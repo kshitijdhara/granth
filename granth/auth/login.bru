@@ -1,0 +1,16 @@
+meta {
+  name: login
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{URL}}/auth/login
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  email: 1@1.com
+  password: Lmaodead@123
+}

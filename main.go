@@ -24,13 +24,6 @@ func main() {
 		config.Logger.Fatalf("Error connecting to the database: %v", err)
 	}
 	defer psqlDB.Close()
-
-	// perform any pending migrations
-	config.Logger.Println("Running database migrations...")
-	err = config.RunMigrations(psqlDB)
-	if err != nil {
-		config.Logger.Fatalf("Error running database migrations: %v", err)
-	}
 	config.Logger.Println("Successfully connected to the database")
 
 	// create router from routes package

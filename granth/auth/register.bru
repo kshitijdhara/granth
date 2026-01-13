@@ -1,0 +1,17 @@
+meta {
+  name: register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{URL}}/auth/register
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  username: user1
+  email: 1@1.com
+  password: Lmaodead@123
+}
