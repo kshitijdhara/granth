@@ -1,18 +1,18 @@
-package routes
+package api
 
 import (
 	"encoding/json"
 	"net/http"
 	"time"
 
-	"granth/config"
-	"granth/services"
-	"granth/utils"
+	"granth/internal/config"
+	"granth/internal/service"
+	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 )
 
-// NewRouter builds and returns the application's HTTP router.
+// AuthRouter builds and returns auth related routes.
 func AuthRouter() http.Handler {
 	r := chi.NewRouter()
 
@@ -26,7 +26,7 @@ func AuthRouter() http.Handler {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
 			return
 		}
-		data, err := services.Login(email, password)
+		data, err := service.Login(email, password)
 		if err != nil {
 			http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
 			return
@@ -55,14 +55,9 @@ func AuthRouter() http.Handler {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
 			return
 		}
-		data, err := services.RegisterUser(username, email, password)
+		data, err := service.RegisterUser(username, email, password)
 		if err != nil {
 			http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
-		if ok.Err() != nil {
-			http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
 			return
 		}
 		jsonData, err := json.Marshal(data)

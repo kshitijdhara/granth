@@ -1,9 +1,9 @@
-package stores
+package store
 
 import (
 	"database/sql"
 	"fmt"
-	"granth/config"
+	"granth/internal/config"
 )
 
 func CreateUser(username, email, passwordHash string) (string, string, error) {

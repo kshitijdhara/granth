@@ -1,4 +1,4 @@
-package routes
+package api
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// NewRouter builds and returns the application's HTTP router.
+// BaseRouter builds and returns the application's HTTP router.
 func BaseRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, middleware.Recoverer, middleware.RealIP)
