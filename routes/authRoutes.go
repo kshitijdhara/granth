@@ -1,17 +1,20 @@
 package routes
 
 import (
-	"granth/services"
+	"encoding/json"
 	"net/http"
+	"time"
+
+	"granth/config"
+	"granth/services"
+	"granth/utils"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 // NewRouter builds and returns the application's HTTP router.
 func AuthRouter() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger, middleware.Recoverer, middleware.RealIP)
 
 	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseMultipartForm(32 << 20); err != nil {
@@ -23,12 +26,23 @@ func AuthRouter() http.Handler {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
 			return
 		}
-		id, username, err := services.Login(email, password)
+		data, err := services.Login(email, password)
 		if err != nil {
 			http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
-		w.Write([]byte("Login successful! UserID: " + id + ", Username: " + username))
+		ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+		if ok.Err() != nil {
+			http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+			return
+		}
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 	})
 
 	r.Post("/register", (func(w http.ResponseWriter, r *http.Request) {
@@ -41,12 +55,47 @@ func AuthRouter() http.Handler {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
 			return
 		}
-		err := services.RegisterUser(username, email, password)
+		data, err := services.RegisterUser(username, email, password)
 		if err != nil {
 			http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		w.Write([]byte("Registration successful!"))
+		ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+		if ok.Err() != nil {
+			http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+			return
+		}
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 	}))
+
+	r.Get("/refreshToken", func(w http.ResponseWriter, r *http.Request) {
+		refreshToken := r.Header.Get("Refresh-Token")
+		if refreshToken == "" {
+			http.Error(w, "Missing refresh token", http.StatusBadRequest)
+			return
+		}
+		accessToken, newRefreshToken, err := utils.RefreshToken(refreshToken)
+		if err != nil {
+			http.Error(w, "Token refresh failed: "+err.Error(), http.StatusUnauthorized)
+			return
+		}
+		response := map[string]string{
+			"accessToken":  accessToken,
+			"refreshToken": newRefreshToken,
+		}
+		jsonData, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
+	})
 	return r
 }

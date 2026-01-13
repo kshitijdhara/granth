@@ -1,39 +1,79 @@
 package services
 
 import (
+	"database/sql"
 	"fmt"
+
 	"granth/stores"
+	"granth/types"
+	"granth/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterUser(username, email, passwordHash string) error {
-	fetchedUserName, fetchedEmail, _, err := stores.GetUserByEmail(email)
+func RegisterUser(username, email, passwordHash string) (types.AuthResponse, error) {
+	_, existingUsername, _, err := stores.GetUserByEmail(email)
 	if err == nil {
-		if username == fetchedUserName {
-			return fmt.Errorf("username already in use")
-		} else if email == fetchedEmail {
-			return fmt.Errorf("email already in use")
+		// email already exists
+		if existingUsername == username {
+			return types.AuthResponse{}, fmt.Errorf("username already in use")
 		}
-	} else {
-		passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(passwordHash), bcrypt.DefaultCost)
-		if err != nil {
-			return fmt.Errorf("error hashing password: %w", err)
-		}
-		passwordHash := string(passwordHashBytes)
-		return stores.CreateUser(username, email, passwordHash)
+		return types.AuthResponse{}, fmt.Errorf("email already in use")
 	}
-	return nil
+	if err != sql.ErrNoRows {
+		return types.AuthResponse{}, fmt.Errorf("error checking existing user: %w", err)
+	}
+
+	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(passwordHash), bcrypt.DefaultCost)
+	if err != nil {
+		return types.AuthResponse{}, fmt.Errorf("error hashing password: %w", err)
+	}
+	passwordHash = string(passwordHashBytes)
+
+	id, username, err := stores.CreateUser(username, email, passwordHash)
+	if err != nil {
+		return types.AuthResponse{}, fmt.Errorf("error creating user: %w", err)
+	}
+
+	accessToken, err := utils.CreateUserToken(id)
+	if err != nil {
+		return types.AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
+	}
+
+	refreshToken, err := utils.CreateRefreshToken(id)
+	if err != nil {
+		return types.AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
+	}
+	return types.AuthResponse{
+		UserID:       id,
+		Username:     username,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
-func Login(email, password string) (string, string, error) {
+func Login(email, password string) (types.AuthResponse, error) {
 	id, username, passwordHash, err := stores.GetUserByEmail(email)
 	if err != nil {
-		return "", "", fmt.Errorf("Error during login: %w", err)
+		return types.AuthResponse{}, fmt.Errorf("Error during login: %w", err)
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
 	if err != nil {
-		return "", "", fmt.Errorf("Invalid Password")
+		return types.AuthResponse{}, fmt.Errorf("Invalid Password")
 	}
-	return id, username, nil
+	accessToken, err := utils.CreateUserToken(id)
+	if err != nil {
+		return types.AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
+	}
+
+	refreshToken, err := utils.CreateRefreshToken(id)
+	if err != nil {
+		return types.AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
+	}
+	return types.AuthResponse{
+		UserID:       id,
+		Username:     username,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }

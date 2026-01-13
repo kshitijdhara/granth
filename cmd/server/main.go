@@ -33,6 +33,14 @@ func main() {
 	}
 	config.Logger.Println("Successfully connected to the database")
 
+	// initialize Redis
+	redisClient, err := config.InitRedisClient(env["REDIS_IP"], env["REDIS_PASSWORD"], 1)
+	if err != nil {
+		config.Logger.Fatalf("Error connecting to Redis: %v", err)
+	}
+	defer redisClient.Close()
+	config.Logger.Println("Successfully connected to Redis")
+
 	// create router from routes package
 	router := routes.BaseRouter()
 

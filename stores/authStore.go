@@ -1,22 +1,29 @@
 package stores
 
 import (
+	"database/sql"
 	"fmt"
 	"granth/config"
 )
 
-func CreateUser(username, email, passwordHash string) error {
-
-	_, err := config.PostgresDB.Exec("INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)", username, email, passwordHash)
+func CreateUser(username, email, passwordHash string) (string, string, error) {
+	var id, returnedUsername string
+	err := config.PostgresDB.QueryRow(
+		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username",
+		username, email, passwordHash,
+	).Scan(&id, &returnedUsername)
 	if err != nil {
-		return fmt.Errorf("createUser exec: %w", err)
+		return "", "", fmt.Errorf("createUser query: %w", err)
 	}
-	return nil
+	return id, returnedUsername, nil
 }
 
 func GetUserByEmail(email string) (string, string, string, error) {
 	var id, username, passwordHash string
 	err := config.PostgresDB.QueryRow("SELECT id, username, password_hash FROM users WHERE email = $1", email).Scan(&id, &username, &passwordHash)
+	if err == sql.ErrNoRows {
+		return "", "", "", sql.ErrNoRows
+	}
 	if err != nil {
 		return "", "", "", fmt.Errorf("getUserByEmail query: %w", err)
 	}
@@ -26,6 +33,9 @@ func GetUserByEmail(email string) (string, string, string, error) {
 func GetUserByID(id string) (string, string, string, error) {
 	var username, email, passwordHash string
 	err := config.PostgresDB.QueryRow("SELECT username, email, password_hash FROM users WHERE id = $1", id).Scan(&username, &email, &passwordHash)
+	if err == sql.ErrNoRows {
+		return "", "", "", sql.ErrNoRows
+	}
 	if err != nil {
 		return "", "", "", fmt.Errorf("getUserByID query: %w", err)
 	}
