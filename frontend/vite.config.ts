@@ -1,0 +1,49 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
+import react from "@vitejs/plugin-react-swc";
+import status from "http-status";
+import {
+	defineConfig,
+	type Plugin,
+	type PreviewServer,
+	type ViteDevServer,
+} from "vite";
+
+const healthCheckPlugin = (): Plugin => ({
+	name: "health-check",
+	configureServer(server: ViteDevServer) {
+		server.middlewares.use(
+			"/health",
+			(_req: IncomingMessage, res: ServerResponse) => {
+				try {
+					res.statusCode = status.OK;
+					res.setHeader("Content-Type", "text/plain");
+					res.end("OK");
+				} catch {
+					res.statusCode = status.INTERNAL_SERVER_ERROR;
+					res.setHeader("Content-Type", "text/plain");
+					res.end("Unhealthy");
+				}
+			},
+		);
+	},
+	configurePreviewServer(server: PreviewServer) {
+		server.middlewares.use(
+			"/health",
+			(_req: IncomingMessage, res: ServerResponse) => {
+				try {
+					res.statusCode = status.OK;
+					res.setHeader("Content-Type", "text/plain");
+					res.end("OK");
+				} catch {
+					res.statusCode = status.INTERNAL_SERVER_ERROR;
+					res.setHeader("Content-Type", "text/plain");
+					res.end("Unhealthy");
+				}
+			},
+		);
+	},
+});
+
+export default defineConfig({
+	plugins: [react(), healthCheckPlugin()],
+});
