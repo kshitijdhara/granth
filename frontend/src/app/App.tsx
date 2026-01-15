@@ -1,10 +1,22 @@
 import React from 'react';
-import { RouterProvider } from 'react-router-dom';
-import { router } from './routes';
+import { Routes, Route } from 'react-router-dom';
+import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage';
+import HomePage from './HomePage';
+import MainLayout from './MainLayout';
 import '../shared/styles/global.scss';
 
 const App: React.FC = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <Routes>
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/home" element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+      </Route>
+    </Routes>
+  );
 };
 
 export default App;

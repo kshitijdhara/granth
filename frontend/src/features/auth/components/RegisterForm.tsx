@@ -1,65 +1,69 @@
-import React, { useState } from 'react';
-import Button from '../../../shared/components/Button';
-import Input from '../../../shared/components/Input';
-import './RegisterForm.scss';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "../../../shared/components/Button";
+import Input from "../../../shared/components/Input";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import "./RegisterForm.scss";
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateName = (value: string) => {
     if (!value.trim()) {
-      return 'Name is required';
+      return "Name is required";
     }
     if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters';
+      return "Name must be at least 2 characters";
     }
-    return '';
+    return "";
   };
 
   const validateEmail = (value: string) => {
     if (!value) {
-      return 'Email is required';
+      return "Email is required";
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value)) {
-      return 'Please enter a valid email address';
+      return "Please enter a valid email address";
     }
-    return '';
+    return "";
   };
 
   const validatePassword = (value: string) => {
     if (!value) {
-      return 'Password is required';
+      return "Password is required";
     }
     if (value.length < 8) {
-      return 'Password must be at least 8 characters';
+      return "Password must be at least 8 characters";
     }
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
-      return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+      return "Password must contain at least one uppercase letter, one lowercase letter, and one number";
     }
-    return '';
+    return "";
   };
 
   const validateConfirmPassword = (value: string) => {
     if (!value) {
-      return 'Please confirm your password';
+      return "Please confirm your password";
     }
     if (value !== password) {
-      return 'Passwords do not match';
+      return "Passwords do not match";
     }
-    return '';
+    return "";
   };
 
   const handleNameChange = (value: string) => {
@@ -129,14 +133,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     setIsSubmitting(true);
 
-    // Mock registration handler
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Registration successful:', { name, email });
-      // In real app, this would handle user registration
-    } catch (error) {
-      console.error('Registration failed:', error);
+      await register(name, email, password);
+      navigate("/home");
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+      const errorMessage = error.response?.data || error.message || "";
+
+      setEmailError(`${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -207,11 +211,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           isDisabled={isSubmitting}
           isFullWidth
         >
-          {isSubmitting ? 'Creating account...' : 'Create account'}
+          {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
 
         <div className="register-form__switch">
-          <span className="register-form__switch-text">Already have an account?</span>
+          <span className="register-form__switch-text">
+            Already have an account?
+          </span>
           <button
             type="button"
             className="register-form__switch-link"

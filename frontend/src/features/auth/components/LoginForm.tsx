@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../shared/components/Button';
 import Input from '../../../shared/components/Input';
+import { useAuth } from '../../../shared/contexts/AuthContext';
 import './LoginForm.scss';
 
 interface LoginFormProps {
@@ -8,6 +10,8 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -72,14 +76,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
     setIsSubmitting(true);
 
-    // Mock login handler
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Login successful:', { email });
-      // In real app, this would handle authentication
-    } catch (error) {
+      await login(email, password);
+      navigate('/home');
+    } catch (error: any) {
       console.error('Login failed:', error);
+      // Handle different error types
+      if (error.response?.status === 401) {
+        setEmailError('Invalid email or password');
+      } else if (error.response?.status === 429) {
+        setEmailError('Too many login attempts. Please try again later.');
+      } else {
+        setEmailError('Login failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

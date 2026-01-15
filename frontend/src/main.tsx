@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDom from "react-dom/client";
+import { BrowserRouter } from 'react-router-dom';
 import App from "./app/App.tsx";
+import { AuthProvider } from "./shared/contexts/AuthContext.tsx";
 
 const rootElement = document.getElementById("root");
 
@@ -10,6 +12,10 @@ if (!rootElement) {
 
 ReactDom.createRoot(rootElement).render(
 	<React.StrictMode>
-		<App />
+		<BrowserRouter>
+			<AuthProvider>
+				<App />
+			</AuthProvider>
+		</BrowserRouter>
 	</React.StrictMode>,
 );
