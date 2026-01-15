@@ -1,0 +1,104 @@
+// Global styles for Granth frontend
+// CSS reset, normalization, and base styles
+
+@use './variables.scss' as *;
+
+// CSS Reset / Normalization
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  line-height: 1.15;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: $font-family-system;
+  font-weight: $font-weight-regular;
+  font-size: 16px;
+  line-height: 1.5;
+  color: $color-text-primary;
+  background-color: $color-background-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Global typography defaults
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: $font-weight-semibold;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: $color-accent-primary;
+  text-decoration: none;
+  transition: color $motion-duration-fast $motion-easing-standard;
+}
+
+a:hover {
+  color: $color-accent-secondary;
+}
+
+// Focus styles
+*:focus {
+  outline: 2px solid $color-accent-primary;
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid $color-accent-primary;
+  outline-offset: 2px;
+}
+
+// Button reset
+button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+// Input reset
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+}
+
+// Motion guidelines
+* {
+  transition: background-color $motion-duration-medium $motion-easing-standard,
+              border-color $motion-duration-medium $motion-easing-standard,
+              color $motion-duration-medium $motion-easing-standard,
+              opacity $motion-duration-medium $motion-easing-standard,
+              transform $motion-duration-medium $motion-easing-standard;
+}

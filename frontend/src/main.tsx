@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDom from "react-dom/client";
-import App from "./App.tsx";
+import App from "./app/App.tsx";
 
 const rootElement = document.getElementById("root");
 
