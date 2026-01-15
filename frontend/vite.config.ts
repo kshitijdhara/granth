@@ -47,13 +47,13 @@ const healthCheckPlugin = (): Plugin => ({
 export default defineConfig({
 	plugins: [react(), healthCheckPlugin()],
 	server:{
-		port: parseInt(process.env.VITE_FRONTEND_PORT || '5173'),
+		port: 3000,
 		host: "0.0.0.0",
 		allowedHosts: ["127.0.0.1"],
 		strictPort: true
 	},
 	preview:{
-		port: parseInt(process.env.VITE_FRONTEND_PORT || '5173'),
+		port: 3000,
 		host: "0.0.0.0",
 		allowedHosts: ["127.0.0.1"],
 		strictPort: true
