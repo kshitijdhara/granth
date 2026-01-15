@@ -16,81 +16,93 @@ import (
 func AuthRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
-			http.Error(w, "Error parsing form data: "+err.Error(), http.StatusBadRequest)
+	r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		email, password := r.FormValue("email"), r.FormValue("password")
-		if email == "" || password == "" {
+
+		if req.Email == "" || req.Password == "" {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
 			return
 		}
-		data, err := service.Login(email, password)
+
+		data, err := service.Login(req.Email, req.Password)
 		if err != nil {
 			http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
+
 		ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
 		if ok.Err() != nil {
 			http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
 			return
 		}
-		jsonData, err := json.Marshal(data)
-		if err != nil {
-			http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(jsonData)
+		json.NewEncoder(w).Encode(data)
 	})
 
-	r.Post("/register", (func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
-			http.Error(w, "Error parsing form data: "+err.Error(), http.StatusBadRequest)
+	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Name     string `json:"name"`
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		username, email, password := r.FormValue("username"), r.FormValue("email"), r.FormValue("password")
-		if username == "" || email == "" || password == "" {
+
+		if req.Name == "" || req.Email == "" || req.Password == "" {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
 			return
 		}
-		data, err := service.RegisterUser(username, email, password)
+
+		data, err := service.RegisterUser(req.Name, req.Email, req.Password)
 		if err != nil {
 			http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		jsonData, err := json.Marshal(data)
-		if err != nil {
-			http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(data)
+	})
+
+	r.Post("/refreshToken", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			RefreshToken string `json:"refreshToken"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(jsonData)
-	}))
 
-	r.Get("/refreshToken", func(w http.ResponseWriter, r *http.Request) {
-		refreshToken := r.Header.Get("Refresh-Token")
-		if refreshToken == "" {
+		if req.RefreshToken == "" {
 			http.Error(w, "Missing refresh token", http.StatusBadRequest)
 			return
 		}
-		accessToken, newRefreshToken, err := utils.RefreshToken(refreshToken)
+
+		accessToken, newRefreshToken, err := utils.RefreshToken(req.RefreshToken)
 		if err != nil {
 			http.Error(w, "Token refresh failed: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
+
 		response := map[string]string{
 			"accessToken":  accessToken,
 			"refreshToken": newRefreshToken,
 		}
-		jsonData, err := json.Marshal(response)
-		if err != nil {
-			http.Error(w, "Error encoding response: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(jsonData)
+		json.NewEncoder(w).Encode(response)
 	})
 	return r
 }
