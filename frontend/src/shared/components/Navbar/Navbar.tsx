@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Button from './Button';
-import { useAuth } from '../contexts/AuthContext';
+import Button from '../Button/Button';
+import { useAuth } from '../../contexts/AuthContext';
 import './Navbar.scss';
 
 const Navbar: React.FC = () => {

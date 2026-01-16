@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../../../shared/components/Button';
-import Input from '../../../shared/components/Input';
-import { useAuth } from '../../../shared/contexts/AuthContext';
+import Button from '../../../../shared/components/Button/Button';
+import Input from '../../../../shared/components/Input/Input';
+import { useAuth } from '../../../../shared/contexts/AuthContext';
 import './LoginForm.scss';
 
 interface LoginFormProps {
