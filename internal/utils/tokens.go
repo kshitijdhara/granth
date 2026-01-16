@@ -4,30 +4,38 @@ import (
 	"os"
 	"time"
 
+	"granth/pkg/models"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
 var secretKey, _ = os.LookupEnv("JWT_SECRET")
 
 func CreateUserToken(userID string) (string, error) {
-	claims := jwt.MapClaims{}
-	claims["user_id"] = userID
-	claims["authorized"] = true
-	claims["token_type"] = "access"
-	claims["exp"] = jwt.NewNumericDate(time.Now().Add(15 * time.Minute)) // 15 minutes
-	claims["iss"] = "granth_app"
+	claims := models.Claims{
+		UserID:     userID,
+		Authorized: true,
+		TokenType:  "access",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			Issuer:    "granth",
+		},
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secretKey))
 }
 
 func CreateRefreshToken(userID string) (string, error) {
-	claims := jwt.MapClaims{}
-	claims["user_id"] = userID
-	claims["authorized"] = true
-	claims["token_type"] = "refresh"
-	claims["exp"] = jwt.NewNumericDate(time.Now().Add(1 * 24 * time.Hour)) // 1 day
-	claims["iss"] = "granth_app"
+	claims := models.Claims{
+		UserID:     userID,
+		Authorized: true,
+		TokenType:  "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * 24 * time.Hour)),
+			Issuer:    "granth",
+		},
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secretKey))
@@ -48,20 +56,17 @@ func RefreshToken(token string) (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	claims, ok := parsedToken.Claims.(*models.Claims)
 	if !ok || !parsedToken.Valid {
 		return "", "", "", jwt.ErrTokenInvalidClaims
 	}
 
 	// Ensure this is a refresh token
-	if tt, ok := claims["token_type"].(string); !ok || tt != "refresh" {
+	if claims.TokenType != "refresh" {
 		return "", "", "", jwt.ErrTokenInvalidClaims
 	}
 
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		return "", "", "", jwt.ErrTokenInvalidClaims
-	}
+	userID := claims.UserID
 
 	accessToken, err := CreateUserToken(userID)
 	if err != nil {
