@@ -2,8 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"granth/internal/config"
@@ -11,133 +11,166 @@ import (
 	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // AuthRouter builds and returns auth related routes.
 func AuthRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
-		var req struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
+	r.Post("/login", handleLogin)
+	r.Post("/register", handleRegister)
+	r.With(utils.AuthMiddleware).Post("/logout", handleLogout)
+	r.Post("/refreshToken", handleRefreshToken)
 
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			// Log the request body for debugging
-			bodyBytes, _ := io.ReadAll(r.Body)
-			bodyString := string(bodyBytes)
-			http.Error(w, "Invalid JSON: "+err.Error()+". Body: "+bodyString, http.StatusBadRequest)
-			return
-		}
-
-		if req.Email == "" || req.Password == "" {
-			http.Error(w, "Missing required fields", http.StatusBadRequest)
-			return
-		}
-
-		data, err := service.Login(req.Email, req.Password)
-		if err != nil {
-			http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
-		if ok.Err() != nil {
-			http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
-	})
-
-	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
-		var req struct {
-			Name     string `json:"name"`
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			// Log the request body for debugging
-			bodyBytes, _ := io.ReadAll(r.Body)
-			bodyString := string(bodyBytes)
-			http.Error(w, "Invalid JSON: "+err.Error()+". Body: "+bodyString, http.StatusBadRequest)
-			return
-		}
-
-		if req.Name == "" || req.Email == "" || req.Password == "" {
-			http.Error(w, "Missing required fields", http.StatusBadRequest)
-			return
-		}
-
-		data, err := service.RegisterUser(req.Name, req.Email, req.Password)
-		if err != nil {
-			http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
-		if ok.Err() != nil {
-			http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
-	})
-
-	r.With(utils.AuthMiddleware).Post("/logout", func(w http.ResponseWriter, r *http.Request) {
-		// Extract userID from JWT token (already validated by middleware)
-		userID, ok := utils.GetUserIDFromContext(r.Context())
-		if !ok {
-			http.Error(w, "Unable to extract user ID from token", http.StatusInternalServerError)
-			return
-		}
-
-		// Delete refresh token from Redis
-		okRedis := config.RedisClient.Del(r.Context(), "refresh:"+userID)
-		if okRedis.Err() != nil {
-			http.Error(w, "Error deleting refresh token: "+okRedis.Err().Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
-	})
-
-	r.Post("/refreshToken", func(w http.ResponseWriter, r *http.Request) {
-		var req struct {
-			RefreshToken string `json:"refreshToken"`
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			// Log the request body for debugging
-			bodyBytes, _ := io.ReadAll(r.Body)
-			bodyString := string(bodyBytes)
-			http.Error(w, "Invalid JSON: "+err.Error()+". Body: "+bodyString, http.StatusBadRequest)
-			return
-		}
-
-		if req.RefreshToken == "" {
-			http.Error(w, "Missing refresh token", http.StatusBadRequest)
-			return
-		}
-
-		accessToken, newRefreshToken, err := utils.RefreshToken(req.RefreshToken)
-		if err != nil {
-			http.Error(w, "Token refresh failed: "+err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		response := map[string]string{
-			"accessToken":  accessToken,
-			"refreshToken": newRefreshToken,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	})
 	return r
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
+		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
+		return
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Email == "" || req.Password == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	data, err := service.Login(req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+	if ok.Err() != nil {
+		http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+func handleRegister(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
+		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
+		return
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Name == "" || req.Email == "" || req.Password == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	data, err := service.RegisterUser(req.Name, req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+	if ok.Err() != nil {
+		http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	// Extract and validate token to get userID
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		http.Error(w, "Authorization header required", http.StatusUnauthorized)
+		return
+	}
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	token, err := utils.ValidateToken(tokenString)
+	if err != nil {
+		http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	// Delete refresh token from Redis
+	okRedis := config.RedisClient.Del(r.Context(), "refresh:"+userID)
+	if okRedis.Err() != nil {
+		http.Error(w, "Error deleting refresh token: "+okRedis.Err().Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
+func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		http.Error(w, "Authorization header with Bearer token required", http.StatusBadRequest)
+		return
+	}
+	refreshToken := strings.TrimPrefix(authHeader, "Bearer ")
+
+	if refreshToken == "" {
+		http.Error(w, "Missing refresh token", http.StatusBadRequest)
+		return
+	}
+
+	accessToken, newRefreshToken, userID, err := utils.RefreshToken(refreshToken)
+	if err != nil {
+		http.Error(w, "Token refresh failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Update stored refresh token
+	ok := config.RedisClient.Set(r.Context(), "refresh:"+userID, newRefreshToken, time.Hour*24)
+	if ok.Err() != nil {
+		http.Error(w, "Error storing new refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]string{
+		"accessToken":  accessToken,
+		"refreshToken": newRefreshToken,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

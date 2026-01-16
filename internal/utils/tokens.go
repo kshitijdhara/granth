@@ -42,36 +42,36 @@ func ValidateToken(token string) (*jwt.Token, error) {
 	})
 }
 
-func RefreshToken(token string) (string, string, error) {
+func RefreshToken(token string) (string, string, string, error) {
 	parsedToken, err := ValidateToken(token)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	if !ok || !parsedToken.Valid {
-		return "", "", jwt.ErrTokenInvalidClaims
+		return "", "", "", jwt.ErrTokenInvalidClaims
 	}
 
 	// Ensure this is a refresh token
 	if tt, ok := claims["token_type"].(string); !ok || tt != "refresh" {
-		return "", "", jwt.ErrTokenInvalidClaims
+		return "", "", "", jwt.ErrTokenInvalidClaims
 	}
 
 	userID, ok := claims["user_id"].(string)
 	if !ok {
-		return "", "", jwt.ErrTokenInvalidClaims
+		return "", "", "", jwt.ErrTokenInvalidClaims
 	}
 
 	accessToken, err := CreateUserToken(userID)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	refreshToken, err := CreateRefreshToken(userID)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	return accessToken, refreshToken, nil
+	return accessToken, refreshToken, userID, nil
 }
