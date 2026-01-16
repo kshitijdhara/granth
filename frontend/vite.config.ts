@@ -58,5 +58,5 @@ export default defineConfig({
 		allowedHosts: ["127.0.0.1"],
 		strictPort: true
 	},
-	envDir: "../.env"
+	envDir: ".."
 });

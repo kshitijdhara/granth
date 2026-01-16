@@ -5,13 +5,27 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 // Token getter function - will be set by AuthContext
 let getAccessToken: (() => string | null) | null = null;
+let refreshCallback: (() => Promise<void>) | null = null;
 
 export const setTokenGetter = (getter: () => string | null) => {
   getAccessToken = getter;
 };
 
+export const setRefreshCallback = (callback: () => Promise<void>) => {
+  refreshCallback = callback;
+};
+
 // Create axios instance with default config
 export const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000, // 10 seconds
+});
+
+// Create separate instance for refresh to avoid interceptor loops
+export const refreshApi: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -38,11 +52,16 @@ api.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - let AuthContext handle this
-      // For now, just reject the error
-      return Promise.reject(error);
+  async (error) => {
+    if (error.response?.status === 401 && refreshCallback) {
+      try {
+        await refreshCallback();
+        // Retry the original request
+        return api.request(error.config);
+      } catch (refreshError) {
+        // If refresh fails, reject with original error
+        return Promise.reject(error);
+      }
     }
     return Promise.reject(error);
   }

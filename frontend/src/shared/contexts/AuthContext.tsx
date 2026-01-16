@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/authApi';
-import { setTokenGetter } from '../../services/baseApi';
+import { setTokenGetter, setRefreshCallback } from '../../services/baseApi';
 
 export interface User {
   id: string;
@@ -94,7 +94,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Set up token getter for API requests
   useEffect(() => {
     setTokenGetter(() => authState.accessToken);
-  }, [authState.accessToken]);
+    setRefreshCallback(refreshToken);
+  }, [authState.accessToken, authState.refreshToken]);
 
   // Initialize auth state from localStorage on mount
   useEffect(() => {

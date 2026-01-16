@@ -141,19 +141,27 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		http.Error(w, "Authorization header with Bearer token required", http.StatusBadRequest)
+	var req struct {
+		RefreshToken string `json:"refreshToken"`
+	}
+
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
+		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
 		return
 	}
-	refreshToken := strings.TrimPrefix(authHeader, "Bearer ")
 
-	if refreshToken == "" {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.RefreshToken == "" {
 		http.Error(w, "Missing refresh token", http.StatusBadRequest)
 		return
 	}
 
-	accessToken, newRefreshToken, userID, err := utils.RefreshToken(refreshToken)
+	accessToken, newRefreshToken, userID, err := utils.RefreshToken(req.RefreshToken)
 	if err != nil {
 		http.Error(w, "Token refresh failed: "+err.Error(), http.StatusInternalServerError)
 		return
