@@ -1,0 +1,15 @@
+meta {
+  name: logout
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{URL}}/auth/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE3Njg1MjkzNDYsImlzcyI6ImdyYW50aF9hcHAiLCJ0b2tlbl90eXBlIjoiYWNjZXNzIiwidXNlcl9pZCI6IjAwYTI2YWZjLWZkNWMtNDdmMy1hZjFlLTI1MWYxMDQ4NmNkYyJ9.URayHKDzL44xkjr6DrYhQxRZS5uEXqXIDwVWwhjC9DM
+}

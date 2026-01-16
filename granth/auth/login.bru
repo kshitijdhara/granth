@@ -4,10 +4,17 @@ meta {
   seq: 1
 }
 
-get {
+post {
   url: {{URL}}/auth/login
-  body: multipartForm
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "email":"1@1.com",
+    "password": "Lmaodead@123"
+  }
 }
 
 body:multipart-form {

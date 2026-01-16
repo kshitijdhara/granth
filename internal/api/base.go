@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 
+	"granth/internal/utils"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -22,12 +24,15 @@ func BaseRouter() http.Handler {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	r.Use(middleware.Logger, middleware.Recoverer, middleware.RealIP)
+	r.Use(middleware.Logger, middleware.Recoverer, middleware.RealIP, middleware.Heartbeat("/api/health"))
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to Granth!"))
+	r.With(utils.AuthMiddleware).Get("/api", func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := utils.GetUserIDFromContext(r.Context())
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"message": "Welcome to Granth, authenticated user!", "userID": "` + userID + `"}`))
 	})
-	r.Mount("/auth", AuthRouter())
+
+	r.Mount("/api/auth", AuthRouter())
 
 	return r
 }

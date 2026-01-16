@@ -7,7 +7,7 @@ import './Navbar.scss';
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, username, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const handleAuthAction = () => {
     if (isAuthenticated) {
