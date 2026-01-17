@@ -11,7 +11,6 @@ import (
 	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // AuthRouter builds and returns auth related routes.
@@ -116,17 +115,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-		return
-	}
-
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
-		return
-	}
+	userID := token.UserID
 
 	// Delete refresh token from Redis
 	okRedis := config.RedisClient.Del(r.Context(), "refresh:"+userID)

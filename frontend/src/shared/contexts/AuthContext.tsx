@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/authApi';
-import { setTokenGetter, setRefreshCallback } from '../../services/baseApi';
+import { setAuthToken, setRefreshCallback } from '../../services/baseApi';
 
 export interface User {
   id: string;
@@ -38,7 +38,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshAccessToken: () => Promise<void>;
+  refreshAccessToken: () => Promise<string>;
 }
 
 const AUTH_STORAGE_KEY = 'auth';
@@ -91,9 +91,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading: true,
   });
 
-  // Set up token getter for API requests
+  // Set up token for API requests
   useEffect(() => {
-    setTokenGetter(() => authState.accessToken);
+    setAuthToken(authState.accessToken);
     setRefreshCallback(refreshToken);
   }, [authState.accessToken, authState.refreshToken]);
 
@@ -197,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshToken = async () => {
+  const refreshToken = async (): Promise<string> => {
     if (!authState.refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -224,6 +224,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           refreshToken: newRefreshToken,
         });
       }
+
+      return accessToken;
     } catch (error) {
       // If refresh fails, logout
       await logout();

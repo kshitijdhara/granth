@@ -1,79 +1,156 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type AxiosError,
+} from 'axios';
 
+// =======================================================
 // API Base Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/';
+// =======================================================
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/';
 
-// Token getter function - will be set by AuthContext
-let getAccessToken: (() => string | null) | null = null;
-let refreshCallback: (() => Promise<void>) | null = null;
+// =======================================================
+// Auth Hooks (Injected by App/Auth Context)
+// =======================================================
+let refreshCallback: (() => Promise<string>) | null = null;
+let onLogout: (() => void) | null = null;
 
-export const setTokenGetter = (getter: () => string | null) => {
-  getAccessToken = getter;
-};
-
-export const setRefreshCallback = (callback: () => Promise<void>) => {
+export const setRefreshCallback = (
+  callback: () => Promise<string>
+) => {
   refreshCallback = callback;
 };
 
-// Create axios instance with default config
+export const setLogoutHandler = (handler: () => void) => {
+  onLogout = handler;
+};
+
+// =======================================================
+// Axios Instance
+// =======================================================
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 seconds
+  withCredentials: true,
 });
 
-// Create separate instance for refresh to avoid interceptor loops
-export const refreshApi: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 seconds
-});
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken ? getAccessToken() : localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// =======================================================
+// Token Management (Single Source of Truth)
+// =======================================================
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common.Authorization;
   }
-);
+};
 
-// Response interceptor to handle common errors
+// =======================================================
+// Refresh State
+// =======================================================
+let isRefreshing = false;
+
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+}> = [];
+
+const processQueue = (
+  error: any,
+  token: string | null = null
+) => {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error);
+    } else {
+      promise.resolve(token!);
+    }
+  });
+
+  failedQueue = [];
+};
+
+// =======================================================
+// Response Interceptor (Auth / Refresh Logic)
+// =======================================================
 api.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
-  async (error) => {
-    if (error.response?.status === 401 && refreshCallback) {
-      try {
-        await refreshCallback();
-        // Retry the original request
-        return api.request(error.config);
-      } catch (refreshError) {
-        // If refresh fails, reject with original error
-        return Promise.reject(error);
-      }
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any;
+
+    // Only handle 401 errors
+    if (
+      error.response?.status !== 401 ||
+      !refreshCallback
+    ) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    // Prevent infinite retry loops
+    if (originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    // Allow opt-out for login / refresh endpoints
+    if (originalRequest.skipAuthRefresh) {
+      return Promise.reject(error);
+    }
+
+    // Queue requests if refresh already running
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({
+          resolve: (token: string) => {
+            originalRequest.headers.Authorization =
+              `Bearer ${token}`;
+            resolve(api(originalRequest));
+          },
+          reject,
+        });
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const newToken = await refreshCallback();
+
+      // Update global token
+      setAuthToken(newToken);
+
+      // Retry queued requests
+      processQueue(null, newToken);
+
+      // Retry original request
+      originalRequest.headers.Authorization =
+        `Bearer ${newToken}`;
+
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      onLogout?.();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 
-// Generic API methods
+// =======================================================
+// API Service Wrapper
+// =======================================================
 export const apiService = {
-  get: <T = any>(url: string, config?: any) => api.get<T>(url, config),
-  post: <T = any>(url: string, data?: any, config?: any) => api.post<T>(url, data, config),
-  put: <T = any>(url: string, data?: any, config?: any) => api.put<T>(url, data, config),
-  patch: <T = any>(url: string, data?: any, config?: any) => api.patch<T>(url, data, config),
-  delete: <T = any>(url: string, config?: any) => api.delete<T>(url, config),
+  get: <T = any>(url: string, config?: any) =>
+    api.get<T>(url, config),
+  post: <T = any>(url: string, data?: any, config?: any) =>
+    api.post<T>(url, data, config),
+  put: <T = any>(url: string, data?: any, config?: any) =>
+    api.put<T>(url, data, config),
+  patch: <T = any>(url: string, data?: any, config?: any) =>
+    api.patch<T>(url, data, config),
+  delete: <T = any>(url: string, config?: any) =>
+    api.delete<T>(url, config),
 };
 
 export default api;

@@ -17,7 +17,7 @@ func CreateUserToken(userID string) (string, error) {
 		Authorized: true,
 		TokenType:  "access",
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Minute)),
 			Issuer:    "granth",
 		},
 	}
@@ -41,24 +41,29 @@ func CreateRefreshToken(userID string) (string, error) {
 	return token.SignedString([]byte(secretKey))
 }
 
-func ValidateToken(token string) (*jwt.Token, error) {
-	return jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+func ValidateToken(token string) (*models.Claims, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &models.Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrTokenMalformed
 		}
 		return []byte(secretKey), nil
 	})
-}
-
-func RefreshToken(token string) (string, string, string, error) {
-	parsedToken, err := ValidateToken(token)
 	if err != nil {
-		return "", "", "", err
+		return nil, err
 	}
 
 	claims, ok := parsedToken.Claims.(*models.Claims)
 	if !ok || !parsedToken.Valid {
-		return "", "", "", jwt.ErrTokenInvalidClaims
+		return nil, jwt.ErrTokenInvalidClaims
+	}
+
+	return claims, nil
+}
+
+func RefreshToken(token string) (string, string, string, error) {
+	claims, err := ValidateToken(token)
+	if err != nil {
+		return "", "", "", err
 	}
 
 	// Ensure this is a refresh token

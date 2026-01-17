@@ -1,4 +1,4 @@
-import { api, refreshApi } from './baseApi';
+import { api } from './baseApi';
 
 // Authentication API methods
 export const authAPI = {
@@ -16,7 +16,7 @@ export const authAPI = {
 
   // Refresh token
   refreshToken: async (refreshToken: string) => {
-    const response = await refreshApi.post('/auth/refreshToken', { refreshToken });
+    const response = await api.post('/auth/refreshToken', { refreshToken });
     return response.data;
   },
 

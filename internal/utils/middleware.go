@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"granth/pkg/models"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -26,24 +26,22 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Validate token
-		token, err := ValidateToken(tokenString)
+		claims, err := ValidateToken(tokenString)
 		if err != nil {
 			http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		// Extract claims
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok || !token.Valid {
-			http.Error(w, "Invalid token claims", http.StatusInternalServerError)
-			return
-		}
-
 		// Ensure this is an access token
-		if tt, ok := claims["token_type"].(string); !ok || tt != "access" {
+		if claims.TokenType != "access" {
 			http.Error(w, "Access token required", http.StatusInternalServerError)
 			return
 		}
+
+		// Add claims to context
+		ctx := context.WithValue(r.Context(), "userID", claims.UserID)
+		ctx = context.WithValue(ctx, "claims", claims)
+		r = r.WithContext(ctx)
 
 		// Call next handler
 		next.ServeHTTP(w, r)
@@ -57,7 +55,7 @@ func GetUserIDFromContext(ctx context.Context) (string, bool) {
 }
 
 // GetClaimsFromContext extracts JWT claims from request context
-func GetClaimsFromContext(ctx context.Context) (jwt.MapClaims, bool) {
-	claims, ok := ctx.Value("claims").(jwt.MapClaims)
+func GetClaimsFromContext(ctx context.Context) (*models.Claims, bool) {
+	claims, ok := ctx.Value("claims").(*models.Claims)
 	return claims, ok
 }
