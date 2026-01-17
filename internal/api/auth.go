@@ -101,21 +101,13 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogout(w http.ResponseWriter, r *http.Request) {
-	// Extract and validate token to get userID
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		http.Error(w, "Authorization header required", http.StatusUnauthorized)
-		return
-	}
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	token, err := utils.ValidateToken(tokenString)
-	if err != nil {
-		http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+	claims, ok := utils.GetClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	userID := token.UserID
+	userID := claims.UserID
 
 	// Delete refresh token from Redis
 	okRedis := config.RedisClient.Del(r.Context(), "refresh:"+userID)
