@@ -1,4 +1,4 @@
-package api
+package auth
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"granth/internal/config"
-	"granth/internal/service"
 	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
@@ -46,7 +45,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := service.Login(req.Email, req.Password)
+	data, err := Login(req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
 		return
@@ -85,7 +84,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := service.RegisterUser(req.Name, req.Email, req.Password)
+	data, err := RegisterUser(req.Name, req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
 		return

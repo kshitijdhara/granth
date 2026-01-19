@@ -5,8 +5,15 @@ import (
 	"net/http"
 	"strings"
 
-	"granth/pkg/models"
+	"github.com/golang-jwt/jwt/v5"
 )
+
+type Claims struct {
+	UserID     string `json:"user_id"`
+	Authorized bool   `json:"authorized"`
+	TokenType  string `json:"token_type"`
+	jwt.RegisteredClaims
+}
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +61,7 @@ func GetUserIDFromContext(ctx context.Context) (string, bool) {
 }
 
 // GetClaimsFromContext extracts JWT claims from request context
-func GetClaimsFromContext(ctx context.Context) (*models.Claims, bool) {
-	claims, ok := ctx.Value("claims").(*models.Claims)
+func GetClaimsFromContext(ctx context.Context) (*Claims, bool) {
+	claims, ok := ctx.Value("claims").(*Claims)
 	return claims, ok
 }

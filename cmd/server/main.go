@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"granth/internal/api"
+	"granth/internal"
 	"granth/internal/config"
 
 	"github.com/joho/godotenv"
@@ -42,7 +42,7 @@ func main() {
 	config.Logger.Println("Successfully connected to Redis")
 
 	// create router from api package
-	router := api.BaseRouter()
+	router := internal.BaseRouter()
 
 	addr := ":" + env["SERVER_PORT"]
 	config.Logger.Println("Server starting on port " + env["SERVER_PORT"])

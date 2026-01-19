@@ -1,8 +1,9 @@
-package api
+package internal
 
 import (
 	"net/http"
 
+	"granth/internal/auth"
 	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
@@ -32,7 +33,7 @@ func BaseRouter() http.Handler {
 		w.Write([]byte(`{"message": "Welcome to Granth, authenticated user!", "userID": "` + userID + `"}`))
 	})
 
-	r.Mount("/api/auth", AuthRouter())
+	r.Mount("/api/auth", auth.AuthRouter())
 
 	return r
 }

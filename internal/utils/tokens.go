@@ -4,15 +4,13 @@ import (
 	"os"
 	"time"
 
-	"granth/pkg/models"
-
 	"github.com/golang-jwt/jwt/v5"
 )
 
 var secretKey, _ = os.LookupEnv("JWT_SECRET")
 
 func CreateUserToken(userID string) (string, error) {
-	claims := models.Claims{
+	claims := Claims{
 		UserID:     userID,
 		Authorized: true,
 		TokenType:  "access",
@@ -27,7 +25,7 @@ func CreateUserToken(userID string) (string, error) {
 }
 
 func CreateRefreshToken(userID string) (string, error) {
-	claims := models.Claims{
+	claims := Claims{
 		UserID:     userID,
 		Authorized: true,
 		TokenType:  "refresh",
@@ -41,8 +39,8 @@ func CreateRefreshToken(userID string) (string, error) {
 	return token.SignedString([]byte(secretKey))
 }
 
-func ValidateToken(token string) (*models.Claims, error) {
-	parsedToken, err := jwt.ParseWithClaims(token, &models.Claims{}, func(t *jwt.Token) (interface{}, error) {
+func ValidateToken(token string) (*Claims, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrTokenMalformed
 		}
@@ -52,7 +50,7 @@ func ValidateToken(token string) (*models.Claims, error) {
 		return nil, err
 	}
 
-	claims, ok := parsedToken.Claims.(*models.Claims)
+	claims, ok := parsedToken.Claims.(*Claims)
 	if !ok || !parsedToken.Valid {
 		return nil, jwt.ErrTokenInvalidClaims
 	}
