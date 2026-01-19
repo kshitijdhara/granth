@@ -16,30 +16,25 @@
     background-color: var(--color-accent-primary);
     color: white;
     border: 1px solid var(--color-accent-primary);
-    box-shadow: var(--shadow-small);
 
     &:hover:not(.button--disabled) {
       background-color: var(--color-accent-secondary);
       border-color: var(--color-accent-secondary);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-medium);
     }
 
     &:active:not(.button--disabled) {
-      transform: translateY(0);
-      box-shadow: var(--shadow-small);
+      opacity: var(--opacity-focus);
     }
   }
 
   &--secondary {
-    background-color: var(--color-surface-primary);
+    background-color: transparent;
     color: var(--color-text-primary);
-    border: 1px solid var(--color-border-light);
-    backdrop-filter: var(--blur-small);
+    border: 1px solid transparent;
 
     &:hover:not(.button--disabled) {
       background-color: var(--color-surface-secondary);
-      border-color: var(--color-border-medium);
+      border-color: var(--color-border-light);
     }
   }
 

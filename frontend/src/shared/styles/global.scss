@@ -181,6 +181,15 @@ input, textarea, select {
   min-height: 100vh;
 
   &__main {
-    padding-top: 80px; // Account for fixed navbar
+    transition: margin-left var(--motion-duration-medium) var(--motion-easing-standard);
+    padding: var(--spacing-xl);
+
+    &--sidebar-open {
+      margin-left: 250px;
+    }
+
+    &--sidebar-closed {
+      margin-left: 60px;
+    }
   }
 }

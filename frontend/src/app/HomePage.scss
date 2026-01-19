@@ -1,11 +1,6 @@
 .home-page {
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    var(--color-background-primary) 0%,
-    var(--color-background-secondary) 50%,
-    rgba(var(--color-accent-primary), 0.05) 100%
-  );
+  background: var(--color-background-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,13 +8,8 @@
 
   &__container {
     width: 100%;
-    max-width: 800px;
-    background: var(--color-surface-primary);
-    backdrop-filter: var(--blur-medium);
-    border-radius: var(--border-radius-xlarge);
-    padding: var(--spacing-xxxl);
-    box-shadow: var(--shadow-xlarge);
-    border: 1px solid var(--color-border-light);
+    max-width: 600px;
+    padding: var(--spacing-xxl);
   }
 
   &__header {
@@ -28,68 +18,37 @@
   }
 
   &__title {
-    font-size: 3rem;
-    font-weight: var(--font-weight-bold);
+    font-size: 2rem;
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
     margin-bottom: var(--spacing-md);
   }
 
   &__subtitle {
-    font-size: 1.25rem;
+    font-size: 1rem;
     color: var(--color-text-secondary);
     margin: 0;
   }
 
   &__content {
-    margin-bottom: var(--spacing-xxxl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xxl);
   }
 
-  &__card {
-    background: var(--color-surface-secondary);
-    backdrop-filter: var(--blur-small);
-    border-radius: var(--border-radius-large);
-    padding: var(--spacing-xxl);
-    border: 1px solid var(--color-border-light);
-  }
-
-  &__card-title {
-    font-size: 1.75rem;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-lg);
-  }
-
-  &__card-text {
-    font-size: 1rem;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin-bottom: var(--spacing-xxl);
-  }
-
-  &__features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-lg);
-  }
-
-  &__feature {
-    text-align: center;
-    padding: var(--spacing-lg);
-    background: var(--color-background-primary);
-    border-radius: var(--border-radius-medium);
-    border: 1px solid var(--color-border-light);
-
-    h3 {
-      font-size: 1.125rem;
-      font-weight: var(--font-weight-semibold);
+  &__section {
+    h2 {
+      font-size: 1.25rem;
+      font-weight: var(--font-weight-medium);
       color: var(--color-text-primary);
       margin-bottom: var(--spacing-sm);
     }
 
     p {
-      font-size: 0.875rem;
+      font-size: 1rem;
       color: var(--color-text-secondary);
       margin: 0;
+      line-height: 1.5;
     }
   }
 }

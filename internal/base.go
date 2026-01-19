@@ -35,7 +35,7 @@ func BaseRouter() http.Handler {
 	})
 
 	r.Mount("/api/auth", auth.AuthRouter())
-	r.Mount("/api/documents", documents.DocumentsRouter())
+	r.With(utils.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
 
 	return r
 }
