@@ -45,7 +45,18 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, toggleSidebar }) => {
     alert(`Document ${documentId} clicked`);
   };
 
-  // Don't show navbar on auth pages
+  const handleCreateDocument = async () => {
+    try {
+      const result = await documentsAPI.createDocument('New Document');
+      alert(`Document created with ID: ${result.document_id}`);
+      // Refresh the documents list
+      const updatedDocs = await documentsAPI.getAllDocuments();
+      setDocuments(updatedDocs);
+    } catch (error) {
+      console.error('Failed to create document:', error);
+      alert('Failed to create document');
+    }
+  };
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   if (isAuthPage) {
@@ -68,51 +79,77 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, toggleSidebar }) => {
         </div>
         {sidebarOpen && (
           <div className="navbar__content">
-            <div className="navbar__documents">
-              <div className="navbar__section">
-                <h2 className="navbar__section-title">Documents</h2>
-                {loading ? (
-                  <p>Loading...</p>
-                ) : documents.length > 0 ? (
-                  <ul className="navbar__document-list">
-                    {documents.map((doc) => (
-                      <li key={doc.id} className="navbar__document-item">
-                        <button
-                          className="navbar__document-link"
-                          onClick={() => handleDocumentClick(doc.id)}
-                        >
-                          {doc.title}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No documents yet</p>
-                )}
+            {isAuthenticated ? (
+              <>
+                <div className="navbar__documents">
+                  <div className="navbar__section">
+                    <h2 className="navbar__section-title">Documents</h2>
+                    <Button
+                      variant="primary"
+                      size="small"
+                      onClick={handleCreateDocument}
+                      isFullWidth={true}
+                    >
+                      New Document
+                    </Button>
+                    {loading ? (
+                      <p>Loading...</p>
+                    ) : documents.length > 0 ? (
+                      <ul className="navbar__document-list">
+                        {documents.map((doc) => (
+                          <li key={doc.id} className="navbar__document-item">
+                            <button
+                              className="navbar__document-link"
+                              onClick={() => handleDocumentClick(doc.id)}
+                            >
+                              {doc.title}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No documents yet</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="navbar__actions">
+                  <div className="navbar__section">
+                    <Button
+                      variant="secondary"
+                      size="medium"
+                      onClick={() => navigate('/profile')}
+                      isFullWidth={true}
+                    >
+                      Profile
+                    </Button>
+                  </div>
+                  <div className="navbar__section">
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      onClick={handleLogout}
+                      isFullWidth={true}
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="navbar__actions">
+                <div className="navbar__section">
+                  <Button
+                    variant="primary"
+                    size="medium"
+                    onClick={() => navigate('/login')}
+                    isFullWidth={true}
+                  >
+                    Login
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="navbar__actions">
-              <div className="navbar__section">
-                <Button
-                  variant="secondary"
-                  size="medium"
-                  onClick={handleAuthAction}
-                  isFullWidth={true}
-                >
-                  Profile
-                </Button>
-              </div>
-              <div className="navbar__section">
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={handleLogout}
-                  isFullWidth={true}
-                >
-                  Sign Out
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>

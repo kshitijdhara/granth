@@ -1,7 +1,19 @@
 import React from 'react';
+import Button from '../shared/components/Button/Button';
+import { documentsAPI } from '../services/documentsApi';
 import './HomePage.scss';
 
 const HomePage: React.FC = () => {
+
+  const handleCreateDocument = async () => {
+    try {
+      const result = await documentsAPI.createDocument('New Document');
+      alert(`Document created with ID: ${result.document_id}`);
+    } catch (error) {
+      console.error('Failed to create document:', error);
+      alert('Failed to create document');
+    }
+  };
 
   return (
     <div className="home-page">
@@ -12,6 +24,16 @@ const HomePage: React.FC = () => {
         </header>
 
         <main className="home-page__content">
+          <div className="home-page__actions">
+            <Button
+              variant="primary"
+              size="medium"
+              onClick={handleCreateDocument}
+              isFullWidth={false}
+            >
+              Create New Document
+            </Button>
+          </div>
           <section className="home-page__section">
             <h2>Notes</h2>
             <p>Create and organize your thoughts</p>

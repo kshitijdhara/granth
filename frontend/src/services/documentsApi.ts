@@ -4,8 +4,8 @@ import { api } from './baseApi';
 export interface Document {
   id: string;
   title: string;
-  status: string;
-  owner_id: string;
+  content: string;
+  created_by: string;
   created_at: string;
   updated_at: string;
   updated_by: string;

@@ -56,8 +56,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 // GetUserIDFromContext extracts user ID from request context
 func GetUserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value("userID").(string)
-	return userID, ok
+	claims, ok := ctx.Value("claims").(*Claims)
+	if !ok {
+		return "", false
+	}
+	return claims.UserID, true
 }
 
 // GetClaimsFromContext extracts JWT claims from request context

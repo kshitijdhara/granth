@@ -35,7 +35,7 @@ func DeleteBlock(id string, ctx context.Context) error {
 func fetchDocumentByID(id string, ctx context.Context) (*Document, error) {
 	// Implementation goes here
 	document := &Document{}
-	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, title, status, owner_id, created_at, updated_at FROM documents WHERE id = $1", id).Scan(&document.ID, &document.Title, &document.Status, &document.OwnerID, &document.CreatedAt, &document.UpdatedAt)
+	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, title, content, created_by, created_at, updated_at, updated_by FROM documents WHERE id = $1", id).Scan(&document.ID, &document.Title, &document.Content, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func fetchDocumentByID(id string, ctx context.Context) (*Document, error) {
 
 func fetchDocumentByTitle(title string, ctx context.Context) (*Document, error) {
 	document := &Document{}
-	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, title, status, owner_id, created_at, updated_at FROM documents WHERE title = $1", title).Scan(&document.ID, &document.Title, &document.Status, &document.OwnerID, &document.CreatedAt, &document.UpdatedAt)
+	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, title, content, created_by, created_at, updated_at, updated_by FROM documents WHERE title = $1", title).Scan(&document.ID, &document.Title, &document.Content, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -53,13 +53,13 @@ func fetchDocumentByTitle(title string, ctx context.Context) (*Document, error) 
 
 func CreateDocument(document *Document, ctx context.Context) error {
 	// Implementation goes here
-	_, err := config.PostgresDB.ExecContext(ctx, "INSERT INTO documents (id, title, status, owner_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)", document.ID, document.Title, document.Status, document.OwnerID, document.CreatedAt, document.UpdatedAt)
+	err := config.PostgresDB.QueryRowContext(ctx, "INSERT INTO documents (title, content, created_by, created_at, updated_at, updated_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", document.Title, document.Content, document.CreatedBy, document.CreatedAt, document.UpdatedAt, document.UpdatedBy).Scan(&document.ID)
 	return err
 }
 
 func UpdateDocument(document *Document, ctx context.Context) error {
 	// Implementation goes here
-	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE documents SET title = $1, status = $2, updated_at = $3 WHERE id = $4", document.Title, document.Status, document.UpdatedAt, document.ID)
+	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE documents SET title = $1, content = $2, updated_at = $3, updated_by = $4 WHERE id = $5", document.Title, document.Content, document.UpdatedAt, document.UpdatedBy, document.ID)
 	return err
 }
 
@@ -92,7 +92,7 @@ func FetchAllBlocksByDocumentID(documentID string, ctx context.Context) ([]*Bloc
 }
 
 func fetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Document, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, title, status, owner_id, created_at, updated_at FROM documents WHERE owner_id = $1", ownerID)
+	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, title, content, created_by, created_at, updated_at, updated_by FROM documents WHERE created_by = $1", ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func fetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Documen
 	var documents []*Document
 	for rows.Next() {
 		document := &Document{}
-		if err := rows.Scan(&document.ID, &document.Title, &document.Status, &document.OwnerID, &document.CreatedAt, &document.UpdatedAt); err != nil {
+		if err := rows.Scan(&document.ID, &document.Title, &document.Content, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy); err != nil {
 			return nil, err
 		}
 		documents = append(documents, document)

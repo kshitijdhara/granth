@@ -18,8 +18,8 @@ func createNewDocument(title string, ctx context.Context) (string, error) {
 	}
 	newDocument := &Document{
 		Title:     title,
-		Status:    "canonical",
-		OwnerID:   userId,
+		Content:   "", // Empty content for new documents
+		CreatedBy: userId,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 		UpdatedBy: userId,

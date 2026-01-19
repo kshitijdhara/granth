@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../../services/authApi';
-import { setAuthToken, setRefreshCallback } from '../../services/baseApi';
+import { authAPI } from '../../features/auth/services/authApi';
+import { setAuthToken, setRefreshCallback, setLogoutHandler } from '../../services/baseApi';
 
 export interface User {
   id: string;
@@ -34,6 +34,7 @@ export interface AuthContextType {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated?: boolean;
   // Methods
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -82,60 +83,74 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
-  const [authState, setAuthState] = useState<AuthState>({
-    userId: null,
-    username: null,
-    accessToken: null,
-    refreshToken: null,
-    isAuthenticated: false,
-    isLoading: true,
-  });
 
-  // Set up token for API requests
-  useEffect(() => {
-    setAuthToken(authState.accessToken);
-    setRefreshCallback(refreshToken);
-  }, [authState.accessToken, authState.refreshToken]);
+  // Initialize state from storage (and set axios header if token exists)
+  const getInitialState = (): AuthState => {
+    const stored = getStoredAuthData();
+    if (stored && stored.accessToken) {
+      setAuthToken(stored.accessToken);
+      return {
+        userId: stored.userId || null,
+        username: stored.username || null,
+        accessToken: stored.accessToken,
+        refreshToken: stored.refreshToken || null,
+        isAuthenticated: true,
+        isLoading: false,
+      };
+    }
 
-  // Initialize auth state from localStorage on mount
-  useEffect(() => {
-    const initializeAuth = () => {
-      const storedAuth = getStoredAuthData();
-
-      if (storedAuth && storedAuth.accessToken) {
-        setAuthState({
-          userId: storedAuth.userId || null,
-          username: storedAuth.username || null,
-          accessToken: storedAuth.accessToken,
-          refreshToken: storedAuth.refreshToken || null,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
-      }
+    return {
+      userId: null,
+      username: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: true,
     };
+  };
 
-    initializeAuth();
+  const [authState, setAuthState] = useState<AuthState>(getInitialState);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') setIsHydrated(true);
   }, []);
+
+  // Helper to update auth state, localStorage, and axios header in one place
+  const updateAuthState = (data: StoredAuthData | null) => {
+    if (data && data.accessToken) {
+      const next: AuthState = {
+        userId: data.userId || null,
+        username: data.username || null,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken || null,
+        isAuthenticated: true,
+        isLoading: false,
+      };
+      setAuthState(next);
+      setStoredAuthData(data);
+      setAuthToken(data.accessToken);
+    } else {
+      setAuthState({
+        userId: null,
+        username: null,
+        accessToken: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      setStoredAuthData(null);
+      setAuthToken(null);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
       const response = await authAPI.login(email, password);
       const { userID, username, accessToken, refreshToken } = response;
 
-      // Update state
-      setAuthState({
-        userId: userID,
-        username,
-        accessToken,
-        refreshToken,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-
-      // Store all auth data in single localStorage key
-      setStoredAuthData({
+      // Update state + storage + header via helper
+      updateAuthState({
         userId: userID,
         username,
         accessToken,
@@ -151,18 +166,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authAPI.register(name, email, password);
       const { userID, username, accessToken, refreshToken } = response;
 
-      // Update state
-      setAuthState({
-        userId: userID,
-        username,
-        accessToken,
-        refreshToken,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-
-      // Store all auth data in single localStorage key
-      setStoredAuthData({
+      // Update state + storage + header via helper
+      updateAuthState({
         userId: userID,
         username,
         accessToken,
@@ -198,43 +203,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const refreshToken = async (): Promise<string> => {
-    if (!authState.refreshToken) {
+    // Read refresh token from storage to avoid stale closures
+    const stored = getStoredAuthData();
+    const currentRefresh = stored?.refreshToken;
+    const currentUserId = stored?.userId;
+
+    if (!currentRefresh || !currentUserId) {
       throw new Error('No refresh token available');
     }
 
     try {
-      // Note: This assumes the backend has a refresh endpoint
-      // You may need to implement this in your backend
-      const response = await authAPI.refreshToken(authState.refreshToken);
+      const response = await authAPI.refreshToken(currentRefresh);
       const { accessToken, refreshToken: newRefreshToken } = response;
 
-      // Update state
-      setAuthState(prev => ({
-        ...prev,
+      // Update everything via helper
+      updateAuthState({
+        userId: currentUserId,
+        username: stored?.username ?? '',
         accessToken,
         refreshToken: newRefreshToken,
-      }));
-
-      // Update stored auth data with new tokens
-      const currentAuth = getStoredAuthData();
-      if (currentAuth) {
-        setStoredAuthData({
-          ...currentAuth,
-          accessToken,
-          refreshToken: newRefreshToken,
-        });
-      }
+      });
 
       return accessToken;
     } catch (error) {
-      // If refresh fails, logout
       await logout();
       throw error;
     }
   };
 
+  // Register refresh and logout handlers with baseApi so interceptors can call them
+  useEffect(() => {
+    setRefreshCallback(refreshToken);
+    setLogoutHandler(() => {
+      void logout();
+    });
+  }, [refreshToken, logout]);
+
   const contextValue: AuthContextType = {
     ...authState,
+    isHydrated,
     login,
     register,
     logout,

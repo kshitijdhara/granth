@@ -1,4 +1,4 @@
-import { api } from './baseApi';
+import { api } from '../../../services/baseApi';
 
 // Authentication API methods
 export const authAPI = {

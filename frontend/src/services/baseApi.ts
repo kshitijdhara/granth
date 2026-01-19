@@ -35,6 +35,43 @@ export const api: AxiosInstance = axios.create({
 });
 
 // =======================================================
+// Request Interceptor (Attach Authorization header)
+// =======================================================
+api.interceptors.request.use((config) => {
+  const req = config as any;
+
+  // ensure headers object
+  req.headers = req.headers || {};
+
+  // If Authorization already set on request, leave it
+  if (req.headers.Authorization || req.headers.authorization) {
+    return req;
+  }
+
+  // Use axios defaults if available
+  const defaultAuth = api.defaults.headers.common.Authorization;
+  if (defaultAuth) {
+    req.headers.Authorization = defaultAuth;
+    return req;
+  }
+
+  // Fallback to localStorage stored auth key (single-key storage used by AuthContext)
+  try {
+    const raw = localStorage.getItem('auth');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.accessToken) {
+        req.headers.Authorization = `Bearer ${parsed.accessToken}`;
+      }
+    }
+  } catch (e) {
+    // ignore parsing errors
+  }
+
+  return req;
+});
+
+// =======================================================
 // Token Management (Single Source of Truth)
 // =======================================================
 export const setAuthToken = (token: string | null) => {
