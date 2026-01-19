@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './features/auth/pages/LoginPage';
 import RegisterPage from './features/auth/pages/RegisterPage';
 import HomePage from './pages/HomePage/HomePage';
+import DocumentsPage from './features/documents/pages/DocumentPage/DocumentsPage';
+import DocumentDetail from './features/documents/pages/DocumentDetail/DocumentDetail';
 import MainLayout from './pages/MainLayout';
 import './shared/styles/global.scss';
 
@@ -12,9 +14,15 @@ const App: React.FC = () => {
       {/* Redirect root to /home so /home is treated as the main root */}
       <Route path="/" element={<Navigate to="/home" replace />} />
 
-      <Route path="/home" element={<MainLayout />}>
-        <Route index element={<HomePage />} />
-      </Route>
+         <Route path="/home" element={<MainLayout />}>
+           <Route index element={<HomePage />} />
+         </Route>
+
+         {/* Documents routes at top-level so `/documents/:id` matches directly */}
+         <Route path="/documents" element={<MainLayout />}>
+           <Route index element={<DocumentsPage />} />
+           <Route path=":id" element={<DocumentDetail />} />
+         </Route>
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

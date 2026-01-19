@@ -34,8 +34,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, toggleSidebar }) => {
   };
 
   const handleDocumentClick = (documentId: string) => {
-    // For now, just alert
-    alert(`Document ${documentId} clicked`);
+    navigate(`/documents/${documentId}`);
   };
 
   const handleCreateDocument = async () => {

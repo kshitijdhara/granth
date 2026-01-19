@@ -10,7 +10,7 @@ import (
 func DocumentsRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/:id", handleGetDocument)
+	r.Get("/{id}", handleGetDocument)
 	r.Get("/all", handleGetAllDocuments)
 	r.Post("/create", handleCreateDocument)
 
