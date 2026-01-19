@@ -50,3 +50,62 @@ func getAllDocuments(ctx context.Context) ([]*Document, error) {
 	}
 	return documents, nil
 }
+
+func updateDocumentByID(document *Document, ctx context.Context) error {
+	userId, ok := utils.GetUserIDFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("User ID not found in context")
+	}
+	document.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	document.UpdatedBy = userId
+	err := updateDocument(document, ctx)
+	if err != nil {
+		return fmt.Errorf("Error updating document: %w", err)
+	}
+	return nil
+}
+
+func getAllBlocksForDocument(documentID string, ctx context.Context) ([]*Block, error) {
+	blocks, err := fetchAllBlocksByDocumentID(documentID, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching blocks for document %s: %w", documentID, err)
+	}
+	return blocks, nil
+}
+func createBlockForDocument(block *Block, ctx context.Context) error {
+	userId, ok := utils.GetUserIDFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("User ID not found in context")
+	}
+	block.CreatedBy = userId
+	block.CreatedAt = time.Now().UTC().Format(time.RFC3339)
+	block.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	block.UpdatedBy = userId
+	err := CreateBlock(block, ctx)
+	if err != nil {
+		return fmt.Errorf("Error creating block: %w", err)
+	}
+	return nil
+}
+
+func updateBlockForDocument(block *Block, ctx context.Context) error {
+	userId, ok := utils.GetUserIDFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("User ID not found in context")
+	}
+	block.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	block.UpdatedBy = userId
+	err := UpdateBlock(block, ctx)
+	if err != nil {
+		return fmt.Errorf("Error updating block: %w", err)
+	}
+	return nil
+}
+
+func deleteBlockForDocument(blockID string, ctx context.Context) error {
+	err := DeleteBlock(blockID, ctx)
+	if err != nil {
+		return fmt.Errorf("Error deleting block: %w", err)
+	}
+	return nil
+}

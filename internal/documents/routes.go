@@ -13,6 +13,13 @@ func DocumentsRouter() http.Handler {
 	r.Get("/{id}", handleGetDocument)
 	r.Get("/all", handleGetAllDocuments)
 	r.Post("/create", handleCreateDocument)
+	r.Put("/{id}", handleUpdateDocument)
+	r.Delete("/{id}", handleDeleteDocument)
+
+	r.Get("/{id}/blocks", handleGetAllBlocksForDocument)
+	r.Post("/{id}/blocks/create", handleCreateBlockForDocument)
+	r.Put("/{id}/blocks/update", handleUpdateBlockForDocument)
+	r.Delete("/{id}/blocks/delete", handleDeleteBlockForDocument)
 
 	return r
 }
@@ -48,6 +55,7 @@ func handleGetDocument(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(jsondata)
 }
+
 func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Title string `json:"title"`
@@ -77,4 +85,110 @@ func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(jsondata)
+}
+
+func handleUpdateDocument(w http.ResponseWriter, r *http.Request) {
+	documentID := chi.URLParam(r, "id")
+	var document Document
+	err := json.NewDecoder(r.Body).Decode(&document)
+	if err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	document.ID = documentID
+
+	err = updateDocumentByID(&document, r.Context())
+	if err != nil {
+		http.Error(w, "Error updating document: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleDeleteDocument(w http.ResponseWriter, r *http.Request) {
+	documentID := chi.URLParam(r, "id")
+
+	err := DeleteDocument(documentID, r.Context())
+	if err != nil {
+		http.Error(w, "Error deleting document: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleGetAllBlocksForDocument(w http.ResponseWriter, r *http.Request) {
+	documentID := chi.URLParam(r, "id")
+	blocks, err := getAllBlocksForDocument(documentID, r.Context())
+	if err != nil {
+		http.Error(w, "Error fetching blocks: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	jsondata, err := json.Marshal(blocks)
+	if err != nil {
+		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsondata)
+}
+
+func handleCreateBlockForDocument(w http.ResponseWriter, r *http.Request) {
+	documentID := chi.URLParam(r, "id")
+	var block Block
+	err := json.NewDecoder(r.Body).Decode(&block)
+	if err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	block.DocumentID = documentID
+
+	err = createBlockForDocument(&block, r.Context())
+	if err != nil {
+		http.Error(w, "Error creating block: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+func handleUpdateBlockForDocument(w http.ResponseWriter, r *http.Request) {
+	var block Block
+	err := json.NewDecoder(r.Body).Decode(&block)
+	if err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = UpdateBlock(&block, r.Context())
+	if err != nil {
+		http.Error(w, "Error updating block: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleDeleteBlockForDocument(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		BlockID string `json:"block_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.BlockID == "" {
+		http.Error(w, "Block ID is required", http.StatusBadRequest)
+		return
+	}
+
+	err = DeleteBlock(req.BlockID, r.Context())
+	if err != nil {
+		http.Error(w, "Error deleting block: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

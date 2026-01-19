@@ -2,13 +2,18 @@ package documents
 
 import (
 	"context"
+	"fmt"
 	"granth/internal/config"
+	"math"
+	"strconv"
+
+	"github.com/lib/pq"
 )
 
 func FetchBlockByID(id string, ctx context.Context) (*Block, error) {
 	// Implementation goes here
 	block := &Block{}
-	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, document_id, content, owner_id, created_at, updated_at FROM documents WHERE id = $1", id).Scan(&block.ID, &block.DocumentID, &block.Content, &block.OwnerID, &block.CreatedAt, &block.UpdatedAt)
+	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, document_id, content, created_by, created_at, updated_at, updated_by FROM blocks WHERE id = $1", id).Scan(&block.ID, &block.DocumentID, &block.Content, &block.CreatedBy, &block.CreatedAt, &block.UpdatedAt, &block.UpdatedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -16,19 +21,27 @@ func FetchBlockByID(id string, ctx context.Context) (*Block, error) {
 }
 
 func CreateBlock(block *Block, ctx context.Context) error {
-	// Implementation goes here
-	_, err := config.PostgresDB.ExecContext(ctx, "INSERT INTO documents (id, document_id, content, owner_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)", block.ID, block.DocumentID, block.Content, block.OwnerID, block.CreatedAt, block.UpdatedAt)
+	// Convert the frontend numeric `order_path` (float) into a scaled integer
+	// and store it as a single-element int[] so the DB's INT[] column is satisfied.
+	// Scale factor preserves fractional ordering.
+	const scale = 1000000
+	scaled := int64(math.Round(block.OrderPath * scale))
+
+	err := config.PostgresDB.QueryRowContext(ctx,
+		"INSERT INTO blocks (document_id, order_path, type, content, created_by, created_at, updated_at, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		block.DocumentID, pq.Array([]int64{scaled}), block.BlockType, block.Content, block.CreatedBy, block.CreatedAt, block.UpdatedAt, block.UpdatedBy).Scan(&block.ID)
 	return err
 }
 
 func UpdateBlock(block *Block, ctx context.Context) error {
-	// Implementation goes here
-	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE documents SET document_id = $1, content = $2, updated_at = $3 WHERE id = $4", block.DocumentID, block.Content, block.UpdatedAt, block.ID)
+	const scale = 1000000
+	scaled := int64(math.Round(block.OrderPath * scale))
+	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE blocks SET document_id = $1, order_path = $2, type = $3, content = $4, updated_at = $5, updated_by = $6 WHERE id = $7", block.DocumentID, pq.Array([]int64{scaled}), block.BlockType, block.Content, block.UpdatedAt, block.UpdatedBy, block.ID)
 	return err
 }
 func DeleteBlock(id string, ctx context.Context) error {
 	// Implementation goes here
-	_, err := config.PostgresDB.ExecContext(ctx, "DELETE FROM documents WHERE id = $1", id)
+	_, err := config.PostgresDB.ExecContext(ctx, "DELETE FROM blocks WHERE id = $1", id)
 	return err
 }
 
@@ -57,7 +70,7 @@ func CreateDocument(document *Document, ctx context.Context) error {
 	return err
 }
 
-func UpdateDocument(document *Document, ctx context.Context) error {
+func updateDocument(document *Document, ctx context.Context) error {
 	// Implementation goes here
 	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE documents SET title = $1, content = $2, updated_at = $3, updated_by = $4 WHERE id = $5", document.Title, document.Content, document.UpdatedAt, document.UpdatedBy, document.ID)
 	return err
@@ -69,9 +82,9 @@ func DeleteDocument(id string, ctx context.Context) error {
 	return err
 }
 
-func FetchAllBlocksByDocumentID(documentID string, ctx context.Context) ([]*Block, error) {
+func fetchAllBlocksByDocumentID(documentID string, ctx context.Context) ([]*Block, error) {
 	// Implementation goes here
-	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, document_id, content, owner_id, created_at, updated_at FROM blocks WHERE document_id = $1 ORDER BY order", documentID)
+	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, document_id, array_to_string(order_path, '.') AS order_path_str, type, content, created_by, created_at, updated_at, updated_by FROM blocks WHERE document_id = $1 ORDER BY order_path", documentID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +93,29 @@ func FetchAllBlocksByDocumentID(documentID string, ctx context.Context) ([]*Bloc
 	var blocks []*Block
 	for rows.Next() {
 		block := &Block{}
-		if err := rows.Scan(&block.ID, &block.DocumentID, &block.Content, &block.OwnerID, &block.CreatedAt, &block.UpdatedAt); err != nil {
+		var orderStr string
+		if err := rows.Scan(&block.ID, &block.DocumentID, &orderStr, &block.BlockType, &block.Content, &block.CreatedBy, &block.CreatedAt, &block.UpdatedAt, &block.UpdatedBy); err != nil {
 			return nil, err
+		}
+		// orderStr is the array string (e.g. "1234567" for single scaled element or "1.2.3" for multi-element).
+		if orderStr != "" {
+			if parsed, err := strconv.ParseInt(orderStr, 10, 64); err == nil {
+				block.OrderPath = float64(parsed) / 1000000
+			} else {
+				// fallback: try to parse first element before a dot
+				if parts := func(s string) string {
+					for i := 0; i < len(s); i++ {
+						if s[i] == '.' {
+							return s[:i]
+						}
+					}
+					return s
+				}(orderStr); parts != "" {
+					if p, err := strconv.ParseInt(parts, 10, 64); err == nil {
+						block.OrderPath = float64(p) / 1000000
+					}
+				}
+			}
 		}
 		blocks = append(blocks, block)
 	}
@@ -101,12 +135,12 @@ func fetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Documen
 	for rows.Next() {
 		document := &Document{}
 		if err := rows.Scan(&document.ID, &document.Title, &document.Content, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan document for owner %s: %w", ownerID, err)
 		}
 		documents = append(documents, document)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rows error for owner %s: %w", ownerID, err)
 	}
 	return documents, nil
 }

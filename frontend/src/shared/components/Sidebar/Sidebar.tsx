@@ -68,7 +68,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, toggleSidebar }) => {
           >
             {sidebarOpen ? <ArrowLeftEndOnRectangleIcon className="icon" /> : <ArrowRightEndOnRectangleIcon className="icon" />}
           </Button>
-          {sidebarOpen && <h1 className="navbar__brand">Granth</h1>}
+          {sidebarOpen && <h1 className="navbar__brand" onClick={() => navigate("/home")}>Granth</h1>}
         </div>
         {sidebarOpen && (
           <div className="navbar__content">

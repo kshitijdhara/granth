@@ -5,6 +5,7 @@ import RegisterPage from './features/auth/pages/RegisterPage';
 import HomePage from './pages/HomePage/HomePage';
 import DocumentsPage from './features/documents/pages/DocumentPage/DocumentsPage';
 import DocumentDetail from './features/documents/pages/DocumentDetail/DocumentDetail';
+import DocumentEditor from './features/documents/pages/DocumentEditor/DocumentEditor';
 import MainLayout from './pages/MainLayout';
 import './shared/styles/global.scss';
 
@@ -21,7 +22,8 @@ const App: React.FC = () => {
          {/* Documents routes at top-level so `/documents/:id` matches directly */}
          <Route path="/documents" element={<MainLayout />}>
            <Route index element={<DocumentsPage />} />
-           <Route path=":id" element={<DocumentDetail />} />
+          <Route path=":id" element={<DocumentDetail />} />
+          <Route path=":id/edit" element={<DocumentEditor />} />
          </Route>
 
       <Route path="/login" element={<LoginPage />} />

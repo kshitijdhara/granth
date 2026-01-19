@@ -5,10 +5,11 @@ type Block struct {
 	DocumentID string  `json:"document_id"`
 	Content    string  `json:"content"`
 	BlockType  string  `json:"block_type"`
-	Order      float64 `json:"order"`
-	OwnerID    string  `json:"owner_id"`
+	OrderPath  float64 `json:"order_path"`
+	CreatedBy  string  `json:"created_by"`
 	CreatedAt  string  `json:"created_at"`
 	UpdatedAt  string  `json:"updated_at"`
+	UpdatedBy  string  `json:"updated_by"`
 }
 
 type Document struct {

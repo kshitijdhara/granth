@@ -29,3 +29,29 @@
   border-radius: var(--border-radius-small);
   white-space: pre-wrap;
 }
+
+.document-detail__blocks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.document-block {
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-small);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-light);
+}
+
+.document-block--heading h2 {
+  margin: 0;
+}
+
+.document-block--code pre {
+  margin: 0;
+  background: #0f172a;
+  color: #e6eef8;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-small);
+  overflow: auto;
+}
