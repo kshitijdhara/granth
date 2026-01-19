@@ -9,6 +9,7 @@ interface ButtonProps {
   isFullWidth?: boolean;
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
+  className?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -19,6 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   isFullWidth = false,
   onClick,
   type = 'button',
+  className,
 }) => {
   const buttonClasses = [
     'button',
@@ -26,6 +28,8 @@ const Button: React.FC<ButtonProps> = ({
     `button--${size}`,
     isFullWidth && 'button--full-width',
     isDisabled && 'button--disabled',
+    // allow custom class names (e.g., navbar__toggle-btn)
+    (typeof className === 'string' && className) || null,
   ].filter(Boolean).join(' ');
 
   return (

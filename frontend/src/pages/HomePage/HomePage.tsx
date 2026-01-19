@@ -1,6 +1,6 @@
 import React from 'react';
-import Button from '../shared/components/Button/Button';
-import { documentsAPI } from '../services/documentsApi';
+import Button from '../../shared/components/Button/Button';
+import { documentsAPI } from '../../features/documents/services/documentsApi';
 import './HomePage.scss';
 
 const HomePage: React.FC = () => {

@@ -89,9 +89,44 @@
 }
 
 // Override button styles for navbar
-.navbar .button {
-  border-radius: var(--border-radius-medium);
-  font-weight: var(--font-weight-medium);
-  transition: background-color var(--motion-duration-medium) var(--motion-easing-standard),
-              border-color var(--motion-duration-medium) var(--motion-easing-standard);
+.navbar .icon {
+  width: 2rem;
+  height: 2rem;
+  display: inline-block;
+  vertical-align: middle;
+  color: var(--color-text-primary);
+  fill: currentColor;
+  stroke: currentColor;
+  // stroke-width: 2px;
+  opacity: 1;
+}
+
+/* Larger icons when navbar is closed so they're still visible */
+.navbar--closed .icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-text-primary);
+  // stroke-width: 1.75px;
+}
+
+/* Ensure the toggle button stays comfortably clickable when closed */
+.navbar--closed .navbar__header .button {
+  padding: 0.5rem;
+}
+
+/* Fixed size toggle button to prevent growing when navbar opens */
+.navbar__toggle-btn {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar__toggle-btn .icon {
+  width: 22px;
+  height: 22px;
 }

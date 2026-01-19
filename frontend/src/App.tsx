@@ -1,10 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './LoginPage';
-import RegisterPage from './RegisterPage';
-import HomePage from './HomePage';
-import MainLayout from './MainLayout';
-import '../shared/styles/global.scss';
+import LoginPage from './features/auth/pages/LoginPage';
+import RegisterPage from './features/auth/pages/RegisterPage';
+import HomePage from './pages/HomePage/HomePage';
+import MainLayout from './pages/MainLayout';
+import './shared/styles/global.scss';
 
 const App: React.FC = () => {
   return (

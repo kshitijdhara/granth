@@ -4,7 +4,7 @@ import Button from '../Button/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { documentsAPI, type Document } from '../../../features/documents/services/documentsApi';
 import { ArrowLeftEndOnRectangleIcon, ArrowRightEndOnRectangleIcon } from '@heroicons/react/24/solid';
-import './Navbar.scss';
+import './Sidebar.scss';
 
 interface NavbarProps {
   sidebarOpen: boolean;

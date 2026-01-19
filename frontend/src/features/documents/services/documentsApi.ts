@@ -1,4 +1,4 @@
-import { api } from './baseApi';
+import { api } from '../../../services/baseApi';
 
 // Document types
 export interface Document {
