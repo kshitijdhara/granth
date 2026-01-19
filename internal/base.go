@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"granth/internal/auth"
+	"granth/internal/documents"
 	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
@@ -34,6 +35,7 @@ func BaseRouter() http.Handler {
 	})
 
 	r.Mount("/api/auth", auth.AuthRouter())
+	r.Mount("/api/documents", documents.DocumentsRouter())
 
 	return r
 }

@@ -45,7 +45,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := Login(req.Email, req.Password)
+	data, err := login(req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
 		return
@@ -84,7 +84,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := RegisterUser(req.Name, req.Email, req.Password)
+	data, err := registerUser(req.Name, req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
 		return

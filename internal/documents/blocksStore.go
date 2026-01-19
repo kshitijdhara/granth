@@ -32,10 +32,19 @@ func DeleteBlock(id string, ctx context.Context) error {
 	return err
 }
 
-func FetchDocumentByID(id string, ctx context.Context) (*Document, error) {
+func fetchDocumentByID(id string, ctx context.Context) (*Document, error) {
 	// Implementation goes here
 	document := &Document{}
 	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, title, status, owner_id, created_at, updated_at FROM documents WHERE id = $1", id).Scan(&document.ID, &document.Title, &document.Status, &document.OwnerID, &document.CreatedAt, &document.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return document, nil
+}
+
+func fetchDocumentByTitle(title string, ctx context.Context) (*Document, error) {
+	document := &Document{}
+	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, title, status, owner_id, created_at, updated_at FROM documents WHERE title = $1", title).Scan(&document.ID, &document.Title, &document.Status, &document.OwnerID, &document.CreatedAt, &document.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +91,7 @@ func FetchAllBlocksByDocumentID(documentID string, ctx context.Context) ([]*Bloc
 	return blocks, nil
 }
 
-func FetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Document, error) {
+func fetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Document, error) {
 	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, title, status, owner_id, created_at, updated_at FROM documents WHERE owner_id = $1", ownerID)
 	if err != nil {
 		return nil, err

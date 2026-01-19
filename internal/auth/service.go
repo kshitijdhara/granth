@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterUser(username, email, passwordHash string) (AuthResponse, error) {
+func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 	_, existingUsername, _, err := GetUserByEmail(email)
 	if err == nil {
 		// email already exists
@@ -50,7 +50,7 @@ func RegisterUser(username, email, passwordHash string) (AuthResponse, error) {
 	}, nil
 }
 
-func Login(email, password string) (AuthResponse, error) {
+func login(email, password string) (AuthResponse, error) {
 	id, username, passwordHash, err := GetUserByEmail(email)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("Error during login: %w", err)

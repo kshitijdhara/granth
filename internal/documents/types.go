@@ -18,4 +18,5 @@ type Document struct {
 	OwnerID   string `json:"owner_id"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
+	UpdatedBy string `json:"updated_by"`
 }
