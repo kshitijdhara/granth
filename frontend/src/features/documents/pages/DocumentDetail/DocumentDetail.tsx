@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentsAPI, type Document } from '../../services/documentsApi';
 import { blocksAPI } from '../../services/blocksApi';
-import { type Block } from '../../types/blocks';
+import type { Block as BlockType } from '../../types/blocks';
 import Button from '../../../../shared/components/Button/Button';
+import Block from '../../components/Block/Block';
 import './DocumentDetail.scss';
 
 const DocumentDetail: React.FC = () => {
@@ -11,7 +12,7 @@ const DocumentDetail: React.FC = () => {
   const navigate = useNavigate();
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(false);
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [blocks, setBlocks] = useState<BlockType[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -70,14 +71,7 @@ const DocumentDetail: React.FC = () => {
             <em>No blocks yet</em>
           ) : (
             blocks.map((blk) => (
-              <div key={blk.id} className={`document-block document-block--${blk.block_type}`}>
-                {blk.block_type === 'heading' && <h2>{blk.content}</h2>}
-                {blk.block_type === 'code' && <pre><code>{blk.content}</code></pre>}
-                {blk.block_type === 'text' && <p>{blk.content}</p>}
-                {blk.block_type !== 'heading' && blk.block_type !== 'code' && blk.block_type !== 'text' && (
-                  <div>{blk.content}</div>
-                )}
-              </div>
+              <Block key={blk.id} block={blk} isEditing={false} />
             ))
           )}
         </div>

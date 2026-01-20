@@ -1,0 +1,111 @@
+.block {
+  margin-bottom: 1rem;
+}
+
+.block--heading h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.block--code pre {
+  background-color: #f4f4f4;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.block--text p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.block--editing {
+  position: relative;
+}
+
+.block__input,
+.block__textarea {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.block__input--heading {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.block__textarea--code {
+  font-family: monospace;
+}
+
+.block__textarea--text {
+  resize: vertical;
+}
+
+.block__add-container {
+  margin-top: 0.5rem;
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.block__add-btn,
+.block__delete-btn {
+  background: none;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  transition: border-color 0.2s;
+}
+
+.block__add-btn:hover {
+  border-color: #999;
+}
+
+.block__delete-btn:hover {
+  border-color: #ff6b6b;
+  background-color: #ffeaea;
+}
+
+.block__icon {
+  width: 1rem;
+  height: 1rem;
+  color: #666;
+}
+
+.block__add-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 100px;
+}
+
+.block__add-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.block__add-menu button:hover {
+  background-color: #f0f0f0;
+}

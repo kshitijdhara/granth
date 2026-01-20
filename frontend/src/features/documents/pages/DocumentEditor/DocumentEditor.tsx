@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentsAPI, type Document } from '../../services/documentsApi';
 import { blocksAPI} from '../../services/blocksApi';
-import { type Block } from '../../types/blocks';
+import type { Block as BlockType } from '../../types/blocks';
 import Button from '../../../../shared/components/Button/Button';
+import Block from '../../components/Block/Block';
 import './DocumentEditor.scss';
 
 const DocumentEditor: React.FC = () => {
@@ -12,7 +13,7 @@ const DocumentEditor: React.FC = () => {
   const [document, setDocument] = useState<Document | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [blocks, setBlocks] = useState<BlockType[]>([]);
   const [addingAt, setAddingAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -91,7 +92,7 @@ const DocumentEditor: React.FC = () => {
       }
     }
 
-    const newBlock: Partial<Block> = {
+    const newBlock: Partial<BlockType> = {
       content: '',
       block_type: type,
       order_path: newOrder,
@@ -99,12 +100,21 @@ const DocumentEditor: React.FC = () => {
 
     await blocksAPI.createBlock(id, newBlock);
     await reloadBlocks();
-    setAddingAt(null);
   };
 
-  const handleUpdateBlock = async (block: Block) => {
+  const handleBlockContentChange = (id: string, content: string) => {
+    setBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
+  };
+
+  const handleUpdateBlock = async (block: BlockType) => {
     if (!id) return;
     await blocksAPI.updateBlock(id, block);
+    await reloadBlocks();
+  };
+
+  const handleDeleteBlock = async (blockId: string) => {
+    if (!id) return;
+    await blocksAPI.deleteBlock(id, blockId);
     await reloadBlocks();
   };
 
@@ -130,55 +140,9 @@ const DocumentEditor: React.FC = () => {
 
       <main className="document-editor__content">
         <div className="document-editor__blocks">
-          {blocks.map((blk, idx) => (
+          {blocks.map((blk) => (
             <div key={blk.id} className="document-editor__block">
-              {blk.block_type === 'heading' ? (
-                <input
-                  className="document-editor__block-heading"
-                  value={blk.content}
-                  onChange={(e) => {
-                    const next = [...blocks];
-                    next[idx] = { ...blk, content: e.target.value };
-                    setBlocks(next);
-                  }}
-                  onBlur={() => handleUpdateBlock(blocks[idx])}
-                />
-              ) : blk.block_type === 'code' ? (
-                <textarea
-                  className="document-editor__block-code"
-                  value={blk.content}
-                  onChange={(e) => {
-                    const next = [...blocks];
-                    next[idx] = { ...blk, content: e.target.value };
-                    setBlocks(next);
-                  }}
-                  onBlur={() => handleUpdateBlock(blocks[idx])}
-                  rows={8}
-                />
-              ) : (
-                <textarea
-                  className="document-editor__block-textarea"
-                  value={blk.content}
-                  onChange={(e) => {
-                    const next = [...blocks];
-                    next[idx] = { ...blk, content: e.target.value };
-                    setBlocks(next);
-                  }}
-                  onBlur={() => handleUpdateBlock(blocks[idx])}
-                  rows={4}
-                />
-              )}
-
-              <div className="document-editor__block-controls">
-                <button className="document-editor__add-btn" onClick={() => setAddingAt(blk.id)}>+</button>
-                {addingAt === blk.id && (
-                  <div className="document-editor__add-menu">
-                    <button onClick={() => handleAddBlock(blk.id, 'text')}>Text</button>
-                    <button onClick={() => handleAddBlock(blk.id, 'heading')}>Heading</button>
-                    <button onClick={() => handleAddBlock(blk.id, 'code')}>Code</button>
-                  </div>
-                )}
-              </div>
+              <Block block={blk} isEditing={true} onContentChange={handleBlockContentChange} onSave={handleUpdateBlock} onAddBlock={handleAddBlock} onDeleteBlock={handleDeleteBlock} />
             </div>
           ))}
 
