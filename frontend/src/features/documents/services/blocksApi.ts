@@ -12,7 +12,7 @@ export const blocksAPI = {
   // Create a new block for a document
   createBlock: async (documentId: string, block: Partial<Block>): Promise<void> => {
     // Only send the fields the server expects for creation.
-    const payload: { content?: string; block_type?: string; order_path?: number } = {
+    const payload: { content?: string; block_type?: string; order_path?: number[] } = {
       content: block.content,
       block_type: block.block_type,
       order_path: block.order_path,

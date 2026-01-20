@@ -7,6 +7,16 @@ import Button from '../../../../shared/components/Button/Button';
 import Block from '../../components/Block/Block';
 import './DocumentEditor.scss';
 
+const compareOrderPaths = (a: number[], b: number[]): number => {
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    if (a[i] !== b[i]) {
+      return a[i] - b[i];
+    }
+  }
+  return a.length - b.length;
+};
+
 const DocumentEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -17,6 +27,7 @@ const DocumentEditor: React.FC = () => {
   const [addingAt, setAddingAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -30,7 +41,7 @@ const DocumentEditor: React.FC = () => {
         // load blocks
         try {
           const b = await blocksAPI.getAllBlocks(id);
-          b.sort((x, y) => (x.order_path ?? 0) - (y.order_path ?? 0));
+          b.sort((x, y) => compareOrderPaths(x.order_path ?? [], y.order_path ?? []));
           setBlocks(b);
         } catch (err) {
           console.error('Failed to load blocks', err);
@@ -63,43 +74,55 @@ const DocumentEditor: React.FC = () => {
     if (!id) return;
     try {
       const b = await blocksAPI.getAllBlocks(id);
-      b.sort((x, y) => (x.order_path ?? 0) - (y.order_path ?? 0));
+      b.sort((x, y) => compareOrderPaths(x.order_path ?? [], y.order_path ?? []));
       setBlocks(b);
     } catch (err) {
       console.error('Failed to reload blocks', err);
     }
   };
 
-  const handleAddBlock = async (afterBlockId: string | null, type: string) => {
-    if (!id) return;
-    // determine order
-    let newOrder = 1;
-    if (afterBlockId === null) {
-      // add at end
-      newOrder = blocks.length > 0 ? (blocks[blocks.length - 1].order_path ?? 0) + 1 : 1;
-    } else {
-      const idx = blocks.findIndex((b) => b.id === afterBlockId);
-      if (idx === -1) {
-        newOrder = blocks.length > 0 ? (blocks[blocks.length - 1].order_path ?? 0) + 1 : 1;
-      } else {
-        const next = blocks[idx + 1];
-        const prev = blocks[idx];
-        if (next) {
-          newOrder = ((prev.order_path ?? 0) + (next.order_path ?? 0)) / 2;
-        } else {
-          newOrder = (prev.order_path ?? 0) + 1;
+  const handleAddBlock = async (parentId: string | null, type: string) => {
+    if (adding) return;
+    setAdding(true);
+    try {
+      if (!id) return;
+      let newOrderPath: number[];
+      if (parentId === null) {
+        // add at root
+        let newOrder = 1000;
+        if (blocks.length > 0) {
+          const max = Math.max(...blocks.map(b => b.order_path?.[0] ?? 0));
+          newOrder = max + 1000;
         }
+        newOrderPath = [newOrder];
+      } else {
+        // add as child
+        const parentBlock = blocks.find(b => b.id === parentId);
+        if (!parentBlock) return;
+        // find children
+        const children = blocks.filter(b => 
+          b.order_path.length === parentBlock.order_path.length + 1 &&
+          b.order_path.slice(0, parentBlock.order_path.length).every((v, i) => v === parentBlock.order_path[i])
+        );
+        let nextChild = 1;
+        if (children.length > 0) {
+          const maxChild = Math.max(...children.map(b => b.order_path[parentBlock.order_path.length]));
+          nextChild = maxChild + 1;
+        }
+        newOrderPath = [...parentBlock.order_path, nextChild];
       }
+
+      const newBlock: Partial<BlockType> = {
+        content: '',
+        block_type: type,
+        order_path: newOrderPath,
+      };
+
+      await blocksAPI.createBlock(id, newBlock);
+      await reloadBlocks();
+    } finally {
+      setAdding(false);
     }
-
-    const newBlock: Partial<BlockType> = {
-      content: '',
-      block_type: type,
-      order_path: newOrder,
-    };
-
-    await blocksAPI.createBlock(id, newBlock);
-    await reloadBlocks();
   };
 
   const handleBlockContentChange = (id: string, content: string) => {
@@ -142,18 +165,18 @@ const DocumentEditor: React.FC = () => {
         <div className="document-editor__blocks">
           {blocks.map((blk) => (
             <div key={blk.id} className="document-editor__block">
-              <Block block={blk} isEditing={true} onContentChange={handleBlockContentChange} onSave={handleUpdateBlock} onAddBlock={handleAddBlock} onDeleteBlock={handleDeleteBlock} />
+              <Block block={blk} isEditing={true} onContentChange={handleBlockContentChange} onSave={handleUpdateBlock} onAddBlock={handleAddBlock} onDeleteBlock={handleDeleteBlock} isAdding={adding} />
             </div>
           ))}
 
           {/* add at end */}
           <div className="document-editor__add-end">
-            <button className="document-editor__add-btn" onClick={() => setAddingAt('END')}>+</button>
+            <button className="document-editor__add-btn" onClick={() => setAddingAt('END')} disabled={adding}>+</button>
             {addingAt === 'END' && (
               <div className="document-editor__add-menu">
-                <button onClick={() => handleAddBlock(null, 'text')}>Text</button>
-                <button onClick={() => handleAddBlock(null, 'heading')}>Heading</button>
-                <button onClick={() => handleAddBlock(null, 'code')}>Code</button>
+                <button onClick={() => handleAddBlock(null, 'text')} disabled={adding}>Text</button>
+                <button onClick={() => handleAddBlock(null, 'heading')} disabled={adding}>Heading</button>
+                <button onClick={() => handleAddBlock(null, 'code')} disabled={adding}>Code</button>
               </div>
             )}
           </div>

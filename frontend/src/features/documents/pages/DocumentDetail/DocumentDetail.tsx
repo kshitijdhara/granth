@@ -7,6 +7,16 @@ import Button from '../../../../shared/components/Button/Button';
 import Block from '../../components/Block/Block';
 import './DocumentDetail.scss';
 
+const compareOrderPaths = (a: number[], b: number[]): number => {
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    if (a[i] !== b[i]) {
+      return a[i] - b[i];
+    }
+  }
+  return a.length - b.length;
+};
+
 const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -24,7 +34,7 @@ const DocumentDetail: React.FC = () => {
         // load blocks for this document and sort by order
         try {
           const b = await blocksAPI.getAllBlocks(id);
-          b.sort((x, y) => (x.order_path ?? 0) - (y.order_path ?? 0));
+          b.sort((x, y) => compareOrderPaths(x.order_path ?? [], y.order_path ?? []));
           setBlocks(b);
         } catch (err) {
           console.error('Failed to load blocks', err);

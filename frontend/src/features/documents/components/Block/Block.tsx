@@ -8,11 +8,12 @@ interface BlockProps {
   isEditing: boolean;
   onContentChange?: (id: string, content: string) => void;
   onSave?: (block: BlockType) => void;
-  onAddBlock?: (position: string, type: string) => void;
+  onAddBlock?: (parentId: string | null, type: string) => void;
   onDeleteBlock?: (id: string) => void;
+  isAdding?: boolean;
 }
 
-const Block: React.FC<BlockProps> = ({ block, isEditing, onContentChange, onSave, onAddBlock, onDeleteBlock }) => {
+const Block: React.FC<BlockProps> = ({ block, isEditing, onContentChange, onSave, onAddBlock, onDeleteBlock, isAdding }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +47,7 @@ const Block: React.FC<BlockProps> = ({ block, isEditing, onContentChange, onSave
 
   if (isEditing) {
     return (
-      <div className="block block--editing">
+      <div className="block block--editing" style={{ marginLeft: `${(block.order_path?.length ?? 1) * 20 - 20}px` }}>
         {block.block_type === 'heading' && (
           <input
             type="text"
@@ -79,17 +80,26 @@ const Block: React.FC<BlockProps> = ({ block, isEditing, onContentChange, onSave
         )}
 
         <div className="block__add-container">
-          <button className="block__add-btn" onClick={() => setShowMenu(!showMenu)}>
+          <button className="block__add-btn" onClick={() => setShowMenu(!showMenu)} disabled={isAdding}>
             <PlusIcon className="block__icon" />
           </button>
-          <button className="block__delete-btn" onClick={() => onDeleteBlock?.(block.id)}>
+          <button className="block__delete-btn" onClick={() => onDeleteBlock?.(block.id)} disabled={isAdding}>
             <TrashIcon className="block__icon" />
           </button>
           {showMenu && (
             <div className="block__add-menu" ref={menuRef}>
-              <button onClick={() => { onAddBlock?.(block.id, 'text'); setShowMenu(false); }}>Text</button>
-              <button onClick={() => { onAddBlock?.(block.id, 'heading'); setShowMenu(false); }}>Heading</button>
-              <button onClick={() => { onAddBlock?.(block.id, 'code'); setShowMenu(false); }}>Code</button>
+              <div>
+                <strong>Add Below:</strong>
+                <button onClick={() => { onAddBlock?.(null, 'text'); setShowMenu(false); }} disabled={isAdding}>Text</button>
+                <button onClick={() => { onAddBlock?.(null, 'heading'); setShowMenu(false); }} disabled={isAdding}>Heading</button>
+                <button onClick={() => { onAddBlock?.(null, 'code'); setShowMenu(false); }} disabled={isAdding}>Code</button>
+              </div>
+              <div>
+                <strong>Add Child:</strong>
+                <button onClick={() => { onAddBlock?.(block.id, 'text'); setShowMenu(false); }} disabled={isAdding}>Text</button>
+                <button onClick={() => { onAddBlock?.(block.id, 'heading'); setShowMenu(false); }} disabled={isAdding}>Heading</button>
+                <button onClick={() => { onAddBlock?.(block.id, 'code'); setShowMenu(false); }} disabled={isAdding}>Code</button>
+              </div>
             </div>
           )}
         </div>
@@ -98,7 +108,7 @@ const Block: React.FC<BlockProps> = ({ block, isEditing, onContentChange, onSave
   }
 
   return (
-    <div className={`block block--${block.block_type}`}>
+    <div className={`block block--${block.block_type}`} style={{ marginLeft: `${(block.order_path?.length ?? 1) * 20 - 20}px` }}>
       {block.block_type === 'heading' && <h2>{block.content}</h2>}
       {block.block_type === 'code' && <pre><code>{block.content}</code></pre>}
       {block.block_type === 'text' && <p>{block.content}</p>}
