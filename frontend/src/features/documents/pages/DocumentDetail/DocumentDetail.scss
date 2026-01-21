@@ -15,10 +15,6 @@
   flex-shrink: 0;
 }
 
-.document-detail {
-  /* Removed flex layout since it's now handled at page level */
-}
-
 .document-detail__header {
   display: flex;
   align-items: center;
@@ -49,19 +45,10 @@
   font-weight: 400;
 }
 
-.document-detail__content {
-  /* Removed unnecessary wrapper styling */
-}
-
 .document-detail__blocks {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-/* These styles seem outdated since blocks are now handled by Block component */
-.document-block {
-  /* Simplified or removed if not used */
 }
 
 .document-block--heading h2 {

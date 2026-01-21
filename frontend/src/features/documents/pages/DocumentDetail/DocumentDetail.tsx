@@ -4,9 +4,9 @@ import { documentsAPI, type Document } from '../../services/documentsApi';
 import { blocksAPI } from '../../services/blocksApi';
 import type { Block as BlockType } from '../../types/blocks';
 import Button from '../../../../shared/components/Button/Button';
+import { DocumentLayout } from '../../../../shared/components';
 import Block from '../../components/Block/Block';
-import ProposalsView from '../../components/ProposalsView/ProposalsView';
-import DocumentLayout from '../../layouts/DocumentLayout';
+import { ProposalsView } from '../../../proposals';
 import './DocumentDetail.scss';
 
 const compareOrderPaths = (a: number[], b: number[]): number => {

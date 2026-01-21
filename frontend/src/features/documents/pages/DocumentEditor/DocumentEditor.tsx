@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentsAPI, type Document } from '../../services/documentsApi';
 import { blocksAPI} from '../../services/blocksApi';
-import { proposalsAPI } from '../../services/proposalsApi';
+import { proposalsAPI } from '../../../proposals/services/proposalsApi';
 import type { Block as BlockType } from '../../types/blocks';
 import Button from '../../../../shared/components/Button/Button';
 import Block from '../../components/Block/Block';
 import ProposalForm from '../../components/ProposalForm';
-import DocumentLayout from '../../layouts/DocumentLayout';
+import { DocumentLayout } from '../../../../shared/components';
 import './DocumentEditor.scss';
 
 const compareOrderPaths = (a: number[], b: number[]): number => {

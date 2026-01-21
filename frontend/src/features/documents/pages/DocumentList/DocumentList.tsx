@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { documentsAPI, type Document } from '../../services/documentsApi';
 import Button from '../../../../shared/components/Button/Button';
-import './DocumentsPage.scss';
+import './DocumentList.scss';
 
 const DocumentsPage: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
