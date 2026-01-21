@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshToken = async (): Promise<string> => {
+  const refreshAccessToken = async (): Promise<string> => {
     // Read refresh token from storage to avoid stale closures
     const stored = getStoredAuthData();
     const currentRefresh = stored?.refreshToken;
@@ -233,11 +233,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Register refresh and logout handlers with baseApi so interceptors can call them
   useEffect(() => {
-    setRefreshCallback(refreshToken);
+    setRefreshCallback(refreshAccessToken);
     setLogoutHandler(() => {
       void logout();
     });
-  }, [refreshToken, logout]);
+  }, [refreshAccessToken, logout]);
 
   const contextValue: AuthContextType = {
     ...authState,
@@ -245,7 +245,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
-    refreshAccessToken: refreshToken,
+    refreshAccessToken,
   };
 
   return (
