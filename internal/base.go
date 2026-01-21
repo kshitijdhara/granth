@@ -5,7 +5,6 @@ import (
 
 	"granth/internal/auth"
 	"granth/internal/documents"
-	"granth/internal/users"
 	"granth/internal/utils"
 
 	"github.com/go-chi/chi/v5"
@@ -37,8 +36,6 @@ func BaseRouter() http.Handler {
 
 	r.Mount("/api/auth", auth.AuthRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
-	// Users routes (protected)
-	r.With(utils.AuthMiddleware).Mount("/api/users", users.UsersRouter())
 
 	return r
 }
