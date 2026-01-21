@@ -22,7 +22,7 @@
   font-family: var(--font-family-system);
   border: 1px solid var(--color-border-light);
   border-radius: var(--border-radius-medium);
-  background-color: var(--color-background-primary);
+  background-color: var(--color-surface-primary);
   color: var(--color-text-primary);
   transition: border-color var(--motion-duration-medium) var(--motion-easing-standard);
 
@@ -43,7 +43,7 @@
     border-color: var(--color-error);
 
     &:focus {
-      box-shadow: 0 0 0 3px rgba(var(--color-error), 0.1);
+      box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.12);
     }
   }
 

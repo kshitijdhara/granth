@@ -130,3 +130,22 @@
   width: 22px;
   height: 22px;
 }
+
+/* Theme toggle button sits next to the sidebar toggle */
+.navbar__theme-btn {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.navbar__theme-btn .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-primary);
+}

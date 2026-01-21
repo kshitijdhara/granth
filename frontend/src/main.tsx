@@ -3,6 +3,7 @@ import ReactDom from "react-dom/client";
 import { BrowserRouter } from 'react-router-dom';
 import App from "./App.tsx";
 import { AuthProvider } from "./shared/contexts/AuthContext.tsx";
+import { ThemeProvider } from "./shared/contexts/ThemeContext";
 
 const rootElement = document.getElementById("root");
 
@@ -13,9 +14,11 @@ if (!rootElement) {
 ReactDom.createRoot(rootElement).render(
 	<React.StrictMode>
 		<BrowserRouter>
-			<AuthProvider>
-				<App />
-			</AuthProvider>
+				<ThemeProvider>
+					<AuthProvider>
+						<App />
+					</AuthProvider>
+				</ThemeProvider>
 		</BrowserRouter>
 	</React.StrictMode>,
 );
