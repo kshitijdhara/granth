@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"granth/internal/blocks"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -137,7 +139,7 @@ func handleGetAllBlocksForDocument(w http.ResponseWriter, r *http.Request) {
 
 func handleCreateBlockForDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
-	var block Block
+	var block blocks.Block
 	err := json.NewDecoder(r.Body).Decode(&block)
 	if err != nil {
 		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
@@ -154,14 +156,14 @@ func handleCreateBlockForDocument(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 func handleUpdateBlockForDocument(w http.ResponseWriter, r *http.Request) {
-	var block Block
+	var block blocks.Block
 	err := json.NewDecoder(r.Body).Decode(&block)
 	if err != nil {
 		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = UpdateBlock(&block, r.Context())
+	err = blocks.UpdateBlock(&block, r.Context())
 	if err != nil {
 		http.Error(w, "Error updating block: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -184,7 +186,7 @@ func handleDeleteBlockForDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DeleteBlock(req.BlockID, r.Context())
+	err = blocks.DeleteBlock(req.BlockID, r.Context())
 	if err != nil {
 		http.Error(w, "Error deleting block: "+err.Error(), http.StatusInternalServerError)
 		return
