@@ -7,6 +7,7 @@ import DocumentsPage from './features/documents/pages/DocumentPage/DocumentsPage
 import DocumentDetail from './features/documents/pages/DocumentDetail/DocumentDetail';
 import DocumentEditor from './features/documents/pages/DocumentEditor/DocumentEditor';
 import MainLayout from './pages/MainLayout';
+import ProfilePage from './features/user/pages/ProfilePage/ProfilePage';
 import './shared/styles/global.scss';
 
 const App: React.FC = () => {
@@ -25,6 +26,10 @@ const App: React.FC = () => {
           <Route path=":id" element={<DocumentDetail />} />
           <Route path=":id/edit" element={<DocumentEditor />} />
          </Route>
+
+           <Route path="/profile" element={<MainLayout />}>
+             <Route index element={<ProfilePage />} />
+           </Route>
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
