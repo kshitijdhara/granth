@@ -31,7 +31,7 @@ const DocumentsPage: React.FC = () => {
       // reload
       await loadDocuments();
       // navigate to the new document if id returned
-      if (res?.document_id) navigate(`/documents/${res.document_id}`);
+      if (res?.document_id) navigate(`/documents/${res.document_id}/edit`);
     } catch (err) {
       console.error('Failed to create document', err);
     }

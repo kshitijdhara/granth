@@ -1,14 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../shared/components/Button/Button';
 import { documentsAPI } from '../../features/documents/services/documentsApi';
 import './HomePage.scss';
 
 const HomePage: React.FC = () => {
 
+  const navigate = useNavigate();
+
   const handleCreateDocument = async () => {
     try {
       const result = await documentsAPI.createDocument('New Document');
-      alert(`Document created with ID: ${result.document_id}`);
+      if (result?.document_id) navigate(`/documents/${result.document_id}/edit`);
     } catch (error) {
       console.error('Failed to create document:', error);
       alert('Failed to create document');

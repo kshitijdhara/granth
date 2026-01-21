@@ -40,10 +40,11 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, toggleSidebar }) => {
   const handleCreateDocument = async () => {
     try {
       const result = await documentsAPI.createDocument('New Document');
-      alert(`Document created with ID: ${result.document_id}`);
       // Refresh the documents list
       const updatedDocs = await documentsAPI.getAllDocuments();
       setDocuments(updatedDocs);
+      // Navigate to editor for the new document if available
+      if (result?.document_id) navigate(`/documents/${result.document_id}/edit`);
     } catch (error) {
       console.error('Failed to create document:', error);
       alert('Failed to create document');
