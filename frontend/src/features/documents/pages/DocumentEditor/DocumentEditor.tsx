@@ -5,6 +5,7 @@ import { blocksAPI} from '../../services/blocksApi';
 import type { Block as BlockType } from '../../types/blocks';
 import Button from '../../../../shared/components/Button/Button';
 import Block from '../../components/Block/Block';
+import DocumentLayout from '../../layouts/DocumentLayout';
 import './DocumentEditor.scss';
 
 const compareOrderPaths = (a: number[], b: number[]): number => {
@@ -145,44 +146,46 @@ const DocumentEditor: React.FC = () => {
   if (!document) return <p>Document not found.</p>;
 
   return (
-    <div className="document-editor">
-      <header className="document-editor__header">
-        <input
-          className="document-editor__title-input"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Document title"
-        />
-        <div className="document-editor__actions">
-          <Button variant="secondary" size="small" onClick={() => navigate(`/documents/${id}`)} isFullWidth={false}>Cancel</Button>
-          <Button variant="primary" size="medium" onClick={handleSave} isFullWidth={false}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </div>
-      </header>
-
-      <main className="document-editor__content">
-        <div className="document-editor__blocks">
-          {blocks.map((blk) => (
-            <div key={blk.id} className="document-editor__block">
-              <Block block={blk} isEditing={true} onContentChange={handleBlockContentChange} onSave={handleUpdateBlock} onAddBlock={handleAddBlock} onDeleteBlock={handleDeleteBlock} isAdding={adding} />
-            </div>
-          ))}
-
-          {/* add at end */}
-          <div className="document-editor__add-end">
-            <button className="document-editor__add-btn" onClick={() => setAddingAt('END')} disabled={adding}>+</button>
-            {addingAt === 'END' && (
-              <div className="document-editor__add-menu">
-                <button onClick={() => handleAddBlock(null, 'text')} disabled={adding}>Text</button>
-                <button onClick={() => handleAddBlock(null, 'heading')} disabled={adding}>Heading</button>
-                <button onClick={() => handleAddBlock(null, 'code')} disabled={adding}>Code</button>
-              </div>
-            )}
+    <DocumentLayout>
+      <div className="document-editor">
+        <header className="document-editor__header">
+          <input
+            className="document-editor__title-input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Document title"
+          />
+          <div className="document-editor__actions">
+            <Button variant="secondary" size="small" onClick={() => navigate(`/documents/${id}`)} isFullWidth={false}>Cancel</Button>
+            <Button variant="primary" size="medium" onClick={handleSave} isFullWidth={false}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
           </div>
-        </div>
-      </main>
-    </div>
+        </header>
+
+        <main className="document-editor__content">
+          <div className="document-editor__blocks">
+            {blocks.map((blk) => (
+              <div key={blk.id} className="document-editor__block">
+                <Block block={blk} isEditing={true} onContentChange={handleBlockContentChange} onSave={handleUpdateBlock} onAddBlock={handleAddBlock} onDeleteBlock={handleDeleteBlock} isAdding={adding} />
+              </div>
+            ))}
+
+            {/* add at end */}
+            <div className="document-editor__add-end">
+              <button className="document-editor__add-btn" onClick={() => setAddingAt('END')} disabled={adding}>+</button>
+              {addingAt === 'END' && (
+                <div className="document-editor__add-menu">
+                  <button onClick={() => handleAddBlock(null, 'text')} disabled={adding}>Text</button>
+                  <button onClick={() => handleAddBlock(null, 'heading')} disabled={adding}>Heading</button>
+                  <button onClick={() => handleAddBlock(null, 'code')} disabled={adding}>Code</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    </DocumentLayout>
   );
 };
 

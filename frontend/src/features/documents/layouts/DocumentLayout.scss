@@ -1,0 +1,11 @@
+.document-layout {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem; /* optional padding */
+}
+
+.document-layout__container {
+  max-width: 816px; /* US letter width at 96 DPI */
+  width: 100%;
+}
