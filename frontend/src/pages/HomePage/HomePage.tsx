@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../shared/components/Button/Button';
-import { documentsAPI } from '../../features/documents/services/documentsApi';
+import { Card } from '../../shared/components';
+import { documentsAPI, type Document } from '../../features/documents/services/documentsApi';
 import './HomePage.scss';
 
 const HomePage: React.FC = () => {
-
   const navigate = useNavigate();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        const docs = await documentsAPI.getAllDocuments();
+        // Sort by created_at descending and take first 10
+        const sortedDocs = docs
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 10);
+        setDocuments(sortedDocs);
+      } catch (error) {
+        console.error('Failed to load documents:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDocuments();
+  }, []);
 
   const handleCreateDocument = async () => {
     try {
@@ -16,6 +36,10 @@ const HomePage: React.FC = () => {
       console.error('Failed to create document:', error);
       alert('Failed to create document');
     }
+  };
+
+  const handleDocumentClick = (documentId: string) => {
+    navigate(`/documents/${documentId}`);
   };
 
   return (
@@ -37,17 +61,31 @@ const HomePage: React.FC = () => {
               Create New Document
             </Button>
           </div>
-          <section className="home-page__section">
-            <h2>Notes</h2>
-            <p>Create and organize your thoughts</p>
-          </section>
-          <section className="home-page__section">
-            <h2>Search</h2>
-            <p>Find anything instantly</p>
-          </section>
-          <section className="home-page__section">
-            <h2>Collaborate</h2>
-            <p>Work with your team</p>
+
+          <section className="home-page__documents">
+            <h2>Recent Documents</h2>
+            {loading ? (
+              <p>Loading documents...</p>
+            ) : documents.length === 0 ? (
+              <p>No documents yet. Create your first one!</p>
+            ) : (
+              <div className="home-page__documents-grid">
+                {documents.map((doc) => (
+                  <Card
+                    key={doc.id}
+                    variant="default"
+                    padding="md"
+                    onClick={() => handleDocumentClick(doc.id)}
+                    className="home-page__document-card"
+                  >
+                    <h3 className="home-page__document-title">{doc.title}</h3>
+                    <p className="home-page__document-meta">
+                      Created: {new Date(doc.created_at).toLocaleDateString()}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>

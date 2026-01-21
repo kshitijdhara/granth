@@ -1,18 +1,22 @@
-.document-detail {
-  padding: 2rem;
-  max-width: 100%;
+.document-detail-page {
   display: flex;
   gap: 2rem;
+  padding: 2rem;
+  min-height: 100vh;
 }
 
-.document-detail__main {
+.document-detail-page__main {
   flex: 1;
-  min-width: 0; /* Allow shrinking */
+  min-width: 0;
 }
 
-.document-detail__sidebar {
-  width: 300px;
+.document-detail-page__sidebar {
+  width: 320px;
   flex-shrink: 0;
+}
+
+.document-detail {
+  /* Removed flex layout since it's now handled at page level */
 }
 
 .document-detail__header {

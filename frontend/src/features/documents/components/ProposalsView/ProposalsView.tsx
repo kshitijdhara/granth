@@ -37,7 +37,7 @@ const ProposalsView: React.FC<ProposalsViewProps> = ({ documentId }) => {
 
   if (error) return (
     <div className="proposals-view">
-      <div className="proposals-view__error">{error}</div>
+      <div className="proposals-view__error">Unable to load proposals. Please try again.</div>
     </div>
   );
 

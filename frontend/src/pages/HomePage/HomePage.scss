@@ -36,19 +36,40 @@
     gap: var(--spacing-xxl);
   }
 
-  &__section {
+  &__documents {
     h2 {
       font-size: 1.25rem;
       font-weight: var(--font-weight-medium);
       color: var(--color-text-primary);
-      margin-bottom: var(--spacing-sm);
+      margin-bottom: var(--spacing-lg);
     }
+  }
 
-    p {
-      font-size: 1rem;
-      color: var(--color-text-secondary);
-      margin: 0;
-      line-height: 1.5;
+  &__documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  &__document-card {
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
     }
+  }
+
+  &__document-title {
+    font-size: 1.125rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.3;
+  }
+
+  &__document-meta {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0;
   }
 }

@@ -3,6 +3,7 @@ package documents
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"granth/internal/blocks"
 
@@ -17,6 +18,7 @@ func DocumentsRouter() http.Handler {
 	r.Post("/create", handleCreateDocument)
 	r.Put("/{id}", handleUpdateDocument)
 	r.Delete("/{id}", handleDeleteDocument)
+	r.Get("/latest", handleGetLatestDocuments)
 
 	r.Get("/{id}/blocks", handleGetAllBlocksForDocument)
 	r.Post("/{id}/blocks/create", handleCreateBlockForDocument)
@@ -41,6 +43,28 @@ func handleGetAllDocuments(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(jsondata)
 }
+
+func handleGetLatestDocuments(w http.ResponseWriter, r *http.Request) {
+	limitStr := chi.URLParam(r, "limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		http.Error(w, "Invalid limit parameter: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	documents, err := getLatestDocuments(r.Context(), limit)
+	if err != nil {
+		http.Error(w, "Error fetching latest documents: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	jsondata, err := json.Marshal(documents)
+	if err != nil {
+		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsondata)
+}
 func handleGetDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
 	document, err := getDocument(documentID, r.Context())
@@ -52,9 +76,11 @@ func handleGetDocument(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	jsondata, err := json.Marshal(document)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsondata)
 }
 

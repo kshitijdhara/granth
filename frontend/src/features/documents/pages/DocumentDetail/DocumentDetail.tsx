@@ -66,39 +66,41 @@ const DocumentDetail: React.FC = () => {
   if (!document) return <p>Document not found.</p>;
 
   return (
-    <DocumentLayout>
-      <div className="document-detail">
-        <aside className="document-detail__sidebar">
-          <ProposalsView documentId={document.id} />
-        </aside>
+    <div className="document-detail-page">
+      <div className="document-detail-page__main">
+        <DocumentLayout>
+          <div className="document-detail">
+            <header className="document-detail__header">
+              <h1 className="document-detail__title">{document.title}</h1>
+              <div className="document-detail__actions">
+                <Button variant="secondary" size="small" onClick={() => navigate(`/documents/${document.id}/edit`)} isFullWidth={false}>Edit</Button>
+                <Button variant="secondary" size="small" onClick={handleDelete} isFullWidth={false}>Delete</Button>
+              </div>
+            </header>
 
-        <div className="document-detail__main">
-          <header className="document-detail__header">
-            <h1 className="document-detail__title">{document.title}</h1>
-            <div className="document-detail__actions">
-              <Button variant="secondary" size="small" onClick={() => navigate(`/documents/${document.id}/edit`)} isFullWidth={false}>Edit</Button>
-              <Button variant="secondary" size="small" onClick={handleDelete} isFullWidth={false}>Delete</Button>
-            </div>
-          </header>
+            <main className="document-detail__content">
+              <div className="document-detail__meta">Created: {new Date(document.created_at).toLocaleString()}</div>
 
-          <main className="document-detail__content">
-            <div className="document-detail__meta">Created: {new Date(document.created_at).toLocaleString()}</div>
+              <div className="document-detail__blocks">
+                {blocks.length === 0 ? (
+                  <em>No blocks yet</em>
+                ) : (
+                  blocks.map((blk) => (
+                    <Block key={blk.id} block={blk} isEditing={false} />
+                  ))
+                )}
+              </div>
 
-            <div className="document-detail__blocks">
-              {blocks.length === 0 ? (
-                <em>No blocks yet</em>
-              ) : (
-                blocks.map((blk) => (
-                  <Block key={blk.id} block={blk} isEditing={false} />
-                ))
-              )}
-            </div>
-
-            <div className="document-detail__meta">Updated: {new Date(document.updated_at).toLocaleString()}</div>
-          </main>
-        </div>
+              <div className="document-detail__meta">Updated: {new Date(document.updated_at).toLocaleString()}</div>
+            </main>
+          </div>
+        </DocumentLayout>
       </div>
-    </DocumentLayout>
+
+      <div className="document-detail-page__sidebar">
+        <ProposalsView documentId={document.id} />
+      </div>
+    </div>
   );
 };
 

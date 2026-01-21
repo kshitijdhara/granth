@@ -62,3 +62,23 @@ func FetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Documen
 	}
 	return documents, nil
 }
+
+func fetchLatestDocuments(limit int, userid string, ctx context.Context) ([]*Document, error) {
+	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, title, created_by, created_at, updated_at, updated_by FROM documents WHERE id ==$1 ORDER BY created_at DESC LIMIT $2", userid, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var documents []*Document
+	for rows.Next() {
+		document := &Document{}
+		if err := rows.Scan(&document.ID, &document.Title, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy); err != nil {
+			return nil, fmt.Errorf("scan latest document: %w", err)
+		}
+		documents = append(documents, document)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error for latest documents: %w", err)
+	}
+	return documents, nil
+}

@@ -109,3 +109,15 @@ func deleteBlockForDocument(blockID string, ctx context.Context) error {
 	}
 	return nil
 }
+
+func getLatestDocuments(ctx context.Context, limit int) ([]*Document, error) {
+	userid, ok := utils.GetUserIDFromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("user ID not found in context")
+	}
+	documents, err := fetchLatestDocuments(limit, userid, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching latest documents: %w", err)
+	}
+	return documents, nil
+}
