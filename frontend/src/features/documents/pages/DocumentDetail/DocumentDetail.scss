@@ -1,6 +1,18 @@
 .document-detail {
   padding: 2rem;
   max-width: 100%;
+  display: flex;
+  gap: 2rem;
+}
+
+.document-detail__main {
+  flex: 1;
+  min-width: 0; /* Allow shrinking */
+}
+
+.document-detail__sidebar {
+  width: 300px;
+  flex-shrink: 0;
 }
 
 .document-detail__header {

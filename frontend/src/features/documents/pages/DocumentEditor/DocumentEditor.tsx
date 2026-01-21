@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentsAPI, type Document } from '../../services/documentsApi';
 import { blocksAPI} from '../../services/blocksApi';
+import { proposalsAPI } from '../../services/proposalsApi';
 import type { Block as BlockType } from '../../types/blocks';
 import Button from '../../../../shared/components/Button/Button';
 import Block from '../../components/Block/Block';
+import ProposalForm from '../../components/ProposalForm';
 import DocumentLayout from '../../layouts/DocumentLayout';
 import './DocumentEditor.scss';
 
@@ -23,12 +25,15 @@ const DocumentEditor: React.FC = () => {
   const navigate = useNavigate();
   const [document, setDocument] = useState<Document | null>(null);
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
   const [blocks, setBlocks] = useState<BlockType[]>([]);
   const [addingAt, setAddingAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [adding, setAdding] = useState(false);
+
+  // Proposal related
+  const [changes, setChanges] = useState<Array<{ action: 'create' | 'update' | 'delete'; block: BlockType }>>([]);
+  const [showProposalForm, setShowProposalForm] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -38,7 +43,6 @@ const DocumentEditor: React.FC = () => {
         const doc = await documentsAPI.getDocument(id);
         setDocument(doc);
         setTitle(doc.title || '');
-        setContent(doc.content || '');
         // load blocks
         try {
           const b = await blocksAPI.getAllBlocks(id);
@@ -57,28 +61,41 @@ const DocumentEditor: React.FC = () => {
     load();
   }, [id]);
 
-  const handleSave = async () => {
-    if (!id) return;
+  const handleCreateProposal = async (data: { title: string; intent: string; scope: string }) => {
+    if (!id || changes.length === 0) return;
     setSaving(true);
     try {
-      await documentsAPI.updateDocument(id, { title, content });
+      // Create proposal
+      const affectedBlockIds = changes
+        .filter(c => c.action !== 'create')
+        .map(c => c.block.id)
+        .filter((id, idx, arr) => arr.indexOf(id) === idx); // unique
+
+      const { proposal_id } = await proposalsAPI.createProposal(id, {
+        title: data.title || 'Proposal',
+        intent: data.intent || 'Edit document',
+        scope: data.scope || 'Document changes',
+        affected_block_ids: affectedBlockIds,
+      });
+
+      // Add block changes
+      for (const change of changes) {
+        await proposalsAPI.addBlockChange(proposal_id, {
+          block_id: change.action === 'create' ? null : change.block.id,
+          action: change.action,
+          block_type: change.block.block_type,
+          order_path: change.block.order_path || [],
+          content: change.block.content,
+        });
+      }
+
       navigate(`/documents/${id}`);
     } catch (err) {
-      console.error('Failed to save document', err);
-      alert('Failed to save document');
+      console.error('Failed to create proposal', err);
+      alert('Failed to create proposal');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const reloadBlocks = async () => {
-    if (!id) return;
-    try {
-      const b = await blocksAPI.getAllBlocks(id);
-      b.sort((x, y) => compareOrderPaths(x.order_path ?? [], y.order_path ?? []));
-      setBlocks(b);
-    } catch (err) {
-      console.error('Failed to reload blocks', err);
+      setShowProposalForm(false);
     }
   };
 
@@ -113,14 +130,20 @@ const DocumentEditor: React.FC = () => {
         newOrderPath = [...parentBlock.order_path, nextChild];
       }
 
-      const newBlock: Partial<BlockType> = {
+      const newBlock: BlockType = {
+        id: `temp-${Date.now()}`, // temporary ID
+        document_id: id,
         content: '',
         block_type: type,
         order_path: newOrderPath,
+        created_by: '', // will be set on proposal
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updated_by: '',
       };
 
-      await blocksAPI.createBlock(id, newBlock);
-      await reloadBlocks();
+      setBlocks(prev => [...prev, newBlock]);
+      setChanges(prev => [...prev, { action: 'create', block: newBlock }]);
     } finally {
       setAdding(false);
     }
@@ -131,15 +154,22 @@ const DocumentEditor: React.FC = () => {
   };
 
   const handleUpdateBlock = async (block: BlockType) => {
-    if (!id) return;
-    await blocksAPI.updateBlock(id, block);
-    await reloadBlocks();
+    // Check if already in changes
+    setChanges(prev => {
+      const existing = prev.find(c => c.block.id === block.id);
+      if (existing) {
+        return prev.map(c => c.block.id === block.id ? { ...c, block } : c);
+      } else {
+        return [...prev, { action: 'update', block }];
+      }
+    });
   };
 
   const handleDeleteBlock = async (blockId: string) => {
-    if (!id) return;
-    await blocksAPI.deleteBlock(id, blockId);
-    await reloadBlocks();
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    setBlocks(prev => prev.filter(b => b.id !== blockId));
+    setChanges(prev => [...prev, { action: 'delete', block }]);
   };
 
   if (loading) return <p>Loading...</p>;
@@ -157,8 +187,8 @@ const DocumentEditor: React.FC = () => {
           />
           <div className="document-editor__actions">
             <Button variant="secondary" size="small" onClick={() => navigate(`/documents/${id}`)} isFullWidth={false}>Cancel</Button>
-            <Button variant="primary" size="medium" onClick={handleSave} isFullWidth={false}>
-              {saving ? 'Saving...' : 'Save'}
+            <Button variant="primary" size="medium" onClick={() => setShowProposalForm(true)} isDisabled={changes.length === 0} isFullWidth={false}>
+              Create Proposal
             </Button>
           </div>
         </header>
@@ -184,6 +214,13 @@ const DocumentEditor: React.FC = () => {
             </div>
           </div>
         </main>
+
+        <ProposalForm
+          isOpen={showProposalForm}
+          onClose={() => setShowProposalForm(false)}
+          onSubmit={handleCreateProposal}
+          isSubmitting={saving}
+        />
       </div>
     </DocumentLayout>
   );
