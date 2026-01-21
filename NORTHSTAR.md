@@ -214,30 +214,59 @@ Once that feeling exists, traditional editors feel irresponsible.
 *(This section is intentionally mutable)*
 
 ### Current Phase
-- [ ] Concept
-- [ ] Prototype
+- [x] Concept
+- [x] Prototype  
 - [ ] Internal dogfooding
 - [ ] External users
 - [ ] Scaling
 
 ### What Exists Today
-- 
+- **Backend Architecture**: Go server with Chi router, PostgreSQL database, clean package structure
+- **Three-Layer Model**: Canonical documents with blocks, proposal system with block changes, foundation for reasoning layer
+- **Document System**: Full CRUD operations, block-based content storage, document metadata
+- **Proposal System**: Complete backend implementation (creation, storage, state management), API endpoints for proposals and block changes
+- **Frontend**: React/TypeScript with Vite, component library (Card, Button, Input, Sidebar), theme system with light/dark modes
+- **UI/UX**: Apple-inspired design following HIG principles, responsive layouts, accessibility considerations
+- **Features**: Documents and Proposals as separate features, shared components, HomePage with document cards
+- **Infrastructure**: Docker containerization, FOUC prevention, build optimization
 
 ### Recent Decisions
-- **Decision:**  
-- **Reasoning:**  
-- **Tradeoffs Accepted:**  
+- **Decision:** Implemented proposal-first editing workflow  
+  **Reasoning:** Reinforces "proposal over edit" mental model, makes change safe by default  
+  **Tradeoffs Accepted:** Increased complexity in UI flow vs. traditional editing
+
+- **Decision:** Adopted Apple UI/UX philosophy throughout  
+  **Reasoning:** Creates elegant, intuitive experience that reduces friction and fosters emotional connection  
+  **Tradeoffs Accepted:** Design consistency over platform-specific conventions
+
+- **Decision:** Split features into documents/proposals with shared components  
+  **Reasoning:** Better code organization, reusability, and maintainability  
+  **Tradeoffs Accepted:** Additional abstraction layers vs. monolithic structure
+
+- **Decision:** Block-based content storage over document-level content  
+  **Reasoning:** Enables granular change tracking and semantic diffs  
+  **Tradeoffs Accepted:** Query complexity vs. simple text storage
 
 ### Current Risks
-- 
+- **Proposal Review Gap**: Backend merge logic exists but frontend review/diff UI is incomplete
+- **Reasoning Layer Absence**: No discussion or context preservation system yet
+- **Performance Scaling**: Block operations may not scale well with large documents
+- **User Adoption**: Proposal workflow may feel unfamiliar compared to traditional editing
+- **Semantic Diff Complexity**: Text diffs implemented, but semantic comparison not yet built
 
 ### Drift Check
 - Tempting but misaligned ideas:
-- Why they are tempting:
-- Why they are out of scope:
+  - Real-time collaborative editing
+  - AI-powered content generation
+  - File management features
+- Why they are tempting: Familiar from existing tools, seem like natural extensions
+- Why they are out of scope: Compete with the core "change as first-class concept" vision, dilute focus on safe exploration
 
 ### Next Irreversible Bets
-- 
+- **Proposal Review Interface**: Implement GitHub-style diff viewer and accept/reject workflow
+- **Reasoning Layer**: Add discussion threads and decision rationale tracking
+- **Semantic Diffs**: Build meaning-based comparison over text diffs
+- **User Testing**: Validate proposal workflow with real users to ensure safety/feeling
 
 ---
 
