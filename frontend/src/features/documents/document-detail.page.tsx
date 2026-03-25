@@ -13,7 +13,9 @@ import "./document-detail.page.scss";
 const compareOrderPaths = (a: number[], b: number[]): number => {
 	const len = Math.min(a.length, b.length);
 	for (let i = 0; i < len; i++) {
-		if (a[i] !== b[i]) return a[i] - b[i];
+		const ai = a[i] ?? 0;
+		const bi = b[i] ?? 0;
+		if (ai !== bi) return ai - bi;
 	}
 	return a.length - b.length;
 };

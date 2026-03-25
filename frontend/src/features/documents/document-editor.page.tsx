@@ -16,7 +16,9 @@ type Change = { action: "create" | "update" | "delete"; block: Block };
 const compareOrderPaths = (a: number[], b: number[]): number => {
 	const len = Math.min(a.length, b.length);
 	for (let i = 0; i < len; i++) {
-		if (a[i] !== b[i]) return a[i] - b[i];
+		const ai = a[i] ?? 0;
+		const bi = b[i] ?? 0;
+		if (ai !== bi) return ai - bi;
 	}
 	return a.length - b.length;
 };
@@ -103,7 +105,7 @@ const DocumentEditorPage: React.FC = () => {
 				);
 				const maxChild =
 					children.length > 0
-						? Math.max(...children.map((b) => b.order_path[parent.order_path.length]))
+						? Math.max(...children.map((b) => b.order_path[parent.order_path.length] ?? 0))
 						: 0;
 				newOrderPath = [...parent.order_path, maxChild + 1];
 			}
