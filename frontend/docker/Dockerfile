@@ -1,25 +1,23 @@
-FROM node:24-slim
+FROM oven/bun:latest AS builder
 
-# Set environment variable
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Set the working directory
 WORKDIR /app
-# Enable corepack and prepare yarn 4.4.1
-RUN corepack enable && corepack prepare yarn@4.12.0 --activate
 
-# Copy the rest of the application code
+COPY package.json bunfig.toml ./
+RUN bun install
+
 COPY . .
+RUN bun run scripts/build.ts
 
-# Expose necessary ports
+FROM oven/bun:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/scripts/preview.ts ./scripts/preview.ts
+
 EXPOSE 3000
 
-# Install openssl and build the application in one RUN to reduce layers
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && \
-    yarn install && \
-    yarn run build && \
-    rm -rf /var/lib/apt/lists/*
-
-# Use ENTRYPOINT to start the application
-ENTRYPOINT ["yarn", "run", "dev"]
+ENTRYPOINT ["bun", "run", "scripts/preview.ts"]

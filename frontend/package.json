@@ -4,10 +4,11 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"build": "tsc -b && vite build",
-		"lint": "eslint .",
-		"preview": "vite preview"
+		"dev": "bun run scripts/dev.ts",
+		"build": "tsc --noEmit && bun run scripts/build.ts",
+		"preview": "bun run scripts/preview.ts",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@heroicons/react": "^2.2.0",
@@ -22,12 +23,8 @@
 		"@types/node": "^24.10.1",
 		"@types/react": "^19.2.5",
 		"@types/react-dom": "^19.2.3",
-		"@vitejs/plugin-react-swc": "^4.2.2",
-		"globals": "^16.5.0",
-		"http-status": "^2.1.0",
-		"sass-embedded": "^1.97.2",
-		"typescript": "~5.9.3",
-		"vite": "^7.2.4"
-	},
-	"packageManager": "yarn@4.12.0"
+		"bun-types": "latest",
+		"sass": "^1.98.0",
+		"typescript": "~5.9.3"
+	}
 }
