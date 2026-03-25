@@ -1,9 +1,8 @@
-import { watch } from "node:fs";
-import path from "node:path";
+import { watch } from "fs";
 import { sassPlugin } from "./sass-plugin";
 
-const ROOT = path.resolve(import.meta.dir, "..");
-const DIST = path.join(ROOT, "dist");
+const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+const DIST = `${ROOT}/dist`;
 
 const sseClients = new Set<ReadableStreamDefaultController<string>>();
 
@@ -19,12 +18,14 @@ function notifyClients() {
 
 async function build() {
   const result = await Bun.build({
-    entrypoints: [path.join(ROOT, "index.html")],
+    entrypoints: [`${ROOT}/index.html`],
     outdir: DIST,
     plugins: [sassPlugin],
+    // @ts-expect-error bun-types@1.3.11 missing alias field
+    alias: { "@": `${ROOT}/src` },
     define: {
-      "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
-        Bun.env.VITE_API_BASE_URL ?? "http://localhost:8080/"
+      "import.meta.env.API_BASE_URL": JSON.stringify(
+        Bun.env.API_BASE_URL ?? "http://localhost:8080"
       ),
       "import.meta.env.DEV": "true",
       "import.meta.env.PROD": "false",
@@ -41,27 +42,20 @@ async function build() {
   }
 }
 
-// Initial build
 await build();
 
-// Watch src and index.html for changes
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let debounceTimer: Timer | null = null;
 function scheduleRebuild() {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(build, 80);
 }
 
-watch(path.join(ROOT, "src"), { recursive: true }, scheduleRebuild);
-watch(path.join(ROOT, "index.html"), scheduleRebuild);
+watch(`${ROOT}/src`, { recursive: true }, scheduleRebuild);
+watch(`${ROOT}/index.html`, scheduleRebuild);
 
-// Inject live-reload script into index.html response
 const LIVE_RELOAD_SCRIPT = `<script>
   new EventSource("/__dev_reload").onmessage = () => location.reload();
 </script>`;
-
-function injectLiveReload(html: string): string {
-  return html.replace("</body>", `${LIVE_RELOAD_SCRIPT}\n</body>`);
-}
 
 const server = Bun.serve({
   port: 3000,
@@ -93,15 +87,13 @@ const server = Bun.serve({
       });
     }
 
-    // Serve static files from dist, fall back to index.html for SPA routing
     const relPath = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
-    const filePath = path.join(DIST, relPath);
-    const file = Bun.file(filePath);
+    const file = Bun.file(`${DIST}/${relPath}`);
 
     if (await file.exists()) {
-      if (relPath === "index.html" || relPath === "") {
+      if (relPath === "index.html") {
         const html = await file.text();
-        return new Response(injectLiveReload(html), {
+        return new Response(html.replace("</body>", `${LIVE_RELOAD_SCRIPT}\n</body>`), {
           headers: { "Content-Type": "text/html" },
         });
       }
@@ -109,10 +101,10 @@ const server = Bun.serve({
     }
 
     // SPA fallback
-    const indexFile = Bun.file(path.join(DIST, "index.html"));
+    const indexFile = Bun.file(`${DIST}/index.html`);
     if (await indexFile.exists()) {
       const html = await indexFile.text();
-      return new Response(injectLiveReload(html), {
+      return new Response(html.replace("</body>", `${LIVE_RELOAD_SCRIPT}\n</body>`), {
         headers: { "Content-Type": "text/html" },
       });
     }

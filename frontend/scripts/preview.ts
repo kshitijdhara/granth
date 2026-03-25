@@ -1,7 +1,5 @@
-import path from "node:path";
-
-const ROOT = path.resolve(import.meta.dir, "..");
-const DIST = path.join(ROOT, "dist");
+const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+const DIST = `${ROOT}/dist`;
 
 const server = Bun.serve({
   port: 3000,
@@ -14,14 +12,12 @@ const server = Bun.serve({
     }
 
     const relPath = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
-    const file = Bun.file(path.join(DIST, relPath));
+    const file = Bun.file(`${DIST}/${relPath}`);
 
-    if (await file.exists()) {
-      return new Response(file);
-    }
+    if (await file.exists()) return new Response(file);
 
     // SPA fallback
-    return new Response(Bun.file(path.join(DIST, "index.html")));
+    return new Response(Bun.file(`${DIST}/index.html`));
   },
 });
 

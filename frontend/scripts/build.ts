@@ -1,15 +1,18 @@
-import path from "node:path";
 import { sassPlugin } from "./sass-plugin";
 
-const ROOT = path.resolve(import.meta.dir, "..");
+// import.meta.dir  = .../frontend/scripts
+// import.meta.url  = file:///...frontend/scripts/build.ts
+const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 
 const result = await Bun.build({
-  entrypoints: [path.join(ROOT, "index.html")],
-  outdir: path.join(ROOT, "dist"),
+  entrypoints: [`${ROOT}/index.html`],
+  outdir: `${ROOT}/dist`,
   plugins: [sassPlugin],
+  // @ts-expect-error bun-types@1.3.11 missing alias field
+  alias: { "@": `${ROOT}/src` },
   define: {
-    "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
-      Bun.env.VITE_API_BASE_URL ?? "http://localhost:8080/"
+    "import.meta.env.API_BASE_URL": JSON.stringify(
+      Bun.env.API_BASE_URL ?? "http://localhost:8080"
     ),
     "import.meta.env.DEV": "false",
     "import.meta.env.PROD": "true",
@@ -24,4 +27,4 @@ if (!result.success) {
   process.exit(1);
 }
 
-console.log(`Build complete → dist/`);
+console.log("Build complete → dist/");

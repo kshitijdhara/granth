@@ -1,24 +1,21 @@
 import React from "react";
-import ReactDom from "react-dom/client";
-import { BrowserRouter } from 'react-router-dom';
-import App from "./App.tsx";
-import { AuthProvider } from "./shared/contexts/AuthContext.tsx";
-import { ThemeProvider } from "./shared/contexts/ThemeContext";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider } from "@/theme.context";
+import { AuthProvider } from "@/features/auth/auth.context";
+import App from "@/app";
 
-const rootElement = document.getElementById("root");
+const root = document.getElementById("root");
+if (!root) throw new Error("Root element not found");
 
-if (!rootElement) {
-	throw new Error("Failed to find the root element");
-}
-
-ReactDom.createRoot(rootElement).render(
-	<React.StrictMode>
-		<BrowserRouter>
-				<ThemeProvider>
-					<AuthProvider>
-						<App />
-					</AuthProvider>
-				</ThemeProvider>
-		</BrowserRouter>
-	</React.StrictMode>,
+ReactDOM.createRoot(root).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
 );

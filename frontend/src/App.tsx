@@ -1,40 +1,36 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './features/auth/pages/LoginPage';
-import RegisterPage from './features/auth/pages/RegisterPage';
-import HomePage from './pages/HomePage/HomePage';
-import DocumentsPage from './features/documents/pages/DocumentList/DocumentList';
-import DocumentDetail from './features/documents/pages/DocumentDetail/DocumentDetail';
-import DocumentEditor from './features/documents/pages/DocumentEditor/DocumentEditor';
-import MainLayout from './pages/MainLayout';
-import ProfilePage from './features/user/pages/ProfilePage/ProfilePage';
-import './shared/styles/global.scss';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "@/layouts/main.layout";
+import LoginPage from "@/features/auth/login.page";
+import RegisterPage from "@/features/auth/register.page";
+import HomePage from "@/pages/home.page";
+import DocumentListPage from "@/features/documents/document-list.page";
+import DocumentDetailPage from "@/features/documents/document-detail.page";
+import DocumentEditorPage from "@/features/documents/document-editor.page";
+import ProfilePage from "@/features/user/profile.page";
+import "@/styles/global.scss";
 
-const App: React.FC = () => {
-  return (
-    <Routes>
-      {/* Redirect root to /home so /home is treated as the main root */}
-      <Route path="/" element={<Navigate to="/home" replace />} />
+const App: React.FC = () => (
+  <Routes>
+    <Route path="/" element={<Navigate to="/home" replace />} />
 
-         <Route path="/home" element={<MainLayout />}>
-           <Route index element={<HomePage />} />
-         </Route>
+    <Route path="/home" element={<MainLayout />}>
+      <Route index element={<HomePage />} />
+    </Route>
 
-         {/* Documents routes at top-level so `/documents/:id` matches directly */}
-         <Route path="/documents" element={<MainLayout />}>
-           <Route index element={<DocumentsPage />} />
-          <Route path=":id" element={<DocumentDetail />} />
-          <Route path=":id/edit" element={<DocumentEditor />} />
-         </Route>
+    <Route path="/documents" element={<MainLayout />}>
+      <Route index element={<DocumentListPage />} />
+      <Route path=":id" element={<DocumentDetailPage />} />
+      <Route path=":id/edit" element={<DocumentEditorPage />} />
+    </Route>
 
-           <Route path="/profile" element={<MainLayout />}>
-             <Route index element={<ProfilePage />} />
-           </Route>
+    <Route path="/profile" element={<MainLayout />}>
+      <Route index element={<ProfilePage />} />
+    </Route>
 
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-    </Routes>
-  );
-};
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
+  </Routes>
+);
 
 export default App;
