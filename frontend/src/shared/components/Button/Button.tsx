@@ -3,7 +3,7 @@ import './Button.scss';
 
 interface ButtonProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'danger';
   size?: 'small' | 'medium' | 'large';
   isDisabled?: boolean;
   isFullWidth?: boolean;

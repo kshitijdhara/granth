@@ -12,9 +12,7 @@ import './DocumentDetail.scss';
 const compareOrderPaths = (a: number[], b: number[]): number => {
   const len = Math.min(a.length, b.length);
   for (let i = 0; i < len; i++) {
-    if (a[i] !== b[i]) {
-      return a[i] - b[i];
-    }
+    if (a[i] !== b[i]) return a[i] - b[i];
   }
   return a.length - b.length;
 };
@@ -33,7 +31,6 @@ const DocumentDetail: React.FC = () => {
       try {
         const doc = await documentsAPI.getDocument(id);
         setDocument(doc);
-        // load blocks for this document and sort by order
         try {
           const b = await blocksAPI.getAllBlocks(id);
           b.sort((x, y) => compareOrderPaths(x.order_path ?? [], y.order_path ?? []));
@@ -53,7 +50,7 @@ const DocumentDetail: React.FC = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Delete this document?')) return;
+    if (!confirm('Delete this document? This cannot be undone.')) return;
     try {
       await documentsAPI.deleteDocument(id);
       navigate('/documents');
@@ -62,8 +59,13 @@ const DocumentDetail: React.FC = () => {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (!document) return <p>Document not found.</p>;
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric',
+    });
+
+  if (loading) return <div className="document-detail-loading">Loading document…</div>;
+  if (!document) return <div className="document-detail-notfound">Document not found.</div>;
 
   return (
     <div className="document-detail-page">
@@ -71,27 +73,45 @@ const DocumentDetail: React.FC = () => {
         <DocumentLayout>
           <div className="document-detail">
             <header className="document-detail__header">
-              <h1 className="document-detail__title">{document.title}</h1>
+              <div className="document-detail__title-group">
+                <h1 className="document-detail__title">{document.title}</h1>
+                <div className="document-detail__date">
+                  <span>Created {formatDate(document.created_at)}</span>
+                  {document.updated_at !== document.created_at && (
+                    <span>· Updated {formatDate(document.updated_at)}</span>
+                  )}
+                </div>
+              </div>
               <div className="document-detail__actions">
-                <Button variant="secondary" size="small" onClick={() => navigate(`/documents/${document.id}/edit`)} isFullWidth={false}>Edit</Button>
-                <Button variant="secondary" size="small" onClick={handleDelete} isFullWidth={false}>Delete</Button>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => navigate(`/documents/${document.id}/edit`)}
+                  isFullWidth={false}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={handleDelete}
+                  isFullWidth={false}
+                >
+                  Delete
+                </Button>
               </div>
             </header>
 
             <main className="document-detail__content">
-              <div className="document-detail__meta">Created: {new Date(document.created_at).toLocaleString()}</div>
-
               <div className="document-detail__blocks">
                 {blocks.length === 0 ? (
-                  <em>No blocks yet</em>
+                  <p className="document-detail__empty">No content yet. Start editing to add blocks.</p>
                 ) : (
                   blocks.map((blk) => (
                     <Block key={blk.id} block={blk} isEditing={false} />
                   ))
                 )}
               </div>
-
-              <div className="document-detail__meta">Updated: {new Date(document.updated_at).toLocaleString()}</div>
             </main>
           </div>
         </DocumentLayout>

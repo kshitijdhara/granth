@@ -21,7 +21,7 @@ const ProposalsView: React.FC<ProposalsViewProps> = ({ documentId }) => {
         setProposals(props);
       } catch (err) {
         console.error('Failed to load proposals', err);
-        setError('Unable to load proposals. Please try again.');
+        setError('Unable to load proposals.');
       } finally {
         setLoading(false);
       }
@@ -29,30 +29,28 @@ const ProposalsView: React.FC<ProposalsViewProps> = ({ documentId }) => {
     loadProposals();
   }, [documentId]);
 
-  if (loading) return (
-    <div className="proposals-view">
-      <div className="proposals-view__loading">Loading proposals...</div>
-    </div>
-  );
-
-  if (error) return (
-    <div className="proposals-view">
-      <div className="proposals-view__error">Unable to load proposals. Please try again.</div>
-    </div>
-  );
-
   return (
     <div className="proposals-view">
-      <h3 className="proposals-view__title">Proposals</h3>
-      {proposals.length === 0 ? (
-        <div className="proposals-view__empty">No proposals yet.</div>
-      ) : (
-        <ul className="proposals-view__list">
-          {proposals.map((proposal) => (
-            <ProposalItem key={proposal.id} proposal={proposal} />
-          ))}
-        </ul>
-      )}
+      <div className="proposals-view__header">
+        <h3 className="proposals-view__title">
+          Proposals {proposals.length > 0 && `(${proposals.length})`}
+        </h3>
+      </div>
+      <div className="proposals-view__body">
+        {loading ? (
+          <p className="proposals-view__loading">Loading…</p>
+        ) : error ? (
+          <p className="proposals-view__error">{error}</p>
+        ) : proposals.length === 0 ? (
+          <p className="proposals-view__empty">No proposals yet.</p>
+        ) : (
+          <ul className="proposals-view__list" role="list">
+            {proposals.map((proposal) => (
+              <ProposalItem key={proposal.id} proposal={proposal} />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

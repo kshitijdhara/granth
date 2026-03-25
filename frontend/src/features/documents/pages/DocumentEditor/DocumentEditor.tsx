@@ -172,8 +172,8 @@ const DocumentEditor: React.FC = () => {
     setChanges(prev => [...prev, { action: 'delete', block }]);
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (!document) return <p>Document not found.</p>;
+  if (loading) return <div className="document-editor-loading">Loading document…</div>;
+  if (!document) return <div className="document-editor-notfound">Document not found.</div>;
 
   return (
     <DocumentLayout>

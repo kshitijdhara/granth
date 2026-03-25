@@ -21,7 +21,7 @@ const MainLayout: React.FC = () => {
   return (
     <div className="app">
       <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <main className={`app__main ${sidebarOpen ? 'app__main--sidebar-open' : 'app__main--sidebar-closed'}`}>
+      <main className={`app__main ${sidebarOpen ? 'app__main--sidebar-open' : 'app__main--sidebar-closed'}`} id="main-content">
         <Outlet />
       </main>
     </div>

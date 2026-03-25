@@ -1,39 +1,62 @@
 .proposal-item {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-large);
+  padding: var(--spacing-4);
+  transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:hover {
+    border-color: var(--color-border-medium);
+  }
+
   &__title {
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-    font-size: var(--font-size-base);
-    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    margin: 0 0 var(--spacing-2);
     line-height: 1.3;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   &__meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-xs);
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-2);
   }
 
   &__state {
     text-transform: capitalize;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-semibold);
     padding: 2px 8px;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-full);
     font-size: 11px;
-    background-color: var(--color-accent-light);
-    color: var(--color-accent-dark);
+    letter-spacing: 0.02em;
+    background: var(--color-accent-light);
+    color: var(--color-accent-primary);
   }
 
   &__date {
     font-size: 11px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
   }
 
   &__intent {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
-    line-height: 1.4;
+    line-height: 1.5;
     margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 }

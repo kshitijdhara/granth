@@ -9,6 +9,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
     <div className="auth-layout">
       <div className="auth-layout__container">
+        <div className="auth-layout__brand">
+          <span>Granth</span>
+        </div>
         <div className="auth-layout__content">
           {children}
         </div>

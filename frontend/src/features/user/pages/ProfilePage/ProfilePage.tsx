@@ -2,11 +2,9 @@ import React from 'react';
 import './ProfilePage.scss';
 import ProfileView from '../../components/ProfileView/ProfileView';
 import { useAuth } from '../../../../shared/contexts/AuthContext';
-import { useTheme } from '../../../../shared/contexts/ThemeContext';
 
 const ProfilePage: React.FC = () => {
   const auth = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   // Derive a safe email fallback for demo purposes
   const email = auth.username ? `${auth.username}@example.com` : null;
@@ -20,13 +18,6 @@ const ProfilePage: React.FC = () => {
         </div>
 
         <div className="profile-actions">
-          <button
-            className="btn btn-ghost"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-          >
-            {theme === 'light' ? 'Switch to Dark' : 'Switch to Light'}
-          </button>
           <button
             className="btn btn-primary"
             onClick={() => alert('Edit profile — implement form')}
