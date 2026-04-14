@@ -1,0 +1,12 @@
+FROM oven/bun:latest
+
+WORKDIR /app
+
+# Pre-install dependencies (node_modules is kept in a named volume)
+COPY package.json bunfig.toml ./
+RUN bun install
+
+EXPOSE 3000
+
+# Source code is mounted via volume in docker-compose
+CMD ["bun", "run", "dev"]

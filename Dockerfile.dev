@@ -1,0 +1,12 @@
+FROM golang:1.25
+
+WORKDIR /app
+
+# Pre-download dependencies (cached in image layer; volume will be used at runtime)
+COPY go.mod go.sum ./
+RUN go mod download
+
+EXPOSE 8080
+
+# Source code is mounted via volume in docker-compose
+CMD ["go", "run", "./cmd/server/main.go"]
