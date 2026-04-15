@@ -9,4 +9,4 @@ RUN go mod download
 EXPOSE 8080
 
 # Source code is mounted via volume in docker-compose
-CMD ["go", "run", "./cmd/server/main.go"]
+CMD ["go", "run", "."]
