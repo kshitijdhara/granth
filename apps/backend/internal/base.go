@@ -7,6 +7,7 @@ import (
 	"granth/internal/documents"
 	"granth/internal/proposals"
 	"granth/internal/utils"
+	"granth/internal/workspaces"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,6 +37,7 @@ func BaseRouter() http.Handler {
 	})
 
 	r.Mount("/api/auth", auth.AuthRouter())
+	r.With(utils.AuthMiddleware).Mount("/api/workspaces", workspaces.WorkspacesRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/proposals", proposals.ProposalsRouter())
 

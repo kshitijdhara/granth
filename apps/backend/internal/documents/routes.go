@@ -86,9 +86,9 @@ func handleGetDocument(w http.ResponseWriter, r *http.Request) {
 
 func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Title string `json:"title"`
+		Title       string  `json:"title"`
+		WorkspaceID *string `json:"workspace_id"`
 	}
-	// Parse JSON request body
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
@@ -99,7 +99,7 @@ func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	documentID, err := createNewDocument(req.Title, r.Context())
+	documentID, err := createNewDocument(req.Title, req.WorkspaceID, r.Context())
 	if err != nil {
 		http.Error(w, "Error creating document: "+err.Error(), http.StatusInternalServerError)
 		return

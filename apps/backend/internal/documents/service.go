@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func createNewDocument(title string, ctx context.Context) (string, error) {
+func createNewDocument(title string, workspaceID *string, ctx context.Context) (string, error) {
 	document, err := FetchDocumentByTitle(title, ctx)
 	if err == nil && document != nil {
 		return "", fmt.Errorf("Document with title '%s' already exists", title)
@@ -17,12 +17,14 @@ func createNewDocument(title string, ctx context.Context) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("User ID not found in context")
 	}
+	now := time.Now().UTC().Format(time.RFC3339)
 	newDocument := &Document{
-		Title:     title,
-		CreatedBy: userId,
-		CreatedAt: time.Now().UTC().Format(time.RFC3339),
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
-		UpdatedBy: userId,
+		Title:       title,
+		WorkspaceID: workspaceID,
+		CreatedBy:   userId,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		UpdatedBy:   userId,
 	}
 	err = CreateDocument(newDocument, ctx)
 	if err != nil {
