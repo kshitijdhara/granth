@@ -223,12 +223,24 @@
 // Actions footer
 .proposal-review__actions {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  flex-direction: column;
   gap: var(--spacing-3);
   padding: var(--spacing-4) var(--spacing-6);
   border-top: 1px solid var(--color-border-light);
   background: var(--color-surface-primary);
+}
+
+.proposal-review__action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.proposal-review__action-primary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
 // Reject form

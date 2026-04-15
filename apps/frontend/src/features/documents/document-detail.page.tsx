@@ -37,7 +37,7 @@ const DocumentDetailPage: React.FC = () => {
 	useEffect(() => {
 		if (!id) return;
 		setLoading(true);
-		Promise.all([documentsApi.get(id), blocksApi.getAll(id).catch(() => [])])
+		Promise.all([documentsApi.get(id), blocksApi.getAll(id)])
 			.then(([doc, blks]) => {
 				setDocument(doc);
 				setBlocks(
@@ -49,6 +49,21 @@ const DocumentDetailPage: React.FC = () => {
 			.catch((err) => console.error("Failed to load document", err))
 			.finally(() => setLoading(false));
 	}, [id]);
+
+	const reloadBlocks = async () => {
+		if (!id) return;
+		try {
+			const blks = await blocksApi.getAll(id);
+			setBlocks(
+				(blks as Block[]).sort((a, b) =>
+					compareOrderPaths(a.order_path ?? [], b.order_path ?? [])
+				)
+			);
+		} catch (err) {
+			console.error("Failed to reload blocks", err);
+			// Keep the existing blocks state — don't clear on failure
+		}
+	};
 
 	const handleDelete = async () => {
 		if (!id || !confirm("Delete this document? This cannot be undone.")) return;
@@ -123,8 +138,13 @@ const DocumentDetailPage: React.FC = () => {
 				onAccepted={() => {
 					setSelectedProposal(null);
 					setProposalRefreshKey((k) => k + 1);
+					void reloadBlocks();
 				}}
 				onRejected={() => {
+					setSelectedProposal(null);
+					setProposalRefreshKey((k) => k + 1);
+				}}
+				onDeleted={() => {
 					setSelectedProposal(null);
 					setProposalRefreshKey((k) => k + 1);
 				}}

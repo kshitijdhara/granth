@@ -11,6 +11,7 @@ interface ProposalReviewModalProps {
 	onClose: () => void;
 	onAccepted: () => void;
 	onRejected: () => void;
+	onDeleted: () => void;
 }
 
 type DiffRow =
@@ -32,6 +33,7 @@ const ProposalReviewModal: React.FC<ProposalReviewModalProps> = ({
 	onClose,
 	onAccepted,
 	onRejected,
+	onDeleted,
 }) => {
 	const [blockChanges, setBlockChanges] = useState<ProposalBlockChange[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -80,6 +82,19 @@ const ProposalReviewModal: React.FC<ProposalReviewModalProps> = ({
 			onAccepted();
 		} catch {
 			setError("Failed to accept proposal. Please try again.");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleDelete = async () => {
+		if (!confirm("Delete this proposal? This cannot be undone.")) return;
+		setSubmitting(true);
+		try {
+			await proposalsApi.delete(proposal.id);
+			onDeleted();
+		} catch {
+			setError("Failed to delete proposal. Please try again.");
 		} finally {
 			setSubmitting(false);
 		}
@@ -196,76 +211,92 @@ const ProposalReviewModal: React.FC<ProposalReviewModalProps> = ({
 					)}
 				</div>
 
-				{/* Actions — only for open proposals */}
-				{proposal.state === "open" && (
-					<div className="proposal-review__actions">
-						{rejectMode ? (
-							<div className="proposal-review__reject-form">
-								<label className="proposal-review__reject-label" htmlFor="reject-reason">
-									Reason for declining <span aria-hidden>*</span>
-								</label>
-								<textarea
-									id="reject-reason"
-									className="proposal-review__reject-textarea"
-									placeholder="Explain why this proposal is being declined…"
-									value={rejectReason}
-									onChange={(e) => {
-										setRejectReason(e.target.value);
-										if (e.target.value.trim()) setReasonError("");
-									}}
-									rows={3}
-								/>
-								{reasonError && (
-									<p className="proposal-review__reason-error">{reasonError}</p>
-								)}
-								<div className="proposal-review__reject-buttons">
-									<Button
-										variant="secondary"
-										size="small"
-										onClick={() => {
-											setRejectMode(false);
-											setRejectReason("");
-											setReasonError("");
-										}}
-										isDisabled={submitting}
-									>
-										Back
-									</Button>
-									<Button
-										variant="danger"
-										size="small"
-										onClick={handleRejectConfirm}
-										isDisabled={submitting}
-									>
-										{submitting ? "Declining…" : "Confirm Decline"}
-									</Button>
-								</div>
-							</div>
-						) : (
-							<>
-								<Button variant="secondary" size="small" onClick={onClose} isDisabled={submitting}>
-									Cancel
-								</Button>
+				{/* Actions */}
+				<div className="proposal-review__actions">
+					{rejectMode ? (
+						<div className="proposal-review__reject-form">
+							<label className="proposal-review__reject-label" htmlFor="reject-reason">
+								Reason for declining <span aria-hidden>*</span>
+							</label>
+							<textarea
+								id="reject-reason"
+								className="proposal-review__reject-textarea"
+								placeholder="Explain why this proposal is being declined…"
+								value={rejectReason}
+								onChange={(e) => {
+									setRejectReason(e.target.value);
+									if (e.target.value.trim()) setReasonError("");
+								}}
+								rows={3}
+							/>
+							{reasonError && (
+								<p className="proposal-review__reason-error">{reasonError}</p>
+							)}
+							<div className="proposal-review__reject-buttons">
 								<Button
 									variant="secondary"
 									size="small"
-									onClick={() => setRejectMode(true)}
+									onClick={() => {
+										setRejectMode(false);
+										setRejectReason("");
+										setReasonError("");
+									}}
 									isDisabled={submitting}
 								>
-									Decline
+									Back
 								</Button>
 								<Button
-									variant="primary"
+									variant="danger"
 									size="small"
-									onClick={handleAccept}
-									isDisabled={submitting || loading}
+									onClick={handleRejectConfirm}
+									isDisabled={submitting}
 								>
-									{submitting ? "Accepting…" : "Accept"}
+									{submitting ? "Declining…" : "Confirm Decline"}
 								</Button>
-							</>
-						)}
-					</div>
-				)}
+							</div>
+						</div>
+					) : (
+						<div className="proposal-review__action-row">
+							<Button
+								variant="danger"
+								size="small"
+								onClick={handleDelete}
+								isDisabled={submitting}
+							>
+								Delete
+							</Button>
+							<div className="proposal-review__action-primary">
+								{proposal.state === "open" ? (
+									<>
+										<Button variant="secondary" size="small" onClick={onClose} isDisabled={submitting}>
+											Cancel
+										</Button>
+										<Button
+											variant="secondary"
+											size="small"
+											onClick={() => setRejectMode(true)}
+											isDisabled={submitting}
+										>
+											Decline
+										</Button>
+										<Button
+											variant="primary"
+											size="small"
+											onClick={handleAccept}
+											isDisabled={submitting || loading}
+										>
+											{submitting ? "Accepting…" : "Accept"}
+										</Button>
+									</>
+								) : (
+									<Button variant="secondary" size="small" onClick={onClose} isDisabled={submitting}>
+										Close
+									</Button>
+								)}
+							</div>
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

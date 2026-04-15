@@ -53,10 +53,24 @@ const DocumentEditorPage: React.FC = () => {
 			.finally(() => setLoading(false));
 	}, [id]);
 
+	const saveTitle = async () => {
+		if (!id || !document || title.trim() === document.title) return;
+		const trimmed = title.trim() || "Untitled Document";
+		try {
+			await documentsApi.update(id, { title: trimmed });
+			setDocument((prev) => (prev ? { ...prev, title: trimmed } : prev));
+		} catch (err) {
+			console.error("Failed to save title", err);
+		}
+	};
+
 	const handleCreateProposal = async (data: { title: string; intent: string; scope: string }) => {
 		if (!id || changes.length === 0) return;
 		setSaving(true);
 		try {
+			// Persist title change before creating the proposal
+			await saveTitle();
+
 			const affectedBlockIds = [
 				...new Set(changes.filter((c) => c.action !== "create").map((c) => c.block.id)),
 			];
@@ -158,6 +172,7 @@ const DocumentEditorPage: React.FC = () => {
 						className="document-editor__title-input"
 						value={title}
 						onChange={(e) => setTitle(e.target.value)}
+						onBlur={() => void saveTitle()}
 						placeholder="Document title"
 					/>
 					<div className="document-editor__actions">

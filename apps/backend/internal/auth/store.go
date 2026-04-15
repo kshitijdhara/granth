@@ -50,6 +50,14 @@ func UpdateUserPassword(id, newPasswordHash string) error {
 	return nil
 }
 
+func UpdateUsername(id, newUsername string) error {
+	_, err := config.PostgresDB.Exec("UPDATE users SET username = $1 WHERE id = $2", newUsername, id)
+	if err != nil {
+		return fmt.Errorf("updateUsername exec: %w", err)
+	}
+	return nil
+}
+
 func DeleteUser(id string) error {
 	_, err := config.PostgresDB.Exec("DELETE FROM users WHERE id = $1", id)
 	if err != nil {

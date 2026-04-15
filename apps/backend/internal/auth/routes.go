@@ -20,6 +20,8 @@ func AuthRouter() http.Handler {
 	r.Post("/register", handleRegister)
 	r.With(utils.AuthMiddleware).Post("/logout", handleLogout)
 	r.Post("/refreshToken", handleRefreshToken)
+	r.With(utils.AuthMiddleware).Get("/profile", handleGetProfile)
+	r.With(utils.AuthMiddleware).Put("/profile", handleUpdateProfile)
 
 	return r
 }
@@ -118,6 +120,62 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
+func handleGetProfile(w http.ResponseWriter, r *http.Request) {
+	claims, ok := utils.GetClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	username, email, _, err := GetUserByID(claims.UserID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"id":       claims.UserID,
+		"username": username,
+		"email":    email,
+	})
+}
+
+func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	claims, ok := utils.GetClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
+		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Username string `json:"username"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" {
+		http.Error(w, "Username cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	if err := UpdateUsername(claims.UserID, req.Username); err != nil {
+		http.Error(w, "Update failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"username": req.Username})
 }
 
 func handleRefreshToken(w http.ResponseWriter, r *http.Request) {

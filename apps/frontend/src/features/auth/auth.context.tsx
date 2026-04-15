@@ -20,6 +20,7 @@ interface AuthContextValue {
 	login: (email: string, password: string) => Promise<void>;
 	register: (name: string, email: string, password: string) => Promise<void>;
 	logout: () => Promise<void>;
+	updateUsername: (newUsername: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -77,6 +78,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		};
 		applyUser(updated);
 		return res.accessToken;
+	};
+
+	const updateUsername = async (newUsername: string): Promise<void> => {
+		await authApi.updateProfile(newUsername);
+		const current = readStorage();
+		if (current) {
+			const updated: User = { ...current, username: newUsername };
+			applyUser(updated);
+		}
 	};
 
 	const logout = async (): Promise<void> => {
@@ -138,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 				login,
 				register,
 				logout,
+				updateUsername,
 			}}
 		>
 			{children}

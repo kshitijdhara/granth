@@ -9,10 +9,6 @@ import (
 )
 
 func createNewDocument(title string, workspaceID *string, ctx context.Context) (string, error) {
-	document, err := FetchDocumentByTitle(title, ctx)
-	if err == nil && document != nil {
-		return "", fmt.Errorf("Document with title '%s' already exists", title)
-	}
 	userId, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return "", fmt.Errorf("User ID not found in context")
@@ -26,8 +22,7 @@ func createNewDocument(title string, workspaceID *string, ctx context.Context) (
 		UpdatedAt:   now,
 		UpdatedBy:   userId,
 	}
-	err = CreateDocument(newDocument, ctx)
-	if err != nil {
+	if err := CreateDocument(newDocument, ctx); err != nil {
 		return "", fmt.Errorf("Error creating document: %w", err)
 	}
 	return newDocument.ID, nil

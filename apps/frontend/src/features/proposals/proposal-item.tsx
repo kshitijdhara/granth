@@ -22,7 +22,7 @@ const ProposalItem: React.FC<ProposalItemProps> = ({ proposal, onClick }) => {
 		<Card
 			variant="default"
 			padding="md"
-			onClick={isRejected || isAccepted ? undefined : () => onClick?.(proposal)}
+			onClick={() => onClick?.(proposal)}
 			className={[
 				"proposal-item",
 				isRejected ? "proposal-item--rejected" : "",

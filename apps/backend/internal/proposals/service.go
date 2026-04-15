@@ -92,10 +92,6 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 		return fmt.Errorf("error fetching proposal: %w", err)
 	}
 
-	if proposal.AuthorID == userID {
-		return fmt.Errorf("author cannot accept their own proposal")
-	}
-
 	changes, err := GetChangesByProposal(proposalID, ctx)
 	if err != nil {
 		return fmt.Errorf("error fetching block changes: %w", err)
@@ -146,7 +142,7 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 }
 
 func rejectProposal(proposalID string, reason string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	_, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -154,10 +150,6 @@ func rejectProposal(proposalID string, reason string, ctx context.Context) error
 	proposal, err := GetProposalByID(proposalID, ctx)
 	if err != nil {
 		return fmt.Errorf("error fetching proposal: %w", err)
-	}
-
-	if proposal.AuthorID == userID {
-		return fmt.Errorf("author cannot reject their own proposal")
 	}
 
 	proposal.State = string(ProposalStatusRejected)

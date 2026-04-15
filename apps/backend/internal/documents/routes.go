@@ -76,11 +76,9 @@ func handleGetDocument(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	jsondata, err := json.Marshal(document)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Write(jsondata)
 }
 
