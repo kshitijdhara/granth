@@ -27,14 +27,14 @@ services:
 
   backend:
     build:
-      context: .
+      context: ../apps/backend
       dockerfile: Dockerfile.dev
     ports:
       - "8080:8080"
     volumes:
-      - .:/app
+      - ../apps/backend:/app
       # Override .env with docker-internal hostnames (postgres/redis instead of localhost)
-      - ./.env.docker:/app/.env:ro
+      - ../.env.docker:/app/.env:ro
       - go_mod_cache:/go/pkg/mod
     depends_on:
       postgres:
@@ -44,8 +44,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: docker/Dockerfile.dev
+      context: ../apps/frontend
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
     environment:
@@ -53,7 +53,7 @@ services:
       # This is the URL the browser uses, so it must be localhost-accessible
       - API_BASE_URL=http://localhost:8080
     volumes:
-      - ./frontend:/app
+      - ../apps/frontend:/app
       # Keep node_modules inside the container to avoid host/container conflicts
       - frontend_node_modules:/app/node_modules
     depends_on:

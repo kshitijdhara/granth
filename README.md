@@ -1,78 +1,127 @@
 # Granth
 
-Granth is a small, focused Go web service containing authentication and document features used for local development and testing.
+A document collaboration platform built on the principle that change is a first-class citizen — not an afterthought.
 
-**Features**
-- HTTP API for authentication and document management
-- Simple, opinionated repo layout for small services
-- Docker compose for quick local environments
+> See [docs/NORTHSTAR.md](docs/NORTHSTAR.md) for the product philosophy.
 
-**Repository Layout**
-- `cmd/` — application entrypoints (e.g. `cmd/server`)
-- `frontend/` — web client (Vite + React/TS)
-- `granth/` — collections and sample scripts
-- `internal/` — application internals (auth, documents, config, utils)
-- `migrations/` — SQL migrations
-- `Dockerfile`, `docker-compose.yaml` — container/development helpers
+---
 
-Quickstart — Backend
+## Project Structure
 
-1. Ensure Go modules are tidy:
-
-```bash
-go mod tidy
+```
+granth/
+├── apps/
+│   ├── backend/        # Go API (chi, PostgreSQL, Redis, JWT)
+│   └── frontend/       # React + TypeScript (Bun, SCSS)
+├── infrastructure/
+│   └── docker-compose.yaml
+├── api/                # Bruno API collection for manual testing
+├── scripts/
+│   └── dev.sh          # Local dev runner (backend + frontend)
+├── docs/               # Architecture, contributing, changelog
+├── .env.example        # Environment variable template
+└── CLAUDE.md           # AI assistant guidelines
 ```
 
-2. Set environment variables (example):
+---
 
+## Prerequisites
+
+| Tool | Version |
+|---|---|
+| Go | 1.25+ |
+| Bun | Latest |
+| Docker + Compose | v2+ |
+
+---
+
+## Quick Start
+
+### Option A — Local (no Docker for app code)
+
+**1. Configure environment**
 ```bash
-export SERVER_PORT=8080
-export DB_URL="postgres://user:pass@localhost:5432/dbname?sslmode=disable"
-export JWT_SECRET="your-secret"
+cp .env.example .env
+# Edit .env with your local DB/Redis connection details
 ```
 
-3. Run database migrations (example using `migrate`):
-
+**2. Start infrastructure**
 ```bash
-#migrate -path migrations -database "$DB_URL" up
+# Start only postgres and redis
+docker compose -f infrastructure/docker-compose.yaml up postgres redis -d
 ```
 
-4. Run the server (development):
-
+**3. Run database migrations**
 ```bash
-go run ./cmd/server
+cd apps/backend
+# Requires golang-migrate CLI (brew install golang-migrate)
+migrate -path migrations -database "$DB_URL" up
 ```
 
-Or build and run the binary:
-
+**4. Start both services**
 ```bash
-go build -o bin/granth ./cmd/server
-./bin/granth
+bash scripts/dev.sh
 ```
 
-Quickstart — Frontend
+Services:
+- Backend API: http://localhost:8080
+- Frontend: http://localhost:3000
+- Health check: http://localhost:8080/api/health
 
-1. Install dependencies and run dev server:
+---
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Container (Docker)
+### Option B — Full Docker
 
 ```bash
-docker compose up --build
+docker compose -f infrastructure/docker-compose.yaml up --build
 ```
 
-Contributing
+Starts postgres, redis, backend, and frontend in containers.
 
-See `CONTRIBUTING.md` for contribution guidelines. Keep PRs focused and run `gofmt` on Go code.
+---
 
-License
+## Development
 
-This project is licensed under the MIT License — see `LICENSE`.
+### Backend (Go)
 
---
-Last updated: 2026-01-20
+```bash
+cd apps/backend
+go run ./cmd/server/main.go
+go vet ./...
+go test ./...
+```
+
+### Frontend (Bun)
+
+```bash
+cd apps/frontend
+bun install
+bun run dev        # Dev server on :3000
+bun run typecheck  # TypeScript check
+bun run lint       # Biome lint
+bun run build      # Production build → dist/
+```
+
+---
+
+## API Collection
+
+The `api/` directory contains a [Bruno](https://www.usebruno.com/) collection covering auth and document endpoints. Open it in Bruno and select the `local` environment.
+
+---
+
+## Logs
+
+When running via `scripts/dev.sh`, logs are written to `logs/` (gitignored):
+- `logs/backend.log`
+- `logs/frontend.log`
+
+---
+
+## Contributing
+
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
