@@ -1,6 +1,7 @@
 import {
 	ArrowRightStartOnRectangleIcon,
 	Bars3Icon,
+	BuildingOffice2Icon,
 	DocumentTextIcon,
 	HomeIcon,
 	MoonIcon,
@@ -15,6 +16,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth.context";
 import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
+import WorkspaceSelector from "@/features/workspaces/workspace-selector";
+import { useWorkspace } from "@/features/workspaces/workspace.context";
+import { workspacesApi } from "@/features/workspaces/workspaces.api";
 import { useTheme } from "@/theme.context";
 import "./sidebar.scss";
 
@@ -28,6 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 	const location = useLocation();
 	const { isAuthenticated, logout } = useAuth();
 	const { theme, toggleTheme } = useTheme();
+	const { current: currentWorkspace } = useWorkspace();
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [creating, setCreating] = useState(false);
@@ -35,12 +40,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 	useEffect(() => {
 		if (!isAuthenticated) return;
 		setLoading(true);
-		documentsApi
-			.getAll()
-			.then(setDocuments)
+		const fetch = currentWorkspace
+			? workspacesApi.getDocuments(currentWorkspace.id)
+			: documentsApi.getAll();
+		fetch
+			.then((docs) => setDocuments(docs ?? []))
 			.catch(console.error)
 			.finally(() => setLoading(false));
-	}, [isAuthenticated]);
+	}, [isAuthenticated, currentWorkspace]);
 
 	const isAuth = location.pathname === "/login" || location.pathname === "/register";
 	if (isAuth) return null;
@@ -54,9 +61,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 		if (creating) return;
 		setCreating(true);
 		try {
-			const res = await documentsApi.create("Untitled Document");
-			const updated = await documentsApi.getAll();
-			setDocuments(updated);
+			const res = await documentsApi.create("Untitled Document", currentWorkspace?.id);
+			// Refresh doc list for current workspace
+			const updated = currentWorkspace
+				? await workspacesApi.getDocuments(currentWorkspace.id)
+				: await documentsApi.getAll();
+			setDocuments(updated ?? []);
 			if (res?.document_id) navigate(`/documents/${res.document_id}/edit`);
 		} catch (err) {
 			console.error("Failed to create document:", err);
@@ -91,10 +101,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 					)}
 				</div>
 
+				{isAuthenticated && (
+					<div className="sidebar__workspace">
+						<WorkspaceSelector isOpen={isOpen} />
+					</div>
+				)}
+
 				<nav className="sidebar__nav" aria-label="Primary navigation">
-					{(["home", "documents"] as const).map((key) => {
+					{(["home", "documents", "workspaces"] as const).map((key) => {
 						const path = `/${key}`;
-						const Icon = key === "home" ? HomeIcon : DocumentTextIcon;
+						const Icon =
+							key === "home"
+								? HomeIcon
+								: key === "documents"
+									? DocumentTextIcon
+									: BuildingOffice2Icon;
 						return (
 							<button
 								type="button"

@@ -314,4 +314,10 @@
       height: 14px;
     }
   }
+
+  // Workspace selector slot
+  &__workspace {
+    padding: 0 var(--spacing-1);
+    margin-bottom: var(--spacing-3);
+  }
 }

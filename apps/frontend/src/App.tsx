@@ -5,6 +5,8 @@ import RegisterPage from "@/features/auth/register.page";
 import DocumentDetailPage from "@/features/documents/document-detail.page";
 import DocumentEditorPage from "@/features/documents/document-editor.page";
 import DocumentListPage from "@/features/documents/document-list.page";
+import WorkspaceListPage from "@/features/workspaces/workspace-list.page";
+import WorkspaceSettingsPage from "@/features/workspaces/workspace-settings.page";
 import ProfilePage from "@/features/user/profile.page";
 import MainLayout from "@/layouts/main.layout";
 import HomePage from "@/pages/home.page";
@@ -22,6 +24,11 @@ const App: React.FC = () => (
 			<Route index element={<DocumentListPage />} />
 			<Route path=":id" element={<DocumentDetailPage />} />
 			<Route path=":id/edit" element={<DocumentEditorPage />} />
+		</Route>
+
+		<Route path="/workspaces" element={<MainLayout />}>
+			<Route index element={<WorkspaceListPage />} />
+			<Route path=":id/settings" element={<WorkspaceSettingsPage />} />
 		</Route>
 
 		<Route path="/profile" element={<MainLayout />}>

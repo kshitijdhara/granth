@@ -277,7 +277,7 @@ The architectural skeleton is correct: a three-layer schema exists, blocks are s
 
 - **No reasoning layer.** Grepping `apps/backend` for `discussion|rationale|comment|reasoning` returns zero matches. There are no tables, no routes, and no types for the layer that §4 calls "non-negotiable." The highest-differentiation feature does not exist yet.
 
-- **No governance primitives.** Grepping `apps/backend` for `workspace|organization|team|role|reviewer` returns zero matches. Only four migrations exist (users, documents, proposals, rejection reason). There is no notion of teams, roles, required reviewers, or approval chains — which means no group of 3+ people can safely use this today.
+- ~~**No governance primitives.** Grepping `apps/backend` for `workspace|organization|team|role|reviewer` returns zero matches. Only four migrations exist (users, documents, proposals, rejection reason). There is no notion of teams, roles, required reviewers, or approval chains — which means no group of 3+ people can safely use this today.~~ **Closed 2026-04-15** — `workspaces` and `workspace_members` tables shipped (migration 5); `apps/backend/internal/workspaces/` provides full CRUD, member management, and role enforcement (`admin`, `reviewer`, `contributor`); `documents.workspace_id` FK added; frontend workspace selector, list, and settings pages wired into sidebar and app routing.
 
 - **No conflict detection.** Nothing compares `affected_block_ids` across open proposals. Two proposals touching the same block can be independently accepted without the system noticing they collide.
 
@@ -302,8 +302,8 @@ Each item below is declarative and testable: an implementer should be able to te
 ### Next — Make it safe for groups
 *These unlock any collaboration with more than two people.*
 
-5. **Workspace / organization / team model.** First migration beyond `users`, `documents`, `proposals`. Documents belong to a workspace; users belong to workspaces with roles.
-6. **Roles.** Contributor (can propose), reviewer (can accept/reject), admin (can configure governance). Enforced at the service layer, not just the UI.
+5. ~~**Workspace / organization / team model.** First migration beyond `users`, `documents`, `proposals`. Documents belong to a workspace; users belong to workspaces with roles.~~ ✓ **Completed 2026-04-15**
+6. ~~**Roles.** Contributor (can propose), reviewer (can accept/reject), admin (can configure governance). Enforced at the service layer, not just the UI.~~ ✓ **Completed 2026-04-15** — roles ship as part of items 5 (same migration and service layer).
 7. **Required reviewers / approval chains.** Configurable per workspace: N reviewers required, specific reviewers required, or designated role required.
 8. **Reasoning layer v1.** Threaded comments attached to proposals (not to raw blocks). This is the first real build of §4's third layer.
 9. **Notifications.** Inbox model: "you have proposals to review," "your proposal was accepted," "a proposal touches content you authored."
@@ -353,6 +353,10 @@ Once that feeling exists, traditional editors feel irresponsible.
 - **Design system**: shared UI kit (Card, Button, Input, Sidebar), light/dark theme, Apple HIG-inspired visual language
 
 ### Recent Decisions
+
+- **Decision (2026-04-15):** Shipped workspace / organization / team model (roadmap items 5 + 6).
+  **Reasoning:** Items 5 and 6 are inseparable — you can't have workspace members without roles, so both shipped in the same migration and service layer. `workspace_id` on documents is nullable for backward compat; the service layer enforces it for new creates. Roles are `admin` (update workspace, manage members), `reviewer` (accept/reject proposals), `contributor` (propose changes). The workspace creator is atomically inserted as an admin member in the same transaction.
+  **Tradeoffs accepted:** Member lookup by user ID only (no invite-by-email yet); required reviewers / approval chains (item 7) are the natural next step now that roles exist.
 
 - **Decision (2026-04-15):** Closed the core loop — shipped all four "Now" roadmap items.
   **Reasoning:** Merge on accept, fixed authorization (author cannot self-accept/reject), proposal review modal, and rejection rationale were the four hard prerequisites for the primitive to be usable by any real group.

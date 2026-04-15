@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "@/App";
 import { AuthProvider } from "@/features/auth/auth.context";
+import { WorkspaceProvider } from "@/features/workspaces/workspace.context";
 import { ThemeProvider } from "@/theme.context";
 
 const root = document.getElementById("root");
@@ -13,7 +14,9 @@ ReactDOM.createRoot(root).render(
 		<BrowserRouter>
 			<ThemeProvider>
 				<AuthProvider>
-					<App />
+					<WorkspaceProvider>
+						<App />
+					</WorkspaceProvider>
 				</AuthProvider>
 			</ThemeProvider>
 		</BrowserRouter>

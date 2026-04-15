@@ -6,7 +6,11 @@ export const documentsApi = {
 
 	get: (id: string) => http.get<Document>(`/documents/${id}`),
 
-	create: (title: string) => http.post<{ document_id: string }>("/documents/create", { title }),
+	create: (title: string, workspaceId?: string) =>
+		http.post<{ document_id: string }>("/documents/create", {
+			title,
+			...(workspaceId ? { workspace_id: workspaceId } : {}),
+		}),
 
 	update: (id: string, data: Partial<Document>) => http.put<void>(`/documents/${id}`, data),
 
