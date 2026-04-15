@@ -25,7 +25,7 @@ async function build() {
     alias: { "@": `${ROOT}/src` },
     define: {
       "import.meta.env.API_BASE_URL": JSON.stringify(
-        Bun.env.API_BASE_URL ?? "http://localhost:8080"
+        Bun.env.API_BASE_URL ?? "http://localhost:8080/api"
       ),
       "import.meta.env.DEV": "true",
       "import.meta.env.PROD": "false",

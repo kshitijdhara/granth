@@ -25,7 +25,7 @@ export function configureHttp(opts: {
 	_onLogout = opts.onLogout;
 }
 
-const BASE_URL = (import.meta.env.API_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
+const BASE_URL = (import.meta.env.API_BASE_URL ?? "http://localhost:8080/api").replace(/\/$/, "");
 
 let isRefreshing = false;
 type QueueEntry = { resolve: () => void; reject: (e: unknown) => void };

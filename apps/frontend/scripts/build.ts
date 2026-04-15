@@ -12,7 +12,7 @@ const result = await Bun.build({
   alias: { "@": `${ROOT}/src` },
   define: {
     "import.meta.env.API_BASE_URL": JSON.stringify(
-      Bun.env.API_BASE_URL ?? "http://localhost:8080"
+      Bun.env.API_BASE_URL ?? "http://localhost:8080/api"
     ),
     "import.meta.env.DEV": "false",
     "import.meta.env.PROD": "true",
