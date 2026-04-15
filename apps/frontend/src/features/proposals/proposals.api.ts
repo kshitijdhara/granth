@@ -9,6 +9,7 @@ export interface Proposal {
 	intent: string;
 	scope: string;
 	state: string;
+	rejection_reason?: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -49,7 +50,8 @@ export const proposalsApi = {
 
 	accept: (id: string) => http.post<void>(`/proposals/${id}/accept`),
 
-	reject: (id: string) => http.post<void>(`/proposals/${id}/reject`),
+	reject: (id: string, reason?: string) =>
+		http.post<void>(`/proposals/${id}/reject`, reason ? { reason } : {}),
 
 	getBlockChanges: (proposalId: string) =>
 		http.get<ProposalBlockChange[]>(`/proposals/${proposalId}/changes`),

@@ -3,8 +3,11 @@ package proposals
 import (
 	"context"
 	"fmt"
+	"granth/internal/config"
 	"granth/internal/utils"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 func createProposal(documentID string, title string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) (string, error) {
@@ -89,24 +92,60 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 		return fmt.Errorf("error fetching proposal: %w", err)
 	}
 
-	if proposal.AuthorID != userID {
-		return fmt.Errorf("only author can accept proposal")
+	if proposal.AuthorID == userID {
+		return fmt.Errorf("author cannot accept their own proposal")
 	}
 
-	// TODO: Apply changes to blocks (merge to canonical layer)
-	// For now, just update state
-	proposal.State = string(ProposalStatusAccepted)
-	proposal.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
-
-	err = UpdateProposal(proposal, ctx)
+	changes, err := GetChangesByProposal(proposalID, ctx)
 	if err != nil {
-		return fmt.Errorf("error accepting proposal: %w", err)
+		return fmt.Errorf("error fetching block changes: %w", err)
 	}
 
-	return nil
+	tx, err := config.PostgresDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	for _, change := range changes {
+		switch change.Action {
+		case "create":
+			_, err = tx.ExecContext(ctx,
+				"INSERT INTO blocks (document_id, order_path, type, content, created_by, created_at, updated_at, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+				proposal.DocumentID, pq.Array(change.OrderPath), change.BlockType, change.Content, userID, now, now, userID)
+		case "update":
+			if change.BlockID == nil {
+				continue
+			}
+			_, err = tx.ExecContext(ctx,
+				"UPDATE blocks SET type = $1, content = $2, updated_at = $3, updated_by = $4 WHERE id = $5",
+				change.BlockType, change.Content, now, userID, *change.BlockID)
+		case "delete":
+			if change.BlockID == nil {
+				continue
+			}
+			_, err = tx.ExecContext(ctx, "DELETE FROM blocks WHERE id = $1", *change.BlockID)
+		default:
+			return fmt.Errorf("unknown block change action: %s", change.Action)
+		}
+		if err != nil {
+			return fmt.Errorf("error applying block change (%s): %w", change.Action, err)
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"UPDATE proposals SET state = $1, updated_at = $2 WHERE id = $3",
+		string(ProposalStatusAccepted), now, proposalID)
+	if err != nil {
+		return fmt.Errorf("error updating proposal state: %w", err)
+	}
+
+	return tx.Commit()
 }
 
-func rejectProposal(proposalID string, ctx context.Context) error {
+func rejectProposal(proposalID string, reason string, ctx context.Context) error {
 	userID, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
@@ -117,11 +156,12 @@ func rejectProposal(proposalID string, ctx context.Context) error {
 		return fmt.Errorf("error fetching proposal: %w", err)
 	}
 
-	if proposal.AuthorID != userID {
-		return fmt.Errorf("only author can reject proposal")
+	if proposal.AuthorID == userID {
+		return fmt.Errorf("author cannot reject their own proposal")
 	}
 
 	proposal.State = string(ProposalStatusRejected)
+	proposal.RejectionReason = &reason
 	proposal.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 
 	err = UpdateProposal(proposal, ctx)

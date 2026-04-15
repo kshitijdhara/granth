@@ -21,6 +21,7 @@ type Proposal struct {
 	Intent           string   `json:"intent"`
 	Scope            string   `json:"scope"`
 	State            string   `json:"state"`
+	RejectionReason  *string  `json:"rejection_reason"`
 	CreatedAt        string   `json:"created_at"`
 	UpdatedAt        string   `json:"updated_at"`
 }

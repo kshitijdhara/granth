@@ -6,9 +6,15 @@ import "./proposals-view.scss";
 
 interface ProposalsViewProps {
 	documentId: string;
+	onProposalSelect?: (proposal: Proposal) => void;
+	refreshKey?: number;
 }
 
-const ProposalsView: React.FC<ProposalsViewProps> = ({ documentId }) => {
+const ProposalsView: React.FC<ProposalsViewProps> = ({
+	documentId,
+	onProposalSelect,
+	refreshKey = 0,
+}) => {
 	const [proposals, setProposals] = useState<Proposal[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -21,7 +27,7 @@ const ProposalsView: React.FC<ProposalsViewProps> = ({ documentId }) => {
 			.then(setProposals)
 			.catch(() => setError("Unable to load proposals."))
 			.finally(() => setLoading(false));
-	}, [documentId]);
+	}, [documentId, refreshKey]);
 
 	return (
 		<div className="proposals-view">
@@ -40,7 +46,7 @@ const ProposalsView: React.FC<ProposalsViewProps> = ({ documentId }) => {
 				) : (
 					<ul className="proposals-view__list">
 						{proposals.map((p) => (
-							<ProposalItem key={p.id} proposal={p} />
+							<ProposalItem key={p.id} proposal={p} onClick={onProposalSelect} />
 						))}
 					</ul>
 				)}

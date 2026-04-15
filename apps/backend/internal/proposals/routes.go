@@ -129,7 +129,13 @@ func handleAcceptProposal(w http.ResponseWriter, r *http.Request) {
 func handleRejectProposal(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 
-	err := rejectProposal(proposalID, r.Context())
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	// Reason is enforced by the UI; decode best-effort here
+	json.NewDecoder(r.Body).Decode(&req)
+
+	err := rejectProposal(proposalID, req.Reason, r.Context())
 	if err != nil {
 		http.Error(w, "Error rejecting proposal: "+err.Error(), http.StatusInternalServerError)
 		return

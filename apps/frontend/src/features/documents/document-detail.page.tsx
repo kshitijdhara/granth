@@ -1,7 +1,9 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import ProposalReviewModal from "@/features/proposals/proposal-review-modal";
 import ProposalsView from "@/features/proposals/proposals-view";
+import type { Proposal } from "@/features/proposals/proposals.api";
 import DocumentLayout from "@/layouts/document.layout";
 import Button from "@/ui/button";
 import BlockView from "./block";
@@ -29,6 +31,8 @@ const DocumentDetailPage: React.FC = () => {
 	const [document, setDocument] = useState<Document | null>(null);
 	const [blocks, setBlocks] = useState<Block[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+	const [proposalRefreshKey, setProposalRefreshKey] = useState(0);
 
 	useEffect(() => {
 		if (!id) return;
@@ -105,8 +109,26 @@ const DocumentDetailPage: React.FC = () => {
 			</div>
 
 			<div className="document-detail-page__sidebar">
-				<ProposalsView documentId={document.id} />
+				<ProposalsView
+					documentId={document.id}
+					onProposalSelect={setSelectedProposal}
+					refreshKey={proposalRefreshKey}
+				/>
 			</div>
+
+			<ProposalReviewModal
+				proposal={selectedProposal}
+				documentBlocks={blocks}
+				onClose={() => setSelectedProposal(null)}
+				onAccepted={() => {
+					setSelectedProposal(null);
+					setProposalRefreshKey((k) => k + 1);
+				}}
+				onRejected={() => {
+					setSelectedProposal(null);
+					setProposalRefreshKey((k) => k + 1);
+				}}
+			/>
 		</div>
 	);
 };
