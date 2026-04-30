@@ -129,7 +129,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 				const remaining = workspaces.filter((w) => w.id !== id);
 				if (remaining[0]) setCurrent(remaining[0].id);
 			}
-			navigate("/workspaces");
+			navigate("/group");
 		} catch (err) {
 			console.error("Failed to delete workspace:", err);
 		} finally {
@@ -152,7 +152,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 				<button
 					type="button"
 					className="ws-settings__back"
-					onClick={() => navigate("/workspaces")}
+					onClick={() => navigate("/group")}
 					aria-label="Back to workspaces"
 				>
 					<ArrowLeftIcon style={{ width: 16, height: 16 }} />

@@ -33,7 +33,7 @@ func GetProposalsByDocument(documentID string, ctx context.Context) ([]*Proposal
 	}
 	defer rows.Close()
 
-	var proposals []*Proposal
+	proposals := make([]*Proposal, 0)
 	for rows.Next() {
 		proposal := &Proposal{}
 		var affectedBlockIDs pq.StringArray
@@ -74,7 +74,7 @@ func GetChangesByProposal(proposalID string, ctx context.Context) ([]*ProposalBl
 	}
 	defer rows.Close()
 
-	var changes []*ProposalBlockChange
+	changes := make([]*ProposalBlockChange, 0)
 	for rows.Next() {
 		change := &ProposalBlockChange{}
 		if err := rows.Scan(&change.ID, &change.ProposalID, &change.BlockID, &change.Action, &change.BlockType, &change.OrderPath, &change.Content, &change.CreatedBy, &change.CreatedAt); err != nil {

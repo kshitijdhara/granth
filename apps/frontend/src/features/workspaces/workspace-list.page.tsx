@@ -25,7 +25,7 @@ const WorkspaceListPage: React.FC = () => {
 			const ws = await workspacesApi.create(name.trim(), description.trim());
 			await refresh();
 			setCurrent(ws.id);
-			navigate("/home");
+			navigate("/inbox");
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to create workspace");
 		} finally {
@@ -35,7 +35,7 @@ const WorkspaceListPage: React.FC = () => {
 
 	const handleSelect = (id: string) => {
 		setCurrent(id);
-		navigate("/home");
+		navigate("/inbox");
 	};
 
 	return (

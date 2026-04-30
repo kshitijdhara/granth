@@ -43,7 +43,7 @@ func FetchAllBlocksByDocumentID(documentID string, ctx context.Context) ([]*Bloc
 	}
 	defer rows.Close()
 
-	var blocks []*Block
+	blocks := make([]*Block, 0)
 	for rows.Next() {
 		block := &Block{}
 		if err := rows.Scan(&block.ID, &block.DocumentID, &block.OrderPath, &block.BlockType, &block.Content, &block.CreatedBy, &block.CreatedAt, &block.UpdatedAt, &block.UpdatedBy); err != nil {

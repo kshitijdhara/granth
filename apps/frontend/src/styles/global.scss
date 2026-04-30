@@ -1,7 +1,7 @@
 // Global styles for Granth frontend
-// Design system: Glassmorphism + Plus Jakarta Sans
+// Design system: Editorial serif (canonical) + Plus Jakarta Sans (chrome/proposals)
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&display=swap');
 
 :root {
   // Colors — light mode
@@ -41,6 +41,7 @@
 
   // Typography
   --font-family-system: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-family-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --font-family-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   --font-weight-light: 300;
   --font-weight-regular: 400;
@@ -123,6 +124,56 @@
   --z-modal: 200;
   --z-toast: 300;
   --z-sidebar: 400;
+
+  // Editor surface tokens
+  --color-surface-editor:   #FFFFFF;
+  --color-surface-toolbar:  rgba(248, 250, 252, 0.82);
+  --color-surface-overlay:  rgba(255, 255, 255, 0.88);
+
+  // Hairline border (Apple HIG 0.5px separators)
+  --border-width-hairline:  0.5px;
+  --color-border-hairline:  rgba(148, 163, 184, 0.25);
+
+  // Extended type scale
+  --font-size-5xl:     2.5rem;   // 40px — document title
+  --font-size-display: 3rem;     // 48px — reserved
+
+  // Truth / canonical reading surface
+  --truth-max-width:      680px;
+  --truth-padding-x:      var(--spacing-8);
+  --truth-line-height:    1.75;
+
+  // Composer layout
+  --composer-max-width:   1200px;
+
+  // Proposal state — Open (amber)
+  --color-proposal-open:            #B45309;
+  --color-proposal-open-surface:    rgba(254, 243, 199, 0.55);
+  --color-proposal-open-border:     #FDE68A;
+  --color-proposal-open-gutter:     #F59E0B;
+  --color-proposal-open-tag-bg:     #FEF3C7;
+  --color-proposal-open-tag-text:   #92400E;
+
+  // Proposal state — Accepted (emerald)
+  --color-proposal-accepted:        #065F46;
+  --color-proposal-accepted-surface: rgba(209, 250, 229, 0.4);
+  --color-proposal-accepted-border: #6EE7B7;
+  --color-proposal-accepted-tag-bg:  #D1FAE5;
+  --color-proposal-accepted-tag-text:#064E3B;
+
+  // Proposal state — Declined (slate)
+  --color-proposal-declined:        #475569;
+  --color-proposal-declined-surface: rgba(241, 245, 249, 0.5);
+  --color-proposal-declined-border: #CBD5E1;
+  --color-proposal-declined-tag-bg:  #F1F5F9;
+  --color-proposal-declined-tag-text:#334155;
+
+  // Proposal state — Conflict (red)
+  --color-proposal-conflict:        #991B1B;
+  --color-proposal-conflict-surface: rgba(254, 226, 226, 0.5);
+  --color-proposal-conflict-border: #FECACA;
+  --color-proposal-conflict-tag-bg:  #FEE2E2;
+  --color-proposal-conflict-tag-text:#7F1D1D;
 }
 
 // Dark mode
@@ -152,6 +203,26 @@
     --shadow-xlarge: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.25);
 
     color-scheme: dark;
+
+    // Surface tokens — dark mode
+    --color-surface-editor:   #1E293B;
+    --color-surface-toolbar:  rgba(15, 23, 42, 0.82);
+    --color-surface-overlay:  rgba(30, 41, 59, 0.92);
+    --color-border-hairline:  rgba(148, 163, 184, 0.12);
+
+    // Proposal state — dark adjustments
+    --color-proposal-open-surface:     rgba(120, 53, 15, 0.2);
+    --color-proposal-open-tag-bg:      rgba(120, 53, 15, 0.35);
+    --color-proposal-open-tag-text:    #FDE68A;
+    --color-proposal-accepted-surface: rgba(6, 78, 59, 0.2);
+    --color-proposal-accepted-tag-bg:  rgba(6, 78, 59, 0.35);
+    --color-proposal-accepted-tag-text:#6EE7B7;
+    --color-proposal-declined-surface: rgba(30, 41, 59, 0.4);
+    --color-proposal-declined-tag-bg:  rgba(30, 41, 59, 0.5);
+    --color-proposal-declined-tag-text:#94A3B8;
+    --color-proposal-conflict-surface: rgba(127, 29, 29, 0.2);
+    --color-proposal-conflict-tag-bg:  rgba(127, 29, 29, 0.35);
+    --color-proposal-conflict-tag-text:#FECACA;
   }
 }
 
@@ -168,6 +239,10 @@
   --color-text-tertiary: #94A3B8;
   --color-border-light: rgba(148, 163, 184, 0.2);
   --color-border-medium: rgba(148, 163, 184, 0.35);
+  --color-surface-editor:   #FFFFFF;
+  --color-surface-toolbar:  rgba(248, 250, 252, 0.82);
+  --color-surface-overlay:  rgba(255, 255, 255, 0.88);
+  --color-border-hairline:  rgba(148, 163, 184, 0.25);
 }
 
 .theme-dark {
@@ -182,6 +257,22 @@
   --color-text-tertiary: #64748B;
   --color-border-light: rgba(148, 163, 184, 0.1);
   --color-border-medium: rgba(148, 163, 184, 0.18);
+  --color-surface-editor:   #1E293B;
+  --color-surface-toolbar:  rgba(15, 23, 42, 0.82);
+  --color-surface-overlay:  rgba(30, 41, 59, 0.92);
+  --color-border-hairline:  rgba(148, 163, 184, 0.12);
+  --color-proposal-open-surface:     rgba(120, 53, 15, 0.2);
+  --color-proposal-open-tag-bg:      rgba(120, 53, 15, 0.35);
+  --color-proposal-open-tag-text:    #FDE68A;
+  --color-proposal-accepted-surface: rgba(6, 78, 59, 0.2);
+  --color-proposal-accepted-tag-bg:  rgba(6, 78, 59, 0.35);
+  --color-proposal-accepted-tag-text:#6EE7B7;
+  --color-proposal-declined-surface: rgba(30, 41, 59, 0.4);
+  --color-proposal-declined-tag-bg:  rgba(30, 41, 59, 0.5);
+  --color-proposal-declined-tag-text:#94A3B8;
+  --color-proposal-conflict-surface: rgba(127, 29, 29, 0.2);
+  --color-proposal-conflict-tag-bg:  rgba(127, 29, 29, 0.35);
+  --color-proposal-conflict-tag-text:#FECACA;
 }
 
 // Reset
