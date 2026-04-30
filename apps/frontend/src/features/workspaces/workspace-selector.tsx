@@ -36,8 +36,8 @@ const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({ isOpen }) => {
 			<button
 				type="button"
 				className="ws-selector ws-selector--collapsed"
-				onClick={() => navigate("/workspaces")}
-				title={current?.name ?? "Workspaces"}
+		onClick={() => navigate("/group")}
+			title={current?.name ?? "Group"}
 				aria-label="Workspaces"
 			>
 				<BuildingOffice2Icon className="ws-selector__icon" />
@@ -83,7 +83,7 @@ const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({ isOpen }) => {
 									onClick={(e) => {
 										e.stopPropagation();
 										setExpanded(false);
-										navigate(`/workspaces/${ws.id}/settings`);
+										navigate(`/group/${ws.id}/settings`);
 									}}
 									title={`Settings for ${ws.name}`}
 									aria-label={`Settings for ${ws.name}`}
@@ -101,7 +101,7 @@ const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({ isOpen }) => {
 						className="ws-selector__new"
 						onClick={() => {
 							setExpanded(false);
-							navigate("/workspaces");
+							navigate("/group");
 						}}
 					>
 						<PlusIcon style={{ width: 13, height: 13 }} />

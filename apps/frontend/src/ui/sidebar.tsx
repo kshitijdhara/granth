@@ -1,24 +1,21 @@
 import {
+	ArchiveBoxIcon,
 	ArrowRightStartOnRectangleIcon,
 	Bars3Icon,
-	BuildingOffice2Icon,
-	DocumentTextIcon,
-	HomeIcon,
+	BookOpenIcon,
+	InboxIcon,
 	MoonIcon,
-	PlusIcon,
+	SparklesIcon,
 	SunIcon,
 	UserCircleIcon,
+	UsersIcon,
 	XMarkIcon,
 } from "@heroicons/react/24/solid";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth.context";
-import { documentsApi } from "@/features/documents/documents.api";
-import type { Document } from "@/features/documents/types";
 import WorkspaceSelector from "@/features/workspaces/workspace-selector";
-import { useWorkspace } from "@/features/workspaces/workspace.context";
-import { workspacesApi } from "@/features/workspaces/workspaces.api";
 import { useTheme } from "@/theme.context";
 import "./sidebar.scss";
 
@@ -27,52 +24,35 @@ interface SidebarProps {
 	onToggle: () => void;
 }
 
+const NAV_ITEMS = [
+	{ key: "inbox", path: "/inbox", label: "Inbox", Icon: InboxIcon },
+	{ key: "truth", path: "/truth", label: "Truth", Icon: BookOpenIcon },
+	{ key: "motion", path: "/motion", label: "In Motion", Icon: SparklesIcon },
+	{ key: "archive", path: "/archive", label: "Archive", Icon: ArchiveBoxIcon },
+	{ key: "group", path: "/group", label: "Group", Icon: UsersIcon },
+] as const;
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { isAuthenticated, logout } = useAuth();
 	const { theme, toggleTheme } = useTheme();
-	const { current: currentWorkspace } = useWorkspace();
-	const [documents, setDocuments] = useState<Document[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [creating, setCreating] = useState(false);
+	const [isCollapsing, setIsCollapsing] = useState(false);
 
-	useEffect(() => {
-		if (!isAuthenticated) return;
-		setLoading(true);
-		const fetch = currentWorkspace
-			? workspacesApi.getDocuments(currentWorkspace.id)
-			: documentsApi.getAll();
-		fetch
-			.then((docs) => setDocuments(docs ?? []))
-			.catch(console.error)
-			.finally(() => setLoading(false));
-	}, [isAuthenticated, currentWorkspace]);
-
-	const isAuth = location.pathname === "/login" || location.pathname === "/register";
-	if (isAuth) return null;
+	const isAuthRoute = location.pathname === "/login" || location.pathname === "/register";
+	if (isAuthRoute) return null;
 
 	const isActive = (path: string) =>
-		path === "/home"
-			? location.pathname === "/home" || location.pathname === "/"
+		path === "/inbox"
+			? location.pathname === "/inbox" || location.pathname === "/"
 			: location.pathname.startsWith(path);
 
-	const handleCreate = async () => {
-		if (creating) return;
-		setCreating(true);
-		try {
-			const res = await documentsApi.create("Untitled Document", currentWorkspace?.id);
-			// Refresh doc list for current workspace
-			const updated = currentWorkspace
-				? await workspacesApi.getDocuments(currentWorkspace.id)
-				: await documentsApi.getAll();
-			setDocuments(updated ?? []);
-			if (res?.document_id) navigate(`/documents/${res.document_id}/edit`);
-		} catch (err) {
-			console.error("Failed to create document:", err);
-		} finally {
-			setCreating(false);
+	const handleToggle = () => {
+		if (isOpen) {
+			setIsCollapsing(true);
+			setTimeout(() => setIsCollapsing(false), 220);
 		}
+		onToggle();
 	};
 
 	return (
@@ -85,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 					<button
 						type="button"
 						className="sidebar__toggle"
-						onClick={onToggle}
+						onClick={handleToggle}
 						aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
 					>
 						{isOpen ? (
@@ -94,91 +74,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 							<Bars3Icon className="sidebar__icon" />
 						)}
 					</button>
-					{isOpen && (
-						<button type="button" className="sidebar__brand" onClick={() => navigate("/home")}>
+					{isOpen && !isCollapsing && (
+						<button type="button" className="sidebar__brand" onClick={() => navigate("/inbox")}>
 							Granth
 						</button>
 					)}
 				</div>
 
-				{isAuthenticated && (
+				{isAuthenticated && isOpen && (
 					<div className="sidebar__workspace">
 						<WorkspaceSelector isOpen={isOpen} />
 					</div>
 				)}
 
 				<nav className="sidebar__nav" aria-label="Primary navigation">
-					{(["home", "documents", "workspaces"] as const).map((key) => {
-						const path = `/${key}`;
-						const Icon =
-							key === "home"
-								? HomeIcon
-								: key === "documents"
-									? DocumentTextIcon
-									: BuildingOffice2Icon;
-						return (
-							<button
-								type="button"
-								key={key}
-								className={`sidebar__nav-item ${isActive(path) ? "sidebar__nav-item--active" : ""}`}
-								onClick={() => navigate(path)}
-								title={key.charAt(0).toUpperCase() + key.slice(1)}
-							>
-								<Icon className="sidebar__icon" />
-								{isOpen && (
-									<span className="sidebar__nav-label">
-										{key.charAt(0).toUpperCase() + key.slice(1)}
-									</span>
-								)}
-							</button>
-						);
-					})}
+					{NAV_ITEMS.map(({ key, path, label, Icon }) => (
+						<button
+							type="button"
+							key={key}
+							className={`sidebar__nav-item ${isActive(path) ? "sidebar__nav-item--active" : ""}`}
+							onClick={() => navigate(path)}
+							title={label}
+						>
+							<Icon className="sidebar__icon" />
+							{isOpen && !isCollapsing && <span className="sidebar__nav-label">{label}</span>}
+						</button>
+					))}
 				</nav>
-
-				{isOpen && isAuthenticated && (
-					<div className="sidebar__documents">
-						<div className="sidebar__section-header">
-							<span className="sidebar__section-title">Recent</span>
-							<button
-								type="button"
-								className="sidebar__new-btn"
-								onClick={handleCreate}
-								disabled={creating}
-								title="New document"
-								aria-label="New document"
-							>
-								<PlusIcon className="sidebar__icon sidebar__icon--sm" />
-							</button>
-						</div>
-						{loading ? (
-							<div className="sidebar__loading">
-								<div className="sidebar__skeleton" />
-								<div className="sidebar__skeleton" />
-								<div className="sidebar__skeleton" />
-							</div>
-						) : documents.length > 0 ? (
-							<ul className="sidebar__doc-list">
-								{documents.slice(0, 12).map((doc) => (
-									<li key={doc.id}>
-										<button
-											type="button"
-											className={`sidebar__doc-item ${location.pathname.includes(doc.id) ? "sidebar__doc-item--active" : ""}`}
-											onClick={() => navigate(`/documents/${doc.id}`)}
-											title={doc.title}
-										>
-											<span className="sidebar__doc-icon">
-												<DocumentTextIcon style={{ width: 12, height: 12 }} />
-											</span>
-											<span className="sidebar__doc-title">{doc.title}</span>
-										</button>
-									</li>
-								))}
-							</ul>
-						) : (
-							<p className="sidebar__empty">No documents yet</p>
-						)}
-					</div>
-				)}
 
 				<div className="sidebar__footer">
 					<button
@@ -193,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 						) : (
 							<SunIcon className="sidebar__icon" />
 						)}
-						{isOpen && (
+						{isOpen && !isCollapsing && (
 							<span className="sidebar__nav-label">
 								{theme === "light" ? "Dark mode" : "Light mode"}
 							</span>
@@ -209,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 								title="Profile"
 							>
 								<UserCircleIcon className="sidebar__icon" />
-								{isOpen && <span className="sidebar__nav-label">Profile</span>}
+								{isOpen && !isCollapsing && <span className="sidebar__nav-label">Profile</span>}
 							</button>
 							<button
 								type="button"
@@ -218,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 								title="Sign out"
 							>
 								<ArrowRightStartOnRectangleIcon className="sidebar__icon" />
-								{isOpen && <span className="sidebar__nav-label">Sign out</span>}
+								{isOpen && !isCollapsing && <span className="sidebar__nav-label">Sign out</span>}
 							</button>
 						</>
 					) : (
@@ -229,7 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 							title="Sign in"
 						>
 							<ArrowRightStartOnRectangleIcon className="sidebar__icon" />
-							{isOpen && <span className="sidebar__nav-label">Sign in</span>}
+							{isOpen && !isCollapsing && <span className="sidebar__nav-label">Sign in</span>}
 						</button>
 					)}
 				</div>
