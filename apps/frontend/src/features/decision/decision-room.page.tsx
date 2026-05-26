@@ -16,6 +16,7 @@ import { proposalsApi } from "@/features/proposals/proposals.api";
 import type { WorkspaceMember } from "@/features/workspaces/types";
 import { useWorkspace } from "@/features/workspaces/workspace.context";
 import { workspacesApi } from "@/features/workspaces/workspaces.api";
+import CommentThread from "@/features/comments/comment-thread";
 import Button from "@/ui/button";
 import "./decision-room.page.scss";
 
@@ -326,6 +327,13 @@ const DecisionRoomPage: React.FC = () => {
 							</div>
 						</section>
 					)}
+
+					{/* DELIBERATION — threaded comments */}
+					<CommentThread
+						proposalId={proposalId ?? ""}
+						currentUserId={userId}
+						isSealed={proposal?.state !== "open"}
+					/>
 
 					{/* DECISION OUTCOME — when already decided */}
 					{!isOpen && (
