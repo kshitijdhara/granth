@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"granth/internal/config"
+	"granth/internal/documents"
 	"granth/internal/utils"
+	"granth/internal/workspaces"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -81,6 +84,34 @@ func updateProposal(proposalID string, title string, intent string, scope string
 	return nil
 }
 
+// checkAuthorBlock returns an error if the caller is the proposal author
+// and the document's workspace has more than one member.
+//
+// The rule (NORTHSTAR §6):
+//   - Single-member workspace → author may self-accept/self-reject (they are the only reviewer)
+//   - Multi-member workspace  → author is blocked; a different user must decide
+//   - No workspace (legacy)   → no restriction (backward compat)
+func checkAuthorBlock(proposal *Proposal, userID string, ctx context.Context) error {
+	if proposal.AuthorID != userID {
+		return nil // not the author — no restriction applies
+	}
+	doc, err := documents.FetchDocumentByID(proposal.DocumentID, ctx)
+	if err != nil {
+		return fmt.Errorf("error fetching document: %w", err)
+	}
+	if doc.WorkspaceID == nil {
+		return nil // legacy doc with no workspace — no restriction
+	}
+	memberCount, err := workspaces.CountMembers(*doc.WorkspaceID, ctx)
+	if err != nil {
+		return fmt.Errorf("error checking workspace membership: %w", err)
+	}
+	if memberCount > 1 {
+		return fmt.Errorf("author cannot accept or reject their own proposal in a shared workspace")
+	}
+	return nil // solo workspace — author is the only reviewer
+}
+
 func acceptProposal(proposalID string, ctx context.Context) error {
 	userID, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
@@ -90,6 +121,27 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 	proposal, err := GetProposalByID(proposalID, ctx)
 	if err != nil {
 		return fmt.Errorf("error fetching proposal: %w", err)
+	}
+
+	// Phase 1.1 — membership-aware author block
+	if err := checkAuthorBlock(proposal, userID, ctx); err != nil {
+		return err
+	}
+
+	// Phase 1.3 — backend conflict enforcement
+	if len(proposal.AffectedBlockIDs) > 0 {
+		conflicts, err := GetOpenConflictingProposals(proposalID, proposal.AffectedBlockIDs, ctx)
+		if err != nil {
+			return fmt.Errorf("error checking for conflicts: %w", err)
+		}
+		if len(conflicts) > 0 {
+			ids := make([]string, len(conflicts))
+			for i, c := range conflicts {
+				ids[i] = c.ID
+			}
+			return fmt.Errorf("proposal conflicts with %d open proposal(s): %s",
+				len(conflicts), strings.Join(ids, ", "))
+		}
 	}
 
 	changes, err := GetChangesByProposal(proposalID, ctx)
@@ -142,7 +194,7 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 }
 
 func rejectProposal(proposalID string, reason string, ctx context.Context) error {
-	_, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := utils.GetUserIDFromContext(ctx) // was `_, ok` — now enforced
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -152,12 +204,16 @@ func rejectProposal(proposalID string, reason string, ctx context.Context) error
 		return fmt.Errorf("error fetching proposal: %w", err)
 	}
 
+	// Phase 1.1 — membership-aware author block
+	if err := checkAuthorBlock(proposal, userID, ctx); err != nil {
+		return err
+	}
+
 	proposal.State = string(ProposalStatusRejected)
 	proposal.RejectionReason = &reason
 	proposal.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 
-	err = UpdateProposal(proposal, ctx)
-	if err != nil {
+	if err = UpdateProposal(proposal, ctx); err != nil {
 		return fmt.Errorf("error rejecting proposal: %w", err)
 	}
 

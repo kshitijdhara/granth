@@ -3,6 +3,7 @@ package proposals
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -132,8 +133,17 @@ func handleRejectProposal(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Reason string `json:"reason"`
 	}
-	// Reason is enforced by the UI; decode best-effort here
-	json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Phase 1.2 — enforce non-empty reason at the API layer.
+	// "Considered and declined" is only meaningful with a recorded rationale.
+	if strings.TrimSpace(req.Reason) == "" {
+		http.Error(w, "rejection_reason is required", http.StatusBadRequest)
+		return
+	}
 
 	err := rejectProposal(proposalID, req.Reason, r.Context())
 	if err != nil {

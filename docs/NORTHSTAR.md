@@ -124,6 +124,12 @@ Instead, the system helps users answer:
 
 Accepting a proposal is a **decision**, not a technical operation. It is the moment the group updates what it collectively believes. The accepted proposal's reasoning becomes part of the permanent record of why shared truth is what it is.
 
+Who may decide depends on the workspace:
+- **Single-member workspace:** the author may accept or reject their own proposals. They are the group. The proposal-first model still applies — the value is preserved reasoning and safe exploration, not social governance.
+- **Multi-member workspace:** a reviewer who is not the proposal's author must decide. The author is the interested party; they cannot be the judge.
+
+This distinction is not a special case — it is the model working correctly at different scales.
+
 Rejected proposals are not deleted:
 - They remain as historical context
 - The system records *why* they were rejected
@@ -293,8 +299,13 @@ The architectural skeleton is correct: a three-layer schema exists, blocks are s
 
 - ~~**Accept does not merge.** `apps/backend/internal/proposals/service.go:96` contains `// TODO: Apply changes to blocks (merge to canonical layer)`. Accepting a proposal only flips `state` to `"accepted"` — the tracked block changes never propagate to the canonical `blocks` table. The three-layer model is broken at its most critical moment: the moment the group decides.~~ **Closed 2026-04-15** — merge on accept is now wired up in a single transaction.
 
-- **Authorization does not match the vision. Claimed closed; verified open.**
-  `service.go` (acceptProposal) retrieves the calling user's ID from context but **never compares it to `proposal.AuthorID`**. Author self-accept is not blocked at the service layer. `rejectProposal` discards the calling user's ID entirely (`_, ok := ...`). In a shared-truth system, the proposal author is the *last* person who should unilaterally decide whether their own proposal is accepted or rejected. The §17 log entry dated 2026-04-15 claims this was fixed — it was not. This invariant must be verified against the running service, not the log.
+- **Authorization rule refined — solo workspaces are a valid use case. Implementation still open.**
+  The original framing — "author cannot self-accept or self-reject, full stop" — is incorrect as an absolute rule. A workspace with exactly one member is a personal versioning workspace: the user is simultaneously author and sole reviewer, and blocking self-accept would make the system unusable for solo work. The correct invariant is membership-scoped:
+  - **Single-member workspace:** author may self-accept/self-reject. They are the only possible reviewer.
+  - **Multi-member workspace:** author cannot self-accept or self-reject. A different user must decide.
+  - **No workspace (legacy docs):** unrestricted (backward compat).
+
+  `service.go` currently enforces none of this — `acceptProposal()` never checks `proposal.AuthorID` against the calling user, and `rejectProposal()` discards the user ID entirely. The implementation must count workspace members before applying the author block. See §15 item 7 and §17 decision log (2026-05-26) for the rationale.
 
 - ~~**No review UI.** `apps/frontend/src/features/proposals/proposal-item.tsx:16` renders a proposal card whose click handler is `alert(...)`. There is no side-by-side diff, no reasoning view, no accept/reject affordance.~~ **Closed 2026-04-15** — `decision-room.page.tsx` ships a full review UI with semantic diff display, conflict detection, and accept/reject affordances.
 
@@ -329,7 +340,7 @@ Each item below is declarative and testable: an implementer should be able to te
 
 5. ~~**Workspace / organization / team model.** Documents belong to a workspace; users belong to workspaces with roles.~~ ✓ **Completed 2026-04-15**
 6. ~~**Roles.** Contributor (can propose), reviewer (can accept/reject), admin (can configure governance). Enforced at the service layer, not just the UI.~~ ✓ **Completed 2026-04-15** — roles ship as part of items 5.
-7. **Author cannot self-accept/self-reject.** Enforce at the service layer: `acceptProposal` and `rejectProposal` must return an error if the calling user is the proposal's author. Currently unenforced (§14).
+7. **Membership-aware author block.** Enforce at the service layer: if the document's workspace has more than one member, `acceptProposal` and `rejectProposal` must return an error if the calling user is the proposal's author. Single-member workspaces are exempt — the user is their own reviewer. No workspace (legacy) is also exempt. Currently unenforced in any case (§14).
 8. **Enforce non-empty rejection reason at the API.** `handleRejectProposal` must validate that `reason` is non-empty before accepting the request. Currently best-effort only.
 9. **Backend conflict enforcement.** At accept time, query open proposals sharing `affected_block_ids` using the existing GIN index. Surface the conflict as a blocking warning or require explicit override. Frontend detection alone is insufficient.
 10. **Required reviewers / approval chains.** Configurable per workspace: N reviewers required, specific reviewers required, or designated role required. Roles exist; enforcement logic does not.
@@ -381,8 +392,13 @@ Once that feeling exists, traditional editors feel irresponsible.
 
 ### Recent Decisions
 
+- **Decision (2026-05-26):** Refined the author self-accept rule — single-member workspaces are exempt.
+  **Reasoning:** A workspace with exactly one member is a personal versioning workspace. The user is simultaneously author and sole reviewer; blocking self-accept would make the system unusable for solo work (drafting, personal knowledge, exploratory branching before sharing). The proposal-first model still applies in this mode — the value is preserved reasoning and safe exploration, not social governance. The invariant "author cannot self-accept" is a *collaborative* invariant, not a universal one. It activates when the workspace has more than one member.
+  **Rule:** `count(workspace_members WHERE workspace_id = doc.workspace_id) > 1` → author block enforced. Otherwise → author may self-accept/self-reject.
+  **Tradeoffs accepted:** Requires a member count query on every accept/reject. This is a single indexed lookup and acceptable overhead. The alternative — a flag on the workspace — is a premature optimization that adds schema complexity for no benefit.
+
 - **Decision (2026-05-26):** Re-opened the "authorization contradiction" gap after code verification.
-  **Reasoning:** §14 claimed author self-accept/self-reject was blocked as of 2026-04-15. Verification against `apps/backend/internal/proposals/service.go` shows `acceptProposal()` never compares the calling user's ID to `proposal.AuthorID`. `rejectProposal()` discards the user ID entirely. The invariant is unenforced. §14 and §15 updated accordingly.
+  **Reasoning:** §14 claimed author self-accept/self-reject was blocked as of 2026-04-15. Verification against `apps/backend/internal/proposals/service.go` shows `acceptProposal()` never compares the calling user's ID to `proposal.AuthorID`. `rejectProposal()` discards the user ID entirely. The invariant is unenforced in any case. §14 and §15 updated with the refined rule above.
 
 - **Decision (2026-05-26):** Surfaced rejection reason API enforcement gap.
   **Reasoning:** The rejection reason is stored and rendered correctly in the UI, but `handleRejectProposal` in `routes.go` accepts an empty reason body without error. This violates the "considered and declined" promise (§6). Added to §15 as a discrete actionable item.

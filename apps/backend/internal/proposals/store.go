@@ -2,6 +2,7 @@ package proposals
 
 import (
 	"context"
+	"fmt"
 	"granth/internal/config"
 
 	"github.com/lib/pq"
@@ -91,4 +92,29 @@ func GetChangesByProposal(proposalID string, ctx context.Context) ([]*ProposalBl
 func DeleteChangesByProposal(proposalID string, ctx context.Context) error {
 	_, err := config.PostgresDB.ExecContext(ctx, "DELETE FROM proposal_block_changes WHERE proposal_id = $1", proposalID)
 	return err
+}
+
+// GetOpenConflictingProposals returns open proposals (excluding proposalID itself)
+// that share at least one affected block ID with the given list.
+// Uses the GIN index on affected_block_ids via the && (array overlap) operator.
+func GetOpenConflictingProposals(proposalID string, affectedBlockIDs []string, ctx context.Context) ([]*Proposal, error) {
+	rows, err := config.PostgresDB.QueryContext(ctx,
+		`SELECT id, title, author_id FROM proposals
+		 WHERE id != $1 AND state = 'open' AND affected_block_ids && $2`,
+		proposalID, pq.Array(affectedBlockIDs),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error querying conflicting proposals: %w", err)
+	}
+	defer rows.Close()
+
+	var conflicts []*Proposal
+	for rows.Next() {
+		p := &Proposal{}
+		if err := rows.Scan(&p.ID, &p.Title, &p.AuthorID); err != nil {
+			return nil, fmt.Errorf("error scanning conflicting proposal: %w", err)
+		}
+		conflicts = append(conflicts, p)
+	}
+	return conflicts, rows.Err()
 }

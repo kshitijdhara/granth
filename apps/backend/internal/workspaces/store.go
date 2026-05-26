@@ -186,3 +186,18 @@ func countAdmins(workspaceID string, ctx context.Context) (int, error) {
 	}
 	return count, nil
 }
+
+// CountMembers returns the total number of members in a workspace.
+// Used by the proposals service to determine whether the author-block applies.
+// The block is only enforced in workspaces with more than one member.
+func CountMembers(workspaceID string, ctx context.Context) (int, error) {
+	var count int
+	err := config.PostgresDB.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM workspace_members WHERE workspace_id = $1`,
+		workspaceID,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("error counting workspace members: %w", err)
+	}
+	return count, nil
+}
