@@ -22,7 +22,7 @@ Every group that holds shared truth — engineers with RFCs, lawyers with contra
 
 The fear is never of editing. **It is of irreversible consequences, lost context, and conflict.** Today the world papers over this with Google Docs comments, Word tracked changes, email threads, and Slack archaeology. None of these preserve the one thing that matters: *why the group came to believe what it believes now.*
 
-Granth exists to eliminate those behaviors — not for one profession, but for any group that needs to evolve shared truth over time.
+The problem is not tooling friction. It is the absence of a primitive for structured, attributable, reasoned change to shared truth. Granth exists to supply that primitive — not for one profession, but for any group that needs to evolve shared truth over time.
 
 ---
 
@@ -34,6 +34,8 @@ Granth exists to eliminate those behaviors — not for one profession, but for a
 ### New Mental Model
 > **"I am proposing a change to shared truth."**
 
+A **proposal** is the atomic unit of change in Granth. It is a bounded, attributed, reasoning-bearing claim that a specific change to shared truth should be made. Every proposal carries: an author, an intent, a scope, a set of affected content, and a state (`open`, `accepted`, `rejected`). There is no other way to change shared truth. There is no direct edit.
+
 Every system decision must reinforce this reframe.
 
 ---
@@ -42,7 +44,7 @@ Every system decision must reinforce this reframe.
 
 The primitive Granth is building is **a group-held claim that can evolve with preserved reasoning.** Documents are one container for such claims. Specs, contracts, policies, model assumptions, annotation standards, and clinical protocols are others. The same mechanics apply to all of them: a canonical truth, proposals to change it, and the reasoning behind each accepted or rejected proposal.
 
-What Git did for source code, Granth does for claims. Git made version control accessible enough to transform how software is built; Granth's bet is that the same primitive — applied without Git's surface complexity — can transform how any group makes and remembers decisions.
+What Git did for source code, Granth does for claims. Git made version control accessible enough to transform how software is built. Granth's bet is that the same primitive — applied without Git's surface complexity — can transform how any group makes and remembers decisions.
 
 A single primitive produces three exposure layers, not three separate products:
 
@@ -60,28 +62,30 @@ Shared truth is never a single mutable object.
 It always consists of three conceptual layers:
 
 ### 1. Canonical Layer — Shared Truth
+**The group's current best understanding, stable until a proposal is accepted.**
+
 - What the group currently agrees on
-- Stable, calm, readable
-- Optimized for consumption, not churn
+- Readable, authoritative, optimized for consumption
+- Changes only through the explicit acceptance of a proposal — never by direct edit
+- The source of record, not the workspace
 
 ### 2. Proposal Layer — Parallel Futures
-- All meaningful changes live here first
-- Multiple proposals may coexist
-- Every proposal has:
-  - author
-  - intent
-  - scope
-  - timestamp
+**Every meaningful change lives here before it can become canonical.**
 
-Users do not explicitly "branch".
-They explore safely by default.
+- Multiple proposals may coexist against the same canonical state
+- Every proposal carries: author, intent, scope, affected content, timestamp, state
+- Users do not explicitly "branch" — they explore safely by default
+- A proposal is a first-class object, not a draft, not a diff, not a comment
 
 ### 3. Reasoning Layer — Why
-- Discussion is attached to proposals, not raw text
-- Decisions reference rationale
-- Context must never be lost
+**The structured record of how the group arrived at what it currently believes.**
 
-If reasoning disappears, the system has failed.
+- Discussion and deliberation are attached to proposals, not to raw content
+- Every accepted or rejected proposal retains its rationale permanently
+- The reasoning layer is not a chat log — it is a deliberation record tied to specific decisions
+- Context must never be lost; losing it means the system has failed
+
+These three layers are always present, even when only one is visible. A system that collapses them into a single mutable surface is not a simplification — it is a regression to the exact failure mode Granth exists to solve.
 
 ---
 
@@ -94,16 +98,17 @@ If reasoning disappears, the system has failed.
 - A power-user feature
 
 ### What Branching IS
-> **Protected parallel thinking**
+> **A proposal under construction — a named parallel future that hasn't yet been accepted or rejected.**
+
+A branch in Granth is not a Git branch. It has no checkout, no merge command, no local copy. It is a proposal in the `open` state: a declared intent to change shared truth, attributed to an author, with an explicit scope. It exists until the group decides.
 
 A proposal is created implicitly when:
 - Meaning changes
 - An alternative is explored
 - Content others rely on is modified
-- A comment evolves into content
+- A comment evolves into a substantive change
 
-Safety is automatic.
-Exploration never risks shared truth.
+Safety is automatic. Exploration never risks shared truth. The canonical layer is never touched until a proposal is accepted.
 
 ---
 
@@ -117,17 +122,22 @@ Instead, the system helps users answer:
 - Does one supersede the other?
 - Are these addressing different concerns?
 
-Accepting a proposal is a **decision**, not a technical operation.
+Accepting a proposal is a **decision**, not a technical operation. It is the moment the group updates what it collectively believes. The accepted proposal's reasoning becomes part of the permanent record of why shared truth is what it is.
 
 Rejected proposals are not deleted:
 - They remain as historical context
-- The system remembers *why* they were rejected
+- The system records *why* they were rejected
+- A rejected proposal is "considered and declined" — not discarded
+
+The history of rejected proposals is part of the reasoning layer. Understanding what a group chose *not* to believe, and why, is as important as understanding what it does believe.
 
 ---
 
 ## 7. Diffs Are Semantic, Not Textual
 
-Text diffs are a fallback, not the primary interface.
+**A semantic diff answers: what does this change mean for the group's shared understanding?**
+
+Text diffs answer a different question: which characters changed? That answer is a fallback — useful when the semantic answer is unavailable, but never the primary interface.
 
 The system compares:
 - Meaning
@@ -141,8 +151,11 @@ Examples of semantic diffs:
 - "Weakens the original conclusion"
 - "Reverses a previous decision"
 - "Narrows scope"
+- "Contradicts an existing claim in §3"
 
-If users must read raw diffs to understand change, abstraction has leaked.
+The semantic diff is what allows a non-technical reviewer to understand a change without reading raw content. If users must read raw text diffs to understand what changed, abstraction has leaked.
+
+Text diffs remain available as a fallback and as an audit artifact. They are never the primary communication of change.
 
 ---
 
@@ -151,12 +164,14 @@ If users must read raw diffs to understand change, abstraction has leaked.
 Presence communicates **intent**, not cursor position.
 
 The system should surface:
-- "Alex is proposing an alternative"
-- "Sam is reviewing a conflicting proposal"
+- "Alex is proposing an alternative to §2"
+- "Sam is reviewing a proposal that conflicts with yours"
 
 Not:
 - cursor noise
 - real-time typing theatrics
+
+Real-time co-editing optimizes for simultaneity. Granth optimizes for deliberation. These are different problems. Granth is not slower than a real-time editor — it is solving a different unit of time: not the keystroke, but the decision.
 
 Collaboration success is measured by:
 - clarity of disagreement
@@ -171,6 +186,7 @@ Collaboration success is measured by:
 - a writer
 - a replacement for thinking
 - a sidebar assistant
+- an autonomous editor of shared truth
 
 ### AI **is**, inside the UI:
 - a proposal summarizer
@@ -183,14 +199,19 @@ AI exists to clarify human disagreement, not erase it.
 
 ### AI as a first-class proposer
 
-AI agents are not just helpers inside the interface — they are **users of the primitive**, submitting proposals the same way humans do. This is a first-class use case, not a retrofit.
+AI agents are not just helpers inside the interface — they are **users of the primitive**, submitting proposals the same way humans do. This is a design requirement, not a retrofit.
+
+The rules for AI proposers are identical to the rules for human proposers:
 
 - Agents submit structured proposals through the same API humans use
 - Agents supply reasoning in the same reasoning layer humans use
-- The canonical layer never distinguishes "an AI wrote this" from "a human wrote this" — provenance lives in the proposal and reasoning layers, not in the truth itself
-- Humans retain the accept/reject decision at all times
+- Agents cannot self-accept — a human (or a human-authorized governance rule) makes the accept/reject decision
+- Agents cannot bypass the proposal layer — there is no "AI direct edit" mode
+- Provenance lives in the proposal and reasoning layers, not in the canonical truth itself; the canonical layer never distinguishes "an AI wrote this" from "a human wrote this"
 
-This makes Granth the natural trust boundary between AI systems and institutional knowledge. Agents do not silently edit shared truth. They propose, with reasoning, and humans decide. The audit trail is the same audit trail humans already use.
+This matters: the canonical layer is not the trust boundary. The **proposal system is the trust boundary**. An AI that writes directly to canonical truth — without a proposal, without reasoning, without human decision — is outside the system. That is not a permitted interaction mode.
+
+This makes Granth the natural governance layer between AI systems and institutional knowledge. Agents propose, with reasoning, and humans decide. The audit trail is identical to the one humans already use. The proposal system cannot be bypassed by capability; it can only be satisfied.
 
 ---
 
@@ -226,7 +247,7 @@ A student editing a group project just types. A junior engineer tweaks a paragra
 Maintainers, legal reviewers, PMs, and standards editors see the full apparatus: side-by-side diffs, semantic diff summaries, reasoning threads, conflict graphs across overlapping proposals, and the complete decision history (including rejections and why). This is where Granth earns its keep in high-stakes work.
 
 ### API layer — for external systems and AI agents
-A stable, structured, public interface for machine proposers. Proposals are submitted as data, with reasoning metadata attached. The API is not an afterthought or a retrofit — it is part of the primitive from day one, because agents-as-users is a first-class scenario (§9).
+A stable, structured, public interface for machine proposers. Proposals are submitted as data, with reasoning metadata attached. The API is not an afterthought or a retrofit — it is part of the primitive from day one, because agents-as-proposers is a first-class scenario (§9).
 
 **The rule:** if we ever find ourselves building parallel systems for casual vs. power vs. agent users, we've broken the primitive. The same proposal object must flow through all three surfaces, rendered appropriately for each audience.
 
@@ -241,7 +262,9 @@ Granth is not:
 - a personal notes app
 - a file manager
 
-**What is out of scope is containers and surfaces.** Granth is the primitive underneath. Knowledge bases, wikis, spec portals, and notes apps can all be built on top — but they are not the foundation, and Granth must not drift into building any of them as end products. The temptation will be real, because each of them looks like an easy win. None of them are the bet.
+**What is out of scope is containers and surfaces.** Granth is the primitive underneath. Knowledge bases, wikis, spec portals, and notes apps can all be built on top — but they are not the foundation, and Granth must not drift into building any of them as end products.
+
+The temptation will be real, because each of them looks like an easy win. The test: does this feature make *proposals, reasoning, and decisions* better? If it primarily makes *content browsing* better, it is out of scope.
 
 ---
 
@@ -254,6 +277,7 @@ For any feature or decision, ask:
 3. Does this preserve reasoning?
 4. Does this help resolve disagreement?
 5. Does this reinforce "proposal over edit"?
+6. Does this keep the three layers distinct?
 
 If the answer is "no" to two or more, the idea is misaligned.
 
@@ -263,25 +287,26 @@ If the answer is "no" to two or more, the idea is misaligned.
 
 The vision above is largely unbuilt. This section is deliberately uncomfortable.
 
-The architectural skeleton is correct: a three-layer schema exists, blocks are structured for semantic comparison, proposals have intent/scope/author/state, and block-level changes are tracked per proposal. But the core loop does not close, and a few pieces directly contradict the vision.
+The architectural skeleton is correct: a three-layer schema exists, blocks are structured for semantic comparison, proposals have intent/scope/author/state, and block-level changes are tracked per proposal. But the core loop does not fully close, and several pieces either do not match the vision or have been claimed complete when they are not.
 
 **Verified gaps, grounded in the current repo:**
 
 - ~~**Accept does not merge.** `apps/backend/internal/proposals/service.go:96` contains `// TODO: Apply changes to blocks (merge to canonical layer)`. Accepting a proposal only flips `state` to `"accepted"` — the tracked block changes never propagate to the canonical `blocks` table. The three-layer model is broken at its most critical moment: the moment the group decides.~~ **Closed 2026-04-15** — merge on accept is now wired up in a single transaction.
 
-- ~~**Authorization contradicts the vision.** `service.go:92-94` and `service.go:120-122` both enforce `if proposal.AuthorID != userID { return "only author can accept/reject" }`. In a shared-truth system the author should be the *last* person allowed to self-accept. This is not a missing feature — it is the wrong invariant, and it makes the primitive unusable in any group of more than one person.~~ **Closed 2026-04-15** — author self-accept/self-reject is now blocked.
+- **Authorization does not match the vision. Claimed closed; verified open.**
+  `service.go` (acceptProposal) retrieves the calling user's ID from context but **never compares it to `proposal.AuthorID`**. Author self-accept is not blocked at the service layer. `rejectProposal` discards the calling user's ID entirely (`_, ok := ...`). In a shared-truth system, the proposal author is the *last* person who should unilaterally decide whether their own proposal is accepted or rejected. The §17 log entry dated 2026-04-15 claims this was fixed — it was not. This invariant must be verified against the running service, not the log.
 
-- ~~**No review UI.** `apps/frontend/src/features/proposals/proposal-item.tsx:16` renders a proposal card whose click handler is `alert(\`Proposal: ${proposal.title}\nState: ${proposal.state}\nIntent: ${proposal.intent}\`)`. There is no side-by-side diff, no reasoning view, no accept/reject affordance. Reviewers cannot see what they are deciding — this is GitHub PRs without a file diff.~~ **Closed 2026-04-15** — `proposal-review-modal.tsx` ships a proper review UI with accept/reject affordances.
+- ~~**No review UI.** `apps/frontend/src/features/proposals/proposal-item.tsx:16` renders a proposal card whose click handler is `alert(...)`. There is no side-by-side diff, no reasoning view, no accept/reject affordance.~~ **Closed 2026-04-15** — `decision-room.page.tsx` ships a full review UI with semantic diff display, conflict detection, and accept/reject affordances.
 
-- ~~**No rejection rationale.** Rejecting a proposal had no required reason field; rejected proposals were indistinguishable from silently discarded ones.~~ **Closed 2026-04-15** — rejection reason is required and stored (`4_add_rejection_reason.up.sql`); rejected proposals render their rationale.
+- ~~**No rejection rationale.** Rejecting a proposal had no required reason field.~~ **Closed 2026-04-15** — rejection reason is stored (`4_add_rejection_reason.up.sql`) and rendered as "considered and declined." Note: the reason is not validated as non-empty at the API layer — `handleRejectProposal` decodes it "best-effort." A direct API call can reject silently, which violates the "considered and declined" promise. Requires a non-empty enforcement check.
 
-- **No reasoning layer.** Grepping `apps/backend` for `discussion|rationale|comment|reasoning` returns zero matches. There are no tables, no routes, and no types for the layer that §4 calls "non-negotiable." The highest-differentiation feature does not exist yet.
+- **No reasoning layer.** Grepping `apps/backend` for `discussion|rationale|comment|reasoning` returns zero matches. There are no tables, no routes, and no types for the layer §4 calls non-negotiable. The highest-differentiation feature — the structured deliberation record — does not exist. This is not a UI gap; it is a schema gap. It cannot be added to the frontend without first being added to the backend.
 
-- ~~**No governance primitives.** Grepping `apps/backend` for `workspace|organization|team|role|reviewer` returns zero matches. Only four migrations exist (users, documents, proposals, rejection reason). There is no notion of teams, roles, required reviewers, or approval chains — which means no group of 3+ people can safely use this today.~~ **Closed 2026-04-15** — `workspaces` and `workspace_members` tables shipped (migration 5); `apps/backend/internal/workspaces/` provides full CRUD, member management, and role enforcement (`admin`, `reviewer`, `contributor`); `documents.workspace_id` FK added; frontend workspace selector, list, and settings pages wired into sidebar and app routing.
+- ~~**No governance primitives.** Only four migrations exist; no notion of teams, roles, or required reviewers.~~ **Closed 2026-04-15** — `workspaces` and `workspace_members` tables shipped (migration 5); `apps/backend/internal/workspaces/` provides full CRUD, member management, and role enforcement (`admin`, `reviewer`, `contributor`); `documents.workspace_id` FK added; frontend workspace selector, list, and settings pages wired into sidebar and routing.
 
-- **No conflict detection.** Nothing compares `affected_block_ids` across open proposals. Two proposals touching the same block can be independently accepted without the system noticing they collide.
+- **Conflict detection is frontend-only; the backend does not enforce.** The inbox, motion, and decision-room pages detect overlapping `affected_block_ids` and surface warnings in the UI. But `acceptProposal()` in the backend does not query for open proposals sharing the same blocks. Two conflicting proposals can be independently accepted in sequence — the second silently overwrites the first with no server-side warning. The GIN index on `affected_block_ids` exists; it is not yet used at accept time.
 
-- **No AI integration of any kind.** There is no model client, no summarizer, no semantic-diff generator, and no agent-facing API. Everything §9 promises is aspirational.
+- **No AI integration of any kind.** There is no model client, no summarizer, no semantic-diff generator, and no agent-facing API. Everything §9 promises is aspirational. The API layer described in §11 exists as a design intent only.
 
 If any of these file references become stale, update them in place — do not delete this section. The point of §14 is to stay continuously verifiable against the repo.
 
@@ -295,28 +320,30 @@ Each item below is declarative and testable: an implementer should be able to te
 *Completed 2026-04-15. All four items shipped.*
 
 1. ~~**Merge on accept.** In a single transaction, apply `proposal_block_changes` (create/update/delete) to the `blocks` table when a proposal is accepted. Fixes `service.go:96`.~~ ✓
-2. ~~**Fix authorization.** Author cannot self-accept or self-reject. A reviewer must be a different user; eventually, a reviewer with the right role. Fixes `service.go:92-94` and `:120-122`.~~ ✓
+2. ~~**Fix authorization.** Author cannot self-accept or self-reject. A reviewer must be a different user; eventually, a reviewer with the right role. Fixes `service.go:92-94` and `:120-122`.~~ ✓ (claimed; see §14 — re-verify against running service)
 3. ~~**Proposal review UI.** Side-by-side diff of old block → new block, grouped by proposal, with visible accept/reject affordances. Replaces the `alert()` in `proposal-item.tsx:16`.~~ ✓
-4. ~~**Rejection rationale.** Rejecting a proposal requires a reason. Rejected proposals render as "considered and declined" with their rationale — not as deleted or hidden.~~ ✓
+4. ~~**Rejection rationale.** Rejecting a proposal requires a reason. Rejected proposals render as "considered and declined" with their rationale — not as deleted or hidden.~~ ✓ (stored and rendered; API enforcement of non-empty reason still needed)
 
 ### Next — Make it safe for groups
 *These unlock any collaboration with more than two people.*
 
-5. ~~**Workspace / organization / team model.** First migration beyond `users`, `documents`, `proposals`. Documents belong to a workspace; users belong to workspaces with roles.~~ ✓ **Completed 2026-04-15**
-6. ~~**Roles.** Contributor (can propose), reviewer (can accept/reject), admin (can configure governance). Enforced at the service layer, not just the UI.~~ ✓ **Completed 2026-04-15** — roles ship as part of items 5 (same migration and service layer).
-7. **Required reviewers / approval chains.** Configurable per workspace: N reviewers required, specific reviewers required, or designated role required.
-8. **Reasoning layer v1.** Threaded comments attached to proposals (not to raw blocks). This is the first real build of §4's third layer.
-9. **Notifications.** Inbox model: "you have proposals to review," "your proposal was accepted," "a proposal touches content you authored."
+5. ~~**Workspace / organization / team model.** Documents belong to a workspace; users belong to workspaces with roles.~~ ✓ **Completed 2026-04-15**
+6. ~~**Roles.** Contributor (can propose), reviewer (can accept/reject), admin (can configure governance). Enforced at the service layer, not just the UI.~~ ✓ **Completed 2026-04-15** — roles ship as part of items 5.
+7. **Author cannot self-accept/self-reject.** Enforce at the service layer: `acceptProposal` and `rejectProposal` must return an error if the calling user is the proposal's author. Currently unenforced (§14).
+8. **Enforce non-empty rejection reason at the API.** `handleRejectProposal` must validate that `reason` is non-empty before accepting the request. Currently best-effort only.
+9. **Backend conflict enforcement.** At accept time, query open proposals sharing `affected_block_ids` using the existing GIN index. Surface the conflict as a blocking warning or require explicit override. Frontend detection alone is insufficient.
+10. **Required reviewers / approval chains.** Configurable per workspace: N reviewers required, specific reviewers required, or designated role required. Roles exist; enforcement logic does not.
+11. **Reasoning layer v1.** Threaded deliberation attached to proposals (not to raw blocks). Schema: `proposal_comments` table with `proposal_id`, `author_id`, `body`, `created_at`. This is the first real build of §4's third layer and the single highest-leverage addition.
+12. **Notifications.** Inbox model: "you have proposals to review," "your proposal was accepted," "a proposal touches content you authored." Backend events required; the frontend inbox page exists but has no backend event source.
 
 ### Long-term — Transformative
 *These are the bets that make Granth irreplaceable, not just useful.*
 
-10. **Semantic diffs.** Model-assisted diff explanations: "reverses a prior decision," "introduces a new assumption," "narrows scope." Text diffs remain the fallback.
-11. **Conflict detection.** When two open proposals affect overlapping `affected_block_ids`, surface the conflict in both review views and require explicit resolution.
-12. **AI agent API.** A first-class public interface for machine proposers — structured proposal submission with reasoning payloads. Not a retrofit of internal routes.
-13. **Vertical templates.** RFC, legal amendment, construction change order, clinical protocol amendment. Same primitive, different defaults and vocabulary.
-14. **Query layer.** "What does the group currently believe about X?" across all canonical truth in a workspace. Enables the primitive to become the source of institutional memory.
-15. **Integrations.** GitHub (RFC/PR linking), Slack (notification and context), Linear (work tracking). Meet users where they already are.
+13. **Semantic diffs.** Model-assisted diff explanations: "reverses a prior decision," "introduces a new assumption," "narrows scope." Text diffs remain the fallback.
+14. **AI agent API.** A first-class public interface for machine proposers — structured proposal submission with reasoning payloads. Not a retrofit of internal routes. Governed by the same authorization rules as human proposers (§9).
+15. **Vertical templates.** RFC, legal amendment, construction change order, clinical protocol amendment. Same primitive, different defaults and vocabulary.
+16. **Query layer.** "What does the group currently believe about X?" across all canonical truth in a workspace. Enables the primitive to become the source of institutional memory.
+17. **Integrations.** GitHub (RFC/PR linking), Slack (notification and context), Linear (work tracking). Meet users where they already are.
 
 ---
 
@@ -346,51 +373,60 @@ Once that feeling exists, traditional editors feel irresponsible.
 - [ ] Scaling
 
 ### What Exists Today
-- **Backend**: Go + Chi router, PostgreSQL, Redis client (unused), clean package layout (`auth`, `documents`, `blocks`, `proposals`)
-- **Schema**: three migrations — users, documents + blocks (with `order_path` hierarchy and typed block content), proposals + `proposal_block_changes` (with GIN index on `affected_block_ids`)
-- **API**: full CRUD for documents, blocks, and proposals; proposal state transitions (open → accepted/rejected) — though merge is not wired up and authorization is inverted (see §14)
-- **Frontend**: React + TypeScript + Vite; feature-based layout (`documents`, `proposals`, `auth`, `user`); editor page with implicit change tracking and a "Create Proposal" flow
+- **Backend**: Go + Chi router, PostgreSQL, Redis client (unused), clean package layout (`auth`, `documents`, `blocks`, `proposals`, `workspaces`)
+- **Schema**: five migrations — users, documents + blocks (with `order_path` hierarchy and typed block content), proposals + `proposal_block_changes` (with GIN index on `affected_block_ids`), rejection reason, workspaces + workspace members
+- **API**: full CRUD for documents, blocks, proposals, and workspaces; proposal state transitions (open → accepted/rejected) with merge-on-accept; role-enforced workspace membership
+- **Frontend**: React + TypeScript + Vite; feature-based layout (`documents`, `proposals`, `auth`, `user`, `workspaces`); composer page with implicit change tracking; decision-room review page with semantic diff display and conflict detection; motion page (open proposals by workspace); archive page (decided proposals); inbox page (proposals pending review)
 - **Design system**: shared UI kit (Card, Button, Input, Sidebar), light/dark theme, Apple HIG-inspired visual language
 
 ### Recent Decisions
 
+- **Decision (2026-05-26):** Re-opened the "authorization contradiction" gap after code verification.
+  **Reasoning:** §14 claimed author self-accept/self-reject was blocked as of 2026-04-15. Verification against `apps/backend/internal/proposals/service.go` shows `acceptProposal()` never compares the calling user's ID to `proposal.AuthorID`. `rejectProposal()` discards the user ID entirely. The invariant is unenforced. §14 and §15 updated accordingly.
+
+- **Decision (2026-05-26):** Surfaced rejection reason API enforcement gap.
+  **Reasoning:** The rejection reason is stored and rendered correctly in the UI, but `handleRejectProposal` in `routes.go` accepts an empty reason body without error. This violates the "considered and declined" promise (§6). Added to §15 as a discrete actionable item.
+
+- **Decision (2026-05-26):** Clarified conflict detection status: frontend-only, backend unenforced.
+  **Reasoning:** Three frontend pages (inbox, motion, decision-room) detect and display conflicting proposals. However, the backend will accept conflicting proposals independently without warning. The existing GIN index on `affected_block_ids` is the correct enforcement point. Added to §15 as item 9.
+
 - **Decision (2026-04-15):** Shipped workspace / organization / team model (roadmap items 5 + 6).
   **Reasoning:** Items 5 and 6 are inseparable — you can't have workspace members without roles, so both shipped in the same migration and service layer. `workspace_id` on documents is nullable for backward compat; the service layer enforces it for new creates. Roles are `admin` (update workspace, manage members), `reviewer` (accept/reject proposals), `contributor` (propose changes). The workspace creator is atomically inserted as an admin member in the same transaction.
-  **Tradeoffs accepted:** Member lookup by user ID only (no invite-by-email yet); required reviewers / approval chains (item 7) are the natural next step now that roles exist.
+  **Tradeoffs accepted:** Member lookup by user ID only (no invite-by-email yet); required reviewers / approval chains (item 10) are the natural next step now that roles exist.
 
 - **Decision (2026-04-15):** Closed the core loop — shipped all four "Now" roadmap items.
-  **Reasoning:** Merge on accept, fixed authorization (author cannot self-accept/reject), proposal review modal, and rejection rationale were the four hard prerequisites for the primitive to be usable by any real group.
-  **Tradeoffs accepted:** Reviewer model is still user-level only (no roles yet); that moves to the "Next" block.
+  **Reasoning:** Merge on accept, fixed authorization (claimed), proposal review modal, and rejection rationale were the four hard prerequisites for the primitive to be usable by any real group.
+  **Tradeoffs accepted:** Author enforcement requires re-verification (see 2026-05-26 entry above).
 
 - **Decision (2026-04-15):** Reframe Granth from "document editor with first-class change" to "operating system for shared truth."
   **Reasoning:** The document framing forces competition with Google Docs/Notion on their strengths and undersells the underlying primitive. The primitive itself is universal — any group that evolves shared claims has the same needs — and the horizontal framing unlocks verticals (open source, legal, compliance, clinical, quant, AI annotation, AI agents) the document framing cannot reach.
-  **Tradeoffs accepted:** Broader scope creates a harder positioning challenge and risks "for everyone means for no one." Mitigation: the near-term roadmap (§15) is still concrete and code-grounded, and the vision explicitly calls out a beachhead path (open-source RFCs is the leading candidate because those users already think in proposals).
+  **Tradeoffs accepted:** Broader scope creates a harder positioning challenge and risks "for everyone means for no one." Mitigation: the near-term roadmap (§15) is still concrete and code-grounded.
 
-- **Decision:** Implemented proposal-first editing workflow
-  **Reasoning:** Reinforces the "proposal over edit" mental model; makes change safe by default
-  **Tradeoffs accepted:** Unfamiliar UI flow vs. traditional editing
+- **Decision:** Implemented proposal-first editing workflow.
+  **Reasoning:** Reinforces the "proposal over edit" mental model; makes change safe by default.
+  **Tradeoffs accepted:** Unfamiliar UI flow vs. traditional editing.
 
-- **Decision:** Adopted Apple UI/UX philosophy throughout
-  **Reasoning:** Elegant, low-friction surface reduces the cognitive overhead of the proposal model
-  **Tradeoffs accepted:** Design consistency over platform-specific conventions
+- **Decision:** Adopted Apple UI/UX philosophy throughout.
+  **Reasoning:** Elegant, low-friction surface reduces the cognitive overhead of the proposal model.
+  **Tradeoffs accepted:** Design consistency over platform-specific conventions.
 
-- **Decision:** Split features into `documents/` and `proposals/` with shared components
-  **Reasoning:** Better organization, reuse, and maintainability as surfaces multiply
-  **Tradeoffs accepted:** Additional abstraction layers vs. a monolithic structure
+- **Decision:** Split features into `documents/` and `proposals/` with shared components.
+  **Reasoning:** Better organization, reuse, and maintainability as surfaces multiply.
+  **Tradeoffs accepted:** Additional abstraction layers vs. a monolithic structure.
 
-- **Decision:** Block-based content storage over document-level content
-  **Reasoning:** Enables granular change tracking and, eventually, semantic diffs
-  **Tradeoffs accepted:** Query complexity vs. simple text storage
+- **Decision:** Block-based content storage over document-level content.
+  **Reasoning:** Enables granular change tracking and, eventually, semantic diffs.
+  **Tradeoffs accepted:** Query complexity vs. simple text storage.
 
 ### Drift Check
 Tempting but misaligned ideas:
-- Real-time collaborative editing (Google Docs envy)
+- Real-time collaborative editing (Google Docs envy — optimizes for simultaneity, not deliberation)
 - AI-powered content generation (the writer role §9 explicitly rejects)
 - File management features (containers, not primitive)
 - A polished wiki / knowledge base layer on top, before the core loop works
 
 Why they are tempting: each is familiar, each looks like an easy win, each has precedent in existing tools.
-Why they are out of scope: each competes with the core "shared truth as first-class primitive" framing and dilutes focus away from §15's "Now" list. Any of them would feel like progress while being, at best, parallel motion.
+Why they are out of scope: each competes with the core "shared truth as first-class primitive" framing and dilutes focus away from §15's actionable items. Any of them would feel like progress while being, at best, parallel motion.
 
 ---
 
