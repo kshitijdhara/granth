@@ -187,6 +187,16 @@ func countAdmins(workspaceID string, ctx context.Context) (int, error) {
 	return count, nil
 }
 
+// FetchMember is the exported version of fetchMember for cross-package use.
+func FetchMember(workspaceID, userID string, ctx context.Context) (*WorkspaceMember, error) {
+	return fetchMember(workspaceID, userID, ctx)
+}
+
+// FetchMembersForWorkspace is the exported version of fetchMembersForWorkspace for cross-package use.
+func FetchMembersForWorkspace(workspaceID string, ctx context.Context) ([]*WorkspaceMember, error) {
+	return fetchMembersForWorkspace(workspaceID, ctx)
+}
+
 // CountMembers returns the total number of members in a workspace.
 // Used by the proposals service to determine whether the author-block applies.
 // The block is only enforced in workspaces with more than one member.

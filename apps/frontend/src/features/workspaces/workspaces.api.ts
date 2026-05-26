@@ -31,4 +31,22 @@ export const workspacesApi = {
 	// Documents scoped to a workspace
 	getDocuments: (workspaceId: string) =>
 		http.get<Document[]>(`/workspaces/${workspaceId}/documents`),
+
+	// Governance policy
+	getGovernance: (workspaceId: string) =>
+		http.get<GovernanceConfig>(`/governance/workspaces/${workspaceId}`),
+
+	setGovernance: (workspaceId: string, config: Partial<GovernanceConfig>) =>
+		http.put<GovernanceConfig>(`/governance/workspaces/${workspaceId}`, config),
 };
+
+export interface GovernanceConfig {
+	id?: string;
+	workspace_id: string;
+	min_reviewers: number;
+	require_role: string | null;
+	allow_author_review: boolean;
+	configured?: boolean;
+	created_at?: string;
+	updated_at?: string;
+}

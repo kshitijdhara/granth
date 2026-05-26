@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"granth/internal/config"
 	"granth/internal/documents"
+	"granth/internal/notifications"
 	"granth/internal/utils"
 	"granth/internal/workspaces"
 	"strings"
@@ -34,6 +35,20 @@ func createProposal(documentID string, title string, intent string, scope string
 	err := CreateProposal(proposal, ctx)
 	if err != nil {
 		return "", fmt.Errorf("error creating proposal: %w", err)
+	}
+
+	// Phase 3.1 — notify workspace reviewers + admins of the new proposal.
+	doc, docErr := documents.FetchDocumentByID(documentID, ctx)
+	if docErr == nil && doc.WorkspaceID != nil {
+		members, _ := workspaces.FetchMembersForWorkspace(*doc.WorkspaceID, ctx)
+		var recipients []string
+		for _, m := range members {
+			if m.UserID != userID && (m.Role == string(workspaces.RoleAdmin) || m.Role == string(workspaces.RoleReviewer)) {
+				recipients = append(recipients, m.UserID)
+			}
+		}
+		notifications.EmitToMany(notifications.KindProposalSubmitted, recipients,
+			map[string]string{"proposal_id": proposal.ID, "title": title})
 	}
 
 	return proposal.ID, nil
@@ -84,17 +99,17 @@ func updateProposal(proposalID string, title string, intent string, scope string
 	return nil
 }
 
-// checkAuthorBlock returns an error if the caller is the proposal author
-// and the document's workspace has more than one member.
+// checkAuthorBlock enforces the two acceptance rules for a given caller:
 //
-// The rule (NORTHSTAR §6):
-//   - Single-member workspace → author may self-accept/self-reject (they are the only reviewer)
-//   - Multi-member workspace  → author is blocked; a different user must decide
-//   - No workspace (legacy)   → no restriction (backward compat)
+//  1. Author block (NORTHSTAR §6): the proposal author cannot accept/reject
+//     their own proposal in a multi-member workspace. In a solo workspace the
+//     author IS the only reviewer, so the block does not apply.
+//
+//  2. Role block (Phase 3.2): a workspace member with the "contributor" role
+//     can never accept or reject a proposal, regardless of authorship.
+//
+// No workspace (legacy docs): no restrictions apply (backward compat).
 func checkAuthorBlock(proposal *Proposal, userID string, ctx context.Context) error {
-	if proposal.AuthorID != userID {
-		return nil // not the author — no restriction applies
-	}
 	doc, err := documents.FetchDocumentByID(proposal.DocumentID, ctx)
 	if err != nil {
 		return fmt.Errorf("error fetching document: %w", err)
@@ -102,14 +117,30 @@ func checkAuthorBlock(proposal *Proposal, userID string, ctx context.Context) er
 	if doc.WorkspaceID == nil {
 		return nil // legacy doc with no workspace — no restriction
 	}
+
 	memberCount, err := workspaces.CountMembers(*doc.WorkspaceID, ctx)
 	if err != nil {
 		return fmt.Errorf("error checking workspace membership: %w", err)
 	}
-	if memberCount > 1 {
+
+	// Author block: only applies in multi-member workspaces.
+	if memberCount > 1 && proposal.AuthorID == userID {
 		return fmt.Errorf("author cannot accept or reject their own proposal in a shared workspace")
 	}
-	return nil // solo workspace — author is the only reviewer
+
+	// Role block: contributors can never accept or reject, regardless of authorship.
+	member, err := workspaces.FetchMember(*doc.WorkspaceID, userID, ctx)
+	if err != nil {
+		return fmt.Errorf("error fetching workspace membership: %w", err)
+	}
+	if member == nil {
+		return fmt.Errorf("user is not a member of this workspace")
+	}
+	if member.Role == string(workspaces.RoleContributor) {
+		return fmt.Errorf("contributors cannot accept or reject proposals; reviewer or admin role required")
+	}
+
+	return nil
 }
 
 func acceptProposal(proposalID string, ctx context.Context) error {
@@ -123,7 +154,7 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 		return fmt.Errorf("error fetching proposal: %w", err)
 	}
 
-	// Phase 1.1 — membership-aware author block
+	// Phase 1.1 + 3.2 — membership-aware author block + role enforcement
 	if err := checkAuthorBlock(proposal, userID, ctx); err != nil {
 		return err
 	}
@@ -190,7 +221,15 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 		return fmt.Errorf("error updating proposal state: %w", err)
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	// Phase 3.1 — notify proposal author that their proposal was accepted.
+	notifications.Emit(notifications.KindProposalAccepted, proposal.AuthorID,
+		map[string]string{"proposal_id": proposalID, "title": proposal.Title})
+
+	return nil
 }
 
 func rejectProposal(proposalID string, reason string, ctx context.Context) error {
@@ -204,7 +243,7 @@ func rejectProposal(proposalID string, reason string, ctx context.Context) error
 		return fmt.Errorf("error fetching proposal: %w", err)
 	}
 
-	// Phase 1.1 — membership-aware author block
+	// Phase 1.1 + 3.2 — membership-aware author block + role enforcement
 	if err := checkAuthorBlock(proposal, userID, ctx); err != nil {
 		return err
 	}
@@ -216,6 +255,10 @@ func rejectProposal(proposalID string, reason string, ctx context.Context) error
 	if err = UpdateProposal(proposal, ctx); err != nil {
 		return fmt.Errorf("error rejecting proposal: %w", err)
 	}
+
+	// Phase 3.1 — notify proposal author that their proposal was rejected.
+	notifications.Emit(notifications.KindProposalRejected, proposal.AuthorID,
+		map[string]string{"proposal_id": proposalID, "title": proposal.Title, "reason": reason})
 
 	return nil
 }
@@ -251,4 +294,18 @@ func getBlockChangesForProposal(proposalID string, ctx context.Context) ([]*Prop
 		return nil, fmt.Errorf("error fetching block changes: %w", err)
 	}
 	return changes, nil
+}
+
+// ── Exported wrappers for cross-package use (governance) ──────────────────────
+
+// AcceptProposal is the exported wrapper around acceptProposal.
+// Used by the governance package to trigger auto-accept when approval threshold is met.
+func AcceptProposal(proposalID string, ctx context.Context) error {
+	return acceptProposal(proposalID, ctx)
+}
+
+// GetProposal is the exported service-level wrapper around getProposal.
+// Used by the governance package.
+func GetProposal(proposalID string, ctx context.Context) (*Proposal, error) {
+	return getProposal(proposalID, ctx)
 }

@@ -22,6 +22,7 @@ func AuthRouter() http.Handler {
 	r.Post("/refreshToken", handleRefreshToken)
 	r.With(utils.AuthMiddleware).Get("/profile", handleGetProfile)
 	r.With(utils.AuthMiddleware).Put("/profile", handleUpdateProfile)
+	r.With(utils.AuthMiddleware).Get("/users/{id}", handleGetUserByID)
 
 	return r
 }
@@ -176,6 +177,20 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"username": req.Username})
+}
+
+func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	username, _, _, err := GetUserByID(id)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"id":       id,
+		"username": username,
+	})
 }
 
 func handleRefreshToken(w http.ResponseWriter, r *http.Request) {

@@ -12,9 +12,10 @@ import {
 	XMarkIcon,
 } from "@heroicons/react/24/solid";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth.context";
+import { notificationsApi } from "@/features/notifications/notifications.api";
 import WorkspaceSelector from "@/features/workspaces/workspace-selector";
 import { useTheme } from "@/theme.context";
 import "./sidebar.scss";
@@ -38,6 +39,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 	const { isAuthenticated, logout } = useAuth();
 	const { theme, toggleTheme } = useTheme();
 	const [isCollapsing, setIsCollapsing] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
+
+	// Poll unread notification count every 60s when authenticated.
+	useEffect(() => {
+		if (!isAuthenticated) return;
+		const fetchCount = () => {
+			notificationsApi.count().then((r) => setUnreadCount(r.unread)).catch(() => {});
+		};
+		fetchCount();
+		const timer = setInterval(fetchCount, 60_000);
+		return () => clearInterval(timer);
+	}, [isAuthenticated]);
 
 	const isAuthRoute = location.pathname === "/login" || location.pathname === "/register";
 	if (isAuthRoute) return null;
@@ -98,6 +111,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 						>
 							<Icon className="sidebar__icon" />
 							{isOpen && !isCollapsing && <span className="sidebar__nav-label">{label}</span>}
+							{key === "inbox" && unreadCount > 0 && (
+								<span className="sidebar__badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+							)}
 						</button>
 					))}
 				</nav>

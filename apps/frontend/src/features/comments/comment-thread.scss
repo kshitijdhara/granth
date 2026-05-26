@@ -1,0 +1,201 @@
+.comment-thread {
+  margin-top: var(--spacing-6, 24px);
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--spacing-6, 24px);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2, 8px);
+    margin-bottom: var(--spacing-4, 16px);
+  }
+
+  &__title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  &__count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-full);
+    padding: 1px 8px;
+  }
+
+  &__sealed-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2, 8px);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+    margin-bottom: var(--spacing-4, 16px);
+  }
+
+  &__sealed-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &__empty {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    text-align: center;
+    padding: var(--spacing-6, 24px) 0;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3, 12px);
+    margin-bottom: var(--spacing-4, 16px);
+  }
+
+  // ── Individual comment ────────────────────────────────────────────────
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1, 4px);
+
+    &--reply {
+      margin-left: var(--spacing-6, 24px);
+      padding-left: var(--spacing-4, 16px);
+      border-left: 2px solid var(--color-border-light);
+    }
+  }
+
+  &__item-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-2, 8px);
+  }
+
+  &__item-author {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  &__item-time {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  &__item-edited {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    font-style: italic;
+  }
+
+  &__item-body {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__item-actions {
+    display: flex;
+    gap: var(--spacing-3, 12px);
+    margin-top: var(--spacing-1, 4px);
+  }
+
+  &__action-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    font-family: inherit;
+
+    &:hover {
+      color: var(--color-accent-primary);
+    }
+
+    &--delete:hover {
+      color: var(--color-error);
+    }
+  }
+
+  // ── Inline edit ───────────────────────────────────────────────────────
+
+  &__edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2, 8px);
+    margin-top: var(--spacing-1, 4px);
+  }
+
+  &__edit-actions {
+    display: flex;
+    gap: var(--spacing-2, 8px);
+  }
+
+  // ── Reply form ────────────────────────────────────────────────────────
+
+  &__reply-form {
+    margin-top: var(--spacing-2, 8px);
+    margin-left: var(--spacing-6, 24px);
+    padding-left: var(--spacing-4, 16px);
+    border-left: 2px solid var(--color-accent-light);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2, 8px);
+  }
+
+  &__reply-actions {
+    display: flex;
+    gap: var(--spacing-2, 8px);
+  }
+
+  // ── Top-level compose ─────────────────────────────────────────────────
+
+  &__compose {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2, 8px);
+    margin-top: var(--spacing-2, 8px);
+  }
+
+  &__compose-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  // ── Shared textarea ───────────────────────────────────────────────────
+
+  &__textarea {
+    width: 100%;
+    min-height: 72px;
+    resize: vertical;
+    padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-surface-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent-primary);
+    }
+
+    &::placeholder {
+      color: var(--color-text-tertiary);
+    }
+  }
+}

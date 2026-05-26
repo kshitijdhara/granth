@@ -14,6 +14,20 @@ export interface Proposal {
 	updated_at: string;
 }
 
+export interface Approval {
+	id: string;
+	proposal_id: string;
+	reviewer_id: string;
+	approved_at: string;
+}
+
+export interface ApprovalStatus {
+	approvals: Approval[];
+	approval_count: number;
+	required_count: number;
+	threshold_reached: boolean;
+}
+
 export interface ProposalBlockChange {
 	id: string;
 	proposal_id: string;
@@ -66,4 +80,8 @@ export const proposalsApi = {
 			content: string;
 		}
 	) => http.post<void>(`/proposals/${proposalId}/changes`, data),
+
+	// Governance — approval chain
+	approve: (id: string) => http.post<ApprovalStatus>(`/governance/proposals/${id}/approve`),
+	getApprovals: (id: string) => http.get<ApprovalStatus>(`/governance/proposals/${id}/approvals`),
 };
