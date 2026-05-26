@@ -6,6 +6,8 @@ import (
 	"granth/internal/auth"
 	"granth/internal/comments"
 	"granth/internal/documents"
+	"granth/internal/governance"
+	"granth/internal/notifications"
 	"granth/internal/proposals"
 	"granth/internal/utils"
 	"granth/internal/workspaces"
@@ -42,6 +44,8 @@ func BaseRouter() http.Handler {
 	r.With(utils.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/proposals", proposals.ProposalsRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/comments", comments.CommentsRouter())
+	r.With(utils.AuthMiddleware).Mount("/api/notifications", notifications.NotificationsRouter())
+	r.With(utils.AuthMiddleware).Mount("/api/governance", governance.GovernanceRouter())
 
 	return r
 }

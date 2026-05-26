@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"granth/internal/notifications"
 	"granth/internal/proposals"
 	"granth/internal/utils"
 )
@@ -69,6 +70,29 @@ func createComment(proposalID string, parentID *string, body string, ctx context
 	if err := CreateComment(c, ctx); err != nil {
 		return nil, fmt.Errorf("error creating comment: %w", err)
 	}
+
+	// Phase 3.1 — notify the proposal author and prior unique commenters.
+	go func() {
+		proposal, err := proposals.GetProposalByID(proposalID, context.Background())
+		if err != nil {
+			return
+		}
+		existing, _ := FetchCommentsByProposal(proposalID, context.Background())
+		seen := map[string]bool{userID: true}
+		var recipients []string
+		if proposal.AuthorID != userID {
+			recipients = append(recipients, proposal.AuthorID)
+			seen[proposal.AuthorID] = true
+		}
+		for _, prior := range existing {
+			if !seen[prior.AuthorID] {
+				recipients = append(recipients, prior.AuthorID)
+				seen[prior.AuthorID] = true
+			}
+		}
+		notifications.EmitToMany(notifications.KindCommentPosted, recipients,
+			map[string]string{"proposal_id": proposalID, "comment_id": c.ID})
+	}()
 
 	return c, nil
 }
