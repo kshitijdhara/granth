@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "bun run scripts/dev.ts",
 		"build": "tsc --noEmit && bun run scripts/build.ts",
-		"preview": "bun run scripts/preview.ts",
+		"preview": "bun run scripts/build.ts --preview",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome lint ./src",
