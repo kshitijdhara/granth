@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"granth/internal/auth"
+	"granth/internal/comments"
 	"granth/internal/documents"
 	"granth/internal/proposals"
 	"granth/internal/utils"
@@ -40,6 +41,7 @@ func BaseRouter() http.Handler {
 	r.With(utils.AuthMiddleware).Mount("/api/workspaces", workspaces.WorkspacesRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
 	r.With(utils.AuthMiddleware).Mount("/api/proposals", proposals.ProposalsRouter())
+	r.With(utils.AuthMiddleware).Mount("/api/comments", comments.CommentsRouter())
 
 	return r
 }
