@@ -11,6 +11,7 @@ import Button from "@/ui/button";
 import Input from "@/ui/input";
 import { useWorkspace } from "./workspace.context";
 import type { WorkspaceMember, WorkspaceRole } from "./types";
+import type { GovernanceConfig } from "./workspaces.api";
 import { workspacesApi } from "./workspaces.api";
 import "./workspace-settings.page.scss";
 
@@ -49,6 +50,13 @@ const WorkspaceSettingsPage: React.FC = () => {
 	const [deleting, setDeleting] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
+	// Governance
+	const [governance, setGovernance] = useState<GovernanceConfig | null>(null);
+	const [govMinReviewers, setGovMinReviewers] = useState(1);
+	const [govAllowAuthorReview, setGovAllowAuthorReview] = useState(false);
+	const [savingGov, setSavingGov] = useState(false);
+	const [govError, setGovError] = useState<string | null>(null);
+
 	useEffect(() => {
 		if (workspace) {
 			setName(workspace.name);
@@ -66,7 +74,35 @@ const WorkspaceSettingsPage: React.FC = () => {
 			.finally(() => setLoadingMembers(false));
 	}, [id]);
 
+	useEffect(() => {
+		if (!id) return;
+		workspacesApi.getGovernance(id).then((g) => {
+			setGovernance(g);
+			setGovMinReviewers(g.min_reviewers ?? 1);
+			setGovAllowAuthorReview(g.allow_author_review ?? false);
+		}).catch(() => {});
+	}, [id]);
+
 	const isAdmin = members.some((m) => m.user_id === userId && m.role === "admin");
+
+	const handleSaveGovernance = async () => {
+		if (!id || savingGov) return;
+		setSavingGov(true);
+		setGovError(null);
+		try {
+			const updated = await workspacesApi.setGovernance(id, {
+				min_reviewers: govMinReviewers,
+				allow_author_review: govAllowAuthorReview,
+				workspace_id: id,
+				require_role: governance?.require_role ?? null,
+			});
+			setGovernance(updated);
+		} catch (err) {
+			setGovError(err instanceof Error ? err.message : "Failed to save policy");
+		} finally {
+			setSavingGov(false);
+		}
+	};
 	const isOwner = workspace?.owner_id === userId;
 
 	const handleSave = async () => {
@@ -269,6 +305,53 @@ const WorkspaceSettingsPage: React.FC = () => {
 					</ul>
 				)}
 			</section>
+
+			{/* Review Policy — admin only */}
+			{isAdmin && (
+				<section className="ws-settings__section">
+					<h2 className="ws-settings__section-title">Review policy</h2>
+					<p className="ws-settings__section-desc">
+						Configure how many approvals a proposal requires before it is adopted.
+					</p>
+					<div className="ws-settings__fields">
+						<div className="ws-settings__field-row">
+							<label className="ws-settings__role-label" htmlFor="min-reviewers">
+								Minimum approvals required
+							</label>
+							<input
+								id="min-reviewers"
+								type="number"
+								className="ws-settings__role-select"
+								min={1}
+								max={10}
+								value={govMinReviewers}
+								onChange={(e) => setGovMinReviewers(Math.max(1, Number(e.target.value)))}
+							/>
+						</div>
+						<div className="ws-settings__field-row">
+							<label className="ws-settings__role-label" htmlFor="allow-author-review">
+								Allow authors to approve their own proposals
+							</label>
+							<input
+								id="allow-author-review"
+								type="checkbox"
+								checked={govAllowAuthorReview}
+								onChange={(e) => setGovAllowAuthorReview(e.target.checked)}
+							/>
+						</div>
+					</div>
+					{govError && <p className="ws-settings__error">{govError}</p>}
+					<Button
+						variant="primary"
+						size="medium"
+						onClick={handleSaveGovernance}
+						isDisabled={savingGov}
+						isFullWidth={false}
+					>
+						{savingGov ? "Saving…" : "Save policy"}
+					</Button>
+				</section>
+			)}
 
 			{/* Danger zone — owner only */}
 			{isOwner && (

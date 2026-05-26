@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth.context";
 import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
+import type { Notification } from "@/features/notifications/notifications.api";
+import { notificationLabel, notificationsApi } from "@/features/notifications/notifications.api";
 import type { Proposal } from "@/features/proposals/proposals.api";
 import { proposalsApi } from "@/features/proposals/proposals.api";
 import { useWorkspace } from "@/features/workspaces/workspace.context";
@@ -51,6 +53,8 @@ const InboxPage: React.FC = () => {
 	const { current: currentWorkspace } = useWorkspace();
 	const [loading, setLoading] = useState(true);
 	const [allProposals, setAllProposals] = useState<ProposalWithDoc[]>([]);
+	const [notifications, setNotifications] = useState<Notification[]>([]);
+	const [markingAllRead, setMarkingAllRead] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -110,6 +114,21 @@ const InboxPage: React.FC = () => {
 			cancelled = true;
 		};
 	}, [currentWorkspace]);
+
+	// Fetch notifications on mount.
+	useEffect(() => {
+		notificationsApi.list().then(setNotifications).catch(() => {});
+	}, []);
+
+	const handleMarkAllRead = async () => {
+		setMarkingAllRead(true);
+		try {
+			await notificationsApi.markAllRead();
+			setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+		} finally {
+			setMarkingAllRead(false);
+		}
+	};
 
 	const { needsDecision, mineInReview, recentlyDecided } = useMemo(() => {
 		const open = allProposals.filter((p) => p.proposal.state === "open");
@@ -171,6 +190,44 @@ const InboxPage: React.FC = () => {
 					</div>
 				) : (
 					<div className="inbox__sections">
+						{/* Notifications feed */}
+						{notifications.length > 0 && (
+							<section className="inbox__section inbox__section--notifications">
+								<div className="inbox__section-header">
+									<h2 className="inbox__section-heading inbox__section-heading--muted">
+										Recent activity
+									</h2>
+									{notifications.some((n) => !n.read) && (
+										<button
+											type="button"
+											className="inbox__mark-read-btn"
+											onClick={handleMarkAllRead}
+											disabled={markingAllRead}
+										>
+											{markingAllRead ? "Marking…" : "Mark all read"}
+										</button>
+									)}
+								</div>
+								<ul className="inbox__list inbox__list--notifications">
+									{notifications.slice(0, 8).map((n) => (
+										<li key={n.id}>
+											<button
+												type="button"
+												className={`inbox__notification ${n.read ? "inbox__notification--read" : "inbox__notification--unread"}`}
+												onClick={() => {
+													if (n.payload.proposal_id) navigate(`/proposals/${n.payload.proposal_id}`);
+												}}
+											>
+												{!n.read && <span className="inbox__notification-dot" aria-hidden />}
+												<span className="inbox__notification-label">{notificationLabel(n)}</span>
+												<span className="inbox__notification-time">{relativeTime(n.created_at)}</span>
+											</button>
+										</li>
+									))}
+								</ul>
+							</section>
+						)}
+
 						{needsDecision.length > 0 && (
 							<section className="inbox__section">
 								<h2 className="inbox__section-heading">Needs your decision</h2>

@@ -17,6 +17,7 @@ import type { WorkspaceMember } from "@/features/workspaces/types";
 import { useWorkspace } from "@/features/workspaces/workspace.context";
 import { workspacesApi } from "@/features/workspaces/workspaces.api";
 import CommentThread from "@/features/comments/comment-thread";
+import type { ApprovalStatus } from "@/features/proposals/proposals.api";
 import Button from "@/ui/button";
 import "./decision-room.page.scss";
 
@@ -104,6 +105,9 @@ const DecisionRoomPage: React.FC = () => {
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	// Approval chain state
+	const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus | null>(null);
+
 	useEffect(() => {
 		if (!proposalId) return;
 		setLoading(true);
@@ -117,15 +121,17 @@ const DecisionRoomPage: React.FC = () => {
 					? workspacesApi.getMembers(currentWorkspace.id).catch(() => [] as WorkspaceMember[])
 					: Promise.resolve([] as WorkspaceMember[]);
 
-				const [doc, blockChanges, allProposals, fetchedMembers] = await Promise.all([
+				const [doc, blockChanges, allProposals, fetchedMembers, approvals] = await Promise.all([
 					documentsApi.get(p.document_id),
 					proposalsApi.getBlockChanges(proposalId),
 					proposalsApi.getForDocument(p.document_id),
 					membersFetch,
+					proposalsApi.getApprovals(proposalId).catch(() => null),
 				]);
 				setDocument(doc);
 				setChanges(blockChanges);
 				setMembers(fetchedMembers);
+				if (approvals) setApprovalStatus(approvals);
 
 				// Detect conflicts with other open proposals
 				const openOthers = allProposals.filter((op) => op.id !== proposalId && op.state === "open");
@@ -155,6 +161,23 @@ const DecisionRoomPage: React.FC = () => {
 			setActing(null);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to accept proposal");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleApprove = async () => {
+		if (!proposalId) return;
+		setSubmitting(true);
+		setError(null);
+		try {
+			const status = await proposalsApi.approve(proposalId);
+			setApprovalStatus(status);
+			if (status.threshold_reached) {
+				setProposal((prev) => (prev ? { ...prev, state: "accepted" } : prev));
+			}
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Failed to approve proposal");
 		} finally {
 			setSubmitting(false);
 		}
@@ -385,14 +408,51 @@ const DecisionRoomPage: React.FC = () => {
 
 									{acting === null && (
 										<div className="decision-room__actions">
-											<button
-												type="button"
-												className="decision-room__action-btn decision-room__action-btn--accept"
-												onClick={() => setActing("accept")}
-											>
-												<CheckCircleIcon className="decision-room__action-icon" />
-												Accept
-											</button>
+											{/* Approval progress */}
+											{approvalStatus && (
+												<div className="decision-room__approval-progress">
+													<span className="decision-room__approval-count">
+														{approvalStatus.approval_count} / {approvalStatus.required_count} approval{approvalStatus.required_count !== 1 ? "s" : ""}
+													</span>
+													<div className="decision-room__approval-bar">
+														<div
+															className="decision-room__approval-bar-fill"
+															style={{
+																width: `${Math.min(100, (approvalStatus.approval_count / approvalStatus.required_count) * 100)}%`,
+															}}
+														/>
+													</div>
+												</div>
+											)}
+
+											{/* Approve button — shown when caller hasn't approved yet */}
+											{approvalStatus && !approvalStatus.approvals.some((a) => a.reviewer_id === userId) ? (
+												<button
+													type="button"
+													className="decision-room__action-btn decision-room__action-btn--accept"
+													onClick={handleApprove}
+													disabled={submitting}
+												>
+													<CheckCircleIcon className="decision-room__action-icon" />
+													{submitting ? "Approving…" : approvalStatus.required_count === 1 ? "Accept" : "Approve"}
+												</button>
+											) : approvalStatus && approvalStatus.approvals.some((a) => a.reviewer_id === userId) ? (
+												<div className="decision-room__approved-note">
+													<CheckCircleIcon className="decision-room__approved-icon" />
+													You've approved this proposal
+												</div>
+											) : (
+												/* Fallback: no approval chain info — use legacy single-accept flow */
+												<button
+													type="button"
+													className="decision-room__action-btn decision-room__action-btn--accept"
+													onClick={() => setActing("accept")}
+												>
+													<CheckCircleIcon className="decision-room__action-icon" />
+													Accept
+												</button>
+											)}
+
 											<button
 												type="button"
 												className="decision-room__action-btn decision-room__action-btn--decline"
