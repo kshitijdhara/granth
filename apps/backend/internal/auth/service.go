@@ -10,10 +10,10 @@ import (
 )
 
 func registerUser(username, email, passwordHash string) (AuthResponse, error) {
-	_, existingUsername, _, err := GetUserByEmail(email)
+	user, err := GetUserByEmail(email)
 	if err == nil {
 		// email already exists
-		if existingUsername == username {
+		if user.Username == username {
 			return AuthResponse{}, fmt.Errorf("username already in use")
 		}
 		return AuthResponse{}, fmt.Errorf("email already in use")
@@ -51,26 +51,26 @@ func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 }
 
 func login(email, password string) (AuthResponse, error) {
-	id, username, passwordHash, err := GetUserByEmail(email)
+	user, err := GetUserByEmail(email)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("Error during login: %w", err)
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("Invalid Password")
 	}
-	accessToken, err := utils.CreateUserToken(id)
+	accessToken, err := utils.CreateUserToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(id)
+	refreshToken, err := utils.CreateRefreshToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}
 	return AuthResponse{
-		UserID:       id,
-		Username:     username,
+		UserID:       user.ID,
+		Username:     user.Username,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil

@@ -18,28 +18,28 @@ func CreateUser(username, email, passwordHash string) (string, string, error) {
 	return id, returnedUsername, nil
 }
 
-func GetUserByEmail(email string) (string, string, string, error) {
-	var id, username, passwordHash string
-	err := config.PostgresDB.QueryRow("SELECT id, username, password_hash FROM users WHERE email = $1", email).Scan(&id, &username, &passwordHash)
+func GetUserByEmail(email string) (*User, error) {
+	var user User
+	err := config.PostgresDB.QueryRow("SELECT id, username, email, password_hash, created_at, updated_at FROM users WHERE email = $1", email).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
 	if err == sql.ErrNoRows {
-		return "", "", "", sql.ErrNoRows
+		return nil, sql.ErrNoRows
 	}
 	if err != nil {
-		return "", "", "", fmt.Errorf("getUserByEmail query: %w", err)
+		return nil, fmt.Errorf("getUserByEmail query: %w", err)
 	}
-	return id, username, passwordHash, nil
+	return &user, nil
 }
 
-func GetUserByID(id string) (string, string, string, error) {
-	var username, email, passwordHash string
-	err := config.PostgresDB.QueryRow("SELECT username, email, password_hash FROM users WHERE id = $1", id).Scan(&username, &email, &passwordHash)
+func GetUserByID(id string) (*User, error) {
+	var user User
+	err := config.PostgresDB.QueryRow("SELECT id, username, email, password_hash, created_at, updated_at FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
 	if err == sql.ErrNoRows {
-		return "", "", "", sql.ErrNoRows
+		return nil, sql.ErrNoRows
 	}
 	if err != nil {
-		return "", "", "", fmt.Errorf("getUserByID query: %w", err)
+		return nil, fmt.Errorf("getUserByID query: %w", err)
 	}
-	return username, email, passwordHash, nil
+	return &user, nil
 }
 
 func UpdateUserPassword(id, newPasswordHash string) error {
