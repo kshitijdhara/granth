@@ -41,16 +41,19 @@ interface LocalBlock {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const semanticLabel = (changes: BlockChange[]): string[] => {
+const semanticLabel = (changes: BlockChange[], newDocTitle?: string, currentDocTitle?: string): string[] => {
 	const labels: string[] = [];
+	if (newDocTitle && newDocTitle !== currentDocTitle) {
+		labels.push(`Renames document: "${currentDocTitle || "Untitled"}" → "${newDocTitle}"`);
+	}
 	const creates = changes.filter((c) => c.action === "create").length;
 	const updates = changes.filter((c) => c.action === "update").length;
 	const deletes = changes.filter((c) => c.action === "delete").length;
 
-	if (creates > 0) labels.push(`Adds ${creates} new ${creates === 1 ? "claim" : "claims"}`);
+	if (creates > 0) labels.push(`Adds ${creates} ${creates === 1 ? "paragraph" : "paragraphs"}`);
 	if (updates > 0)
-		labels.push(`Modifies ${updates} existing ${updates === 1 ? "claim" : "claims"}`);
-	if (deletes > 0) labels.push(`Removes ${deletes} ${deletes === 1 ? "claim" : "claims"}`);
+		labels.push(`Edits ${updates} ${updates === 1 ? "paragraph" : "paragraphs"}`);
+	if (deletes > 0) labels.push(`Removes ${deletes} ${deletes === 1 ? "paragraph" : "paragraphs"}`);
 	return labels;
 };
 
@@ -137,7 +140,7 @@ const BlockEditor: React.FC<BlockEditorProps> = ({
 						? "Heading…"
 						: block.blockType === "code"
 							? "Code…"
-							: "Claim or statement…"
+							: "Write something…"
 				}
 				onChange={(e) => {
 					onContentChange(block.localId, e.target.value);
@@ -173,6 +176,10 @@ const ComposerPage: React.FC = () => {
 	// Reasoning pane state
 	const [proposalTitle, setProposalTitle] = useState("");
 	const [reasoning, setReasoning] = useState("");
+
+	// Document rename state
+	const [renamingDoc, setRenamingDoc] = useState(false);
+	const [newDocTitle, setNewDocTitle] = useState("");
 
 	// Focus management
 	const focusRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
@@ -327,13 +334,16 @@ const ComposerPage: React.FC = () => {
 		}
 	}
 
-	const semanticLabels = semanticLabel(pendingChanges);
+	const trimmedNewDocTitle = newDocTitle.trim();
+	const docTitleChanged = renamingDoc && trimmedNewDocTitle !== "" && trimmedNewDocTitle !== (document?.title ?? "");
+	const semanticLabels = semanticLabel(pendingChanges, docTitleChanged ? trimmedNewDocTitle : undefined, document?.title);
 	const affectedBlockIds = pendingChanges
 		.filter((c) => c.blockId !== null)
 		.map((c) => c.blockId as string);
 
 	const handleSend = async () => {
-		if (!documentId || pendingChanges.length === 0 || !reasoning.trim()) return;
+		const hasChanges = pendingChanges.length > 0 || docTitleChanged;
+		if (!documentId || !hasChanges || !reasoning.trim()) return;
 		setSubmitting(true);
 		try {
 			const inferredTitle =
@@ -342,6 +352,7 @@ const ComposerPage: React.FC = () => {
 				"Untitled proposal";
 			const res = await proposalsApi.create(documentId, {
 				title: inferredTitle,
+				...(docTitleChanged ? { new_title: trimmedNewDocTitle } : {}),
 				intent: reasoning.trim(),
 				scope: semanticLabels.join("; "),
 				affected_block_ids: affectedBlockIds,
@@ -367,7 +378,7 @@ const ComposerPage: React.FC = () => {
 		}
 	};
 
-	const canSend = pendingChanges.length > 0 && reasoning.trim().length > 0;
+	const canSend = (pendingChanges.length > 0 || docTitleChanged) && reasoning.trim().length > 0;
 
 	if (loading) {
 		return (
@@ -414,7 +425,7 @@ const ComposerPage: React.FC = () => {
 						disabled={!canSend || submitting}
 					>
 						<PaperAirplaneIcon className="composer__send-icon" />
-						{submitting ? "Sending…" : "Send when ready"}
+						{submitting ? "Submitting…" : "Submit"}
 					</button>
 				</div>
 			</div>
@@ -426,11 +437,45 @@ const ComposerPage: React.FC = () => {
 						<span className="composer__pane-label">YOUR DRAFT</span>
 					</div>
 
+					{/* Document rename row */}
+					<div className="composer__rename-row">
+						<span className="composer__rename-doc-label">
+							{document?.title || "Untitled"}
+						</span>
+						{!renamingDoc ? (
+							<button
+								type="button"
+								className="composer__rename-toggle"
+								onClick={() => { setRenamingDoc(true); setNewDocTitle(document?.title ?? ""); }}
+							>
+								Rename document
+							</button>
+						) : (
+							<div className="composer__rename-input-row">
+								<input
+									type="text"
+									className="composer__rename-input"
+									value={newDocTitle}
+									onChange={(e) => setNewDocTitle(e.target.value)}
+									placeholder="New document title"
+									autoFocus
+								/>
+								<button
+									type="button"
+									className="composer__rename-cancel"
+									onClick={() => { setRenamingDoc(false); setNewDocTitle(""); }}
+								>
+									Cancel
+								</button>
+							</div>
+						)}
+					</div>
+
 					<div className="composer__draft-title-wrapper">
 						<textarea
 							className="composer__draft-title"
 							value={proposalTitle}
-							placeholder="Optional: give your proposal a title"
+							placeholder="Title (optional)"
 							onChange={(e) => setProposalTitle(e.target.value)}
 							rows={1}
 							onInput={(e) => {
@@ -465,10 +510,10 @@ const ComposerPage: React.FC = () => {
 							type="button"
 							className="composer__add-btn"
 							onClick={() => handleAddBlock("text")}
-							title="Add text claim"
+							title="Add paragraph"
 						>
 							<PlusIcon className="composer__add-icon" />
-							Add claim
+							Add paragraph
 						</button>
 						<button
 							type="button"
@@ -505,9 +550,6 @@ const ComposerPage: React.FC = () => {
 										{label}
 									</li>
 								))}
-								<li className="composer__diff-item">
-									Affects {pendingChanges.length} {pendingChanges.length === 1 ? "block" : "blocks"}
-								</li>
 							</ul>
 							{showTextDiff && (
 								<div className="composer__text-diff">
@@ -531,13 +573,13 @@ const ComposerPage: React.FC = () => {
 				{/* Right: Reasoning pane */}
 				<div className="composer__why">
 					<div className="composer__why-header">
-						<span className="composer__pane-label">WHY</span>
+						<span className="composer__pane-label">REASONING</span>
 						<div
 							className="composer__why-hint"
-							title="A proposal without reasoning is incomplete. The group will use this to decide."
+							title="A proposal without reasoning is incomplete. Your team uses this to decide."
 						>
 							<InformationCircleIcon className="composer__why-hint-icon" />
-							Required — helps the group decide
+							Required — your team uses this to decide
 						</div>
 					</div>
 
@@ -545,15 +587,14 @@ const ComposerPage: React.FC = () => {
 						className="composer__reasoning"
 						value={reasoning}
 						placeholder={
-							"Explain why this change is needed.\n\nWhat problem does it solve? What did the group previously believe, and why should that belief change? What alternatives did you consider?"
+							"Explain why this change is needed.\n\nWhat problem does it solve? What does the team currently believe, and why should that change? What alternatives did you consider?"
 						}
 						onChange={(e) => setReasoning(e.target.value)}
 					/>
 
 					{!reasoning.trim() && (
 						<p className="composer__reasoning-hint">
-							A proposal without reasoning is visibly incomplete. The group needs to understand the
-							why before they can decide.
+							A proposal without reasoning is incomplete. Your team needs to understand why before they can decide.
 						</p>
 					)}
 
@@ -565,7 +606,7 @@ const ComposerPage: React.FC = () => {
 							disabled={submitting}
 						>
 							<PaperAirplaneIcon className="composer__send-icon" />
-							{submitting ? "Sending…" : "Send when ready"}
+							{submitting ? "Submitting…" : "Submit"}
 						</button>
 					)}
 				</div>

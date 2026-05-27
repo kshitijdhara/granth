@@ -10,16 +10,16 @@ import (
 
 func CreateProposal(proposal *Proposal, ctx context.Context) error {
 	err := config.PostgresDB.QueryRowContext(ctx,
-		"INSERT INTO proposals (document_id, affected_block_ids, title, author_id, intent, scope, state, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-		proposal.DocumentID, pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.AuthorID, proposal.Intent, proposal.Scope, proposal.State, proposal.CreatedAt, proposal.UpdatedAt).Scan(&proposal.ID)
+		"INSERT INTO proposals (document_id, affected_block_ids, title, new_title, author_id, intent, scope, state, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		proposal.DocumentID, pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.NewTitle, proposal.AuthorID, proposal.Intent, proposal.Scope, proposal.State, proposal.CreatedAt, proposal.UpdatedAt).Scan(&proposal.ID)
 	return err
 }
 
 func GetProposalByID(id string, ctx context.Context) (*Proposal, error) {
 	proposal := &Proposal{}
 	var affectedBlockIDs pq.StringArray
-	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, document_id, affected_block_ids, title, author_id, intent, scope, state, rejection_reason, created_at, updated_at FROM proposals WHERE id = $1", id).Scan(
-		&proposal.ID, &proposal.DocumentID, &affectedBlockIDs, &proposal.Title, &proposal.AuthorID, &proposal.Intent, &proposal.Scope, &proposal.State, &proposal.RejectionReason, &proposal.CreatedAt, &proposal.UpdatedAt)
+	err := config.PostgresDB.QueryRowContext(ctx, "SELECT id, document_id, affected_block_ids, title, COALESCE(new_title, ''), author_id, intent, scope, state, rejection_reason, created_at, updated_at FROM proposals WHERE id = $1", id).Scan(
+		&proposal.ID, &proposal.DocumentID, &affectedBlockIDs, &proposal.Title, &proposal.NewTitle, &proposal.AuthorID, &proposal.Intent, &proposal.Scope, &proposal.State, &proposal.RejectionReason, &proposal.CreatedAt, &proposal.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func GetProposalByID(id string, ctx context.Context) (*Proposal, error) {
 }
 
 func GetProposalsByDocument(documentID string, ctx context.Context) ([]*Proposal, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, document_id, affected_block_ids, title, author_id, intent, scope, state, rejection_reason, created_at, updated_at FROM proposals WHERE document_id = $1 ORDER BY created_at DESC", documentID)
+	rows, err := config.PostgresDB.QueryContext(ctx, "SELECT id, document_id, affected_block_ids, title, COALESCE(new_title, ''), author_id, intent, scope, state, rejection_reason, created_at, updated_at FROM proposals WHERE document_id = $1 ORDER BY created_at DESC", documentID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func GetProposalsByDocument(documentID string, ctx context.Context) ([]*Proposal
 	for rows.Next() {
 		proposal := &Proposal{}
 		var affectedBlockIDs pq.StringArray
-		if err := rows.Scan(&proposal.ID, &proposal.DocumentID, &affectedBlockIDs, &proposal.Title, &proposal.AuthorID, &proposal.Intent, &proposal.Scope, &proposal.State, &proposal.RejectionReason, &proposal.CreatedAt, &proposal.UpdatedAt); err != nil {
+		if err := rows.Scan(&proposal.ID, &proposal.DocumentID, &affectedBlockIDs, &proposal.Title, &proposal.NewTitle, &proposal.AuthorID, &proposal.Intent, &proposal.Scope, &proposal.State, &proposal.RejectionReason, &proposal.CreatedAt, &proposal.UpdatedAt); err != nil {
 			return nil, err
 		}
 		proposal.AffectedBlockIDs = []string(affectedBlockIDs)
@@ -51,8 +51,8 @@ func GetProposalsByDocument(documentID string, ctx context.Context) ([]*Proposal
 }
 
 func UpdateProposal(proposal *Proposal, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE proposals SET affected_block_ids = $1, title = $2, intent = $3, scope = $4, state = $5, updated_at = $6, rejection_reason = $7 WHERE id = $8",
-		pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.Intent, proposal.Scope, proposal.State, proposal.UpdatedAt, proposal.RejectionReason, proposal.ID)
+	_, err := config.PostgresDB.ExecContext(ctx, "UPDATE proposals SET affected_block_ids = $1, title = $2, new_title = $3, intent = $4, scope = $5, state = $6, updated_at = $7, rejection_reason = $8 WHERE id = $9",
+		pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.NewTitle, proposal.Intent, proposal.Scope, proposal.State, proposal.UpdatedAt, proposal.RejectionReason, proposal.ID)
 	return err
 }
 

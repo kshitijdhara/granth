@@ -41,6 +41,7 @@ func handleCreateProposal(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Title            string   `json:"title"`
+		NewTitle         string   `json:"new_title"`
 		Intent           string   `json:"intent"`
 		Scope            string   `json:"scope"`
 		AffectedBlockIDs []string `json:"affected_block_ids"`
@@ -50,7 +51,7 @@ func handleCreateProposal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	proposalID, err := createProposal(documentID, req.Title, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context())
+	proposalID, err := createProposal(documentID, req.Title, req.NewTitle, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context())
 	if err != nil {
 		http.Error(w, "Error creating proposal: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -78,6 +79,7 @@ func handleUpdateProposal(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Title            string   `json:"title"`
+		NewTitle         string   `json:"new_title"`
 		Intent           string   `json:"intent"`
 		Scope            string   `json:"scope"`
 		AffectedBlockIDs []string `json:"affected_block_ids"`
@@ -87,7 +89,7 @@ func handleUpdateProposal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := updateProposal(proposalID, req.Title, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context())
+	err := updateProposal(proposalID, req.Title, req.NewTitle, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context())
 	if err != nil {
 		http.Error(w, "Error updating proposal: "+err.Error(), http.StatusInternalServerError)
 		return

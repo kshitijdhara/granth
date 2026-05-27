@@ -311,7 +311,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 				<section className="ws-settings__section">
 					<h2 className="ws-settings__section-title">Review policy</h2>
 					<p className="ws-settings__section-desc">
-						Configure how many approvals a proposal requires before it is adopted.
+						Set how many approvals a proposal needs before it can be accepted.
 					</p>
 					<div className="ws-settings__fields">
 						<div className="ws-settings__field-row">

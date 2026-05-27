@@ -35,7 +35,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	const { isAuthenticated } = useAuth();
 	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
 	const [currentId, setCurrentId] = useState<string | null>(readStoredId);
-	const [loading, setLoading] = useState(false);
+	// Start true so document lists wait for workspace resolution (avoids a throwaway /documents/all).
+	const [loading, setLoading] = useState(true);
 
 	const refresh = useCallback(async () => {
 		if (!isAuthenticated) return;
@@ -65,6 +66,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		} else {
 			setWorkspaces([]);
 			setCurrentId(null);
+			setLoading(false);
 		}
 	}, [isAuthenticated, refresh]);
 

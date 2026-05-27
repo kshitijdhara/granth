@@ -41,33 +41,64 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 	const [blockProposalMap, setBlockProposalMap] = useState<Map<string, Proposal[]>>(new Map());
 
 	useEffect(() => {
+		let cancelled = false;
 		setLoading(true);
-		Promise.all([
-			documentsApi.get(documentId),
-			blocksApi.getAll(documentId),
-			proposalsApi.getForDocument(documentId),
-		])
-			.then(([doc, rawBlocks, rawProposals]) => {
-				const sorted = [...rawBlocks].sort(
-					(a, b) => (a.order_path[0] ?? 0) - (b.order_path[0] ?? 0)
-				);
-				setDocument(doc);
-				setBlocks(sorted);
-				setProposals(rawProposals);
+		setDocument(null);
+		setBlocks([]);
+		setProposals([]);
+		setBlockProposalMap(new Map());
 
-				const openProposals = rawProposals.filter((p) => p.state === "open");
-				const map = new Map<string, Proposal[]>();
-				for (const p of openProposals) {
-					for (const blockId of p.affected_block_ids) {
-						const existing = map.get(blockId) ?? [];
-						existing.push(p);
-						map.set(blockId, existing);
-					}
+		const applyProposals = (rawProposals: Proposal[]) => {
+			setProposals(rawProposals);
+			const openProposals = rawProposals.filter((p) => p.state === "open");
+			const map = new Map<string, Proposal[]>();
+			for (const p of openProposals) {
+				for (const blockId of p.affected_block_ids) {
+					const existing = map.get(blockId) ?? [];
+					existing.push(p);
+					map.set(blockId, existing);
 				}
-				setBlockProposalMap(map);
+			}
+			setBlockProposalMap(map);
+		};
+
+		documentsApi
+			.get(documentId)
+			.then(async (doc) => {
+				if (cancelled) return;
+				setDocument(doc);
+
+				const [blocksResult, proposalsResult] = await Promise.allSettled([
+					blocksApi.getAll(documentId),
+					proposalsApi.getForDocument(documentId),
+				]);
+				if (cancelled) return;
+
+				if (blocksResult.status === "fulfilled") {
+					const sorted = [...blocksResult.value].sort(
+						(a, b) => (a.order_path[0] ?? 0) - (b.order_path[0] ?? 0)
+					);
+					setBlocks(sorted);
+				} else {
+					console.error(blocksResult.reason);
+				}
+
+				if (proposalsResult.status === "fulfilled") {
+					applyProposals(proposalsResult.value);
+				} else {
+					console.error(proposalsResult.reason);
+				}
 			})
-			.catch(console.error)
-			.finally(() => setLoading(false));
+			.catch((err) => {
+				if (!cancelled) console.error(err);
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
 	}, [documentId]);
 
 	const handleAddThought = async () => {
@@ -96,9 +127,9 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 	if (!document) {
 		return (
 			<div className="truth-detail truth-detail--error">
-				<p>This body of truth could not be found.</p>
+				<p>This document could not be found.</p>
 				<Button variant="secondary" size="small" onClick={() => navigate("/truth")}>
-					Back to Truth
+					Back to Library
 				</Button>
 			</div>
 		);
@@ -109,7 +140,7 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 			<div className="truth-detail__chrome">
 				<button type="button" className="truth-detail__back" onClick={() => navigate("/truth")}>
 					<ArrowLeftIcon className="truth-detail__back-icon" />
-					Truth
+					Library
 				</button>
 				<div className="truth-detail__chrome-right">
 					{openCount > 0 && (
@@ -149,7 +180,7 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 						<div className="truth-detail__empty">
 							<p>No content yet.</p>
 							<button type="button" className="truth-detail__empty-cta" onClick={handleAddThought}>
-								Propose the first claim →
+								Add the first paragraph →
 							</button>
 						</div>
 					) : (
@@ -210,10 +241,10 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 						disabled={creating}
 					>
 						<PlusIcon className="truth-detail__add-thought-icon" />
-						Add a thought
+						Add a block
 					</button>
 					<span className="truth-detail__add-thought-hint">
-						Exploration never risks shared truth
+						Your changes stay in draft until you submit.
 					</span>
 				</div>
 			</article>
@@ -227,27 +258,42 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 
 const TruthListView: React.FC = () => {
 	const navigate = useNavigate();
-	const { current: currentWorkspace } = useWorkspace();
+	const { current: currentWorkspace, loading: workspaceLoading } = useWorkspace();
+	const workspaceId = currentWorkspace?.id ?? null;
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [creating, setCreating] = useState(false);
 
 	useEffect(() => {
+		if (workspaceLoading) return;
+
+		let cancelled = false;
 		setLoading(true);
-		const fetch = currentWorkspace
-			? workspacesApi.getDocuments(currentWorkspace.id)
+
+		const fetch = workspaceId
+			? workspacesApi.getDocuments(workspaceId)
 			: documentsApi.getAll();
+
 		fetch
-			.then((docs) =>
+			.then((docs) => {
+				if (cancelled) return;
 				setDocuments(
 					[...docs].sort(
 						(a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
 					)
-				)
-			)
-			.catch(console.error)
-			.finally(() => setLoading(false));
-	}, [currentWorkspace]);
+				);
+			})
+			.catch((err) => {
+				if (!cancelled) console.error(err);
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [workspaceId, workspaceLoading]);
 
 	const handleCreate = async () => {
 		if (creating) return;
@@ -265,14 +311,14 @@ const TruthListView: React.FC = () => {
 			<div className="truth-list__container">
 				<header className="truth-list__header">
 					<div className="truth-list__header-text">
-						<h1 className="truth-list__title">Truth</h1>
+						<h1 className="truth-list__title">Library</h1>
 						<p className="truth-list__subtitle">
-							What your group currently believes, with full reasoning preserved.
+							Your team's documents — every accepted change recorded with its reasoning.
 						</p>
 					</div>
 					<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={creating}>
 						<PlusIcon style={{ width: 16, height: 16 }} />
-						{creating ? "Creating…" : "New body"}
+						{creating ? "Creating…" : "New document"}
 					</Button>
 				</header>
 
@@ -285,14 +331,13 @@ const TruthListView: React.FC = () => {
 					</div>
 				) : documents.length === 0 ? (
 					<div className="truth-list__empty">
-						<p className="truth-list__empty-heading">No bodies of truth yet</p>
+						<p className="truth-list__empty-heading">No documents yet</p>
 						<p className="truth-list__empty-text">
-							A body of truth holds what your group collectively believes — with the full reasoning
-							behind every change preserved.
+							Documents hold your team's shared knowledge. Every accepted change is saved with its reasoning, permanently.
 						</p>
 						<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={creating}>
 							<PlusIcon style={{ width: 16, height: 16 }} />
-							{creating ? "Creating…" : "Create the first body"}
+							{creating ? "Creating…" : "Create your first document"}
 						</Button>
 					</div>
 				) : (

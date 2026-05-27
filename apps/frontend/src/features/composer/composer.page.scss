@@ -200,6 +200,73 @@
     color: var(--color-text-tertiary);
   }
 
+  &__rename-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--color-bg-subtle, rgba(0,0,0,0.03));
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+  }
+
+  &__rename-doc-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__rename-toggle {
+    font-size: var(--font-size-xs);
+    color: var(--color-accent, #0066cc);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  &__rename-input-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    width: 100%;
+    margin-top: var(--spacing-2);
+  }
+
+  &__rename-input {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-1) var(--spacing-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    outline: none;
+
+    &:focus {
+      border-color: var(--color-accent, #0066cc);
+    }
+  }
+
+  &__rename-cancel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
   &__draft-title-wrapper {
     margin-bottom: var(--spacing-4);
   }

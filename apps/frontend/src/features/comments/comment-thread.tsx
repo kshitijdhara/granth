@@ -264,7 +264,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
 	return (
 		<section className="comment-thread">
 			<div className="comment-thread__header">
-				<h3 className="comment-thread__title">Deliberation</h3>
+				<h3 className="comment-thread__title">Discussion</h3>
 				{comments.length > 0 && (
 					<span className="comment-thread__count">{comments.length}</span>
 				)}
@@ -273,13 +273,13 @@ const CommentThread: React.FC<CommentThreadProps> = ({
 			{isSealed && (
 				<div className="comment-thread__sealed-label">
 					<LockClosedIcon className="comment-thread__sealed-icon" />
-					Deliberation record — sealed
+					Discussion closed
 				</div>
 			)}
 
 			{!loading && comments.length === 0 && (
 				<p className="comment-thread__empty">
-					{isSealed ? "No deliberation was recorded." : "No comments yet. Be the first to weigh in."}
+					{isSealed ? "No discussion was recorded." : "No comments yet. Be the first to weigh in."}
 				</p>
 			)}
 
@@ -309,7 +309,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
 				<div className="comment-thread__compose">
 					<textarea
 						className="comment-thread__textarea"
-						placeholder="Add to the deliberation…"
+						placeholder="Add a comment…"
 						value={draftBody}
 						onChange={(e) => setDraftBody(e.target.value)}
 					/>

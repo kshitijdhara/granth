@@ -35,7 +35,7 @@ const formatRelative = (iso: string): string => {
 
 const semanticLabel = (action: string, blockType: string): string => {
 	const typeLabel =
-		blockType === "heading" ? "heading" : blockType === "code" ? "code block" : "claim";
+		blockType === "heading" ? "heading" : blockType === "code" ? "code block" : "paragraph";
 	switch (action) {
 		case "create":
 			return `Adds new ${typeLabel}`;
@@ -251,7 +251,7 @@ const DecisionRoomPage: React.FC = () => {
 							? "Open"
 							: proposal.state === "accepted"
 								? "Accepted"
-								: "Considered & Declined"}
+								: "Declined"}
 					</span>
 					{document && (
 						<button
@@ -259,7 +259,7 @@ const DecisionRoomPage: React.FC = () => {
 							className="decision-room__doc-link"
 							onClick={() => navigate(`/truth/${document.id}`)}
 						>
-							in {document.title || "Untitled body"}
+							in {document.title || "Untitled document"}
 						</button>
 					)}
 				</div>
@@ -286,10 +286,18 @@ const DecisionRoomPage: React.FC = () => {
 							</button>
 						</div>
 
-						{changes.length === 0 ? (
-							<p className="decision-room__empty-section">No block changes recorded.</p>
+						{changes.length === 0 && !proposal.new_title ? (
+							<p className="decision-room__empty-section">No content changes recorded.</p>
 						) : (
 							<div className="decision-room__diff-list">
+								{proposal.new_title && (
+									<div className="semantic-diff-entry semantic-diff-entry--update">
+										<div className="semantic-diff-entry__label">
+											<span className="semantic-diff-entry__action-glyph semantic-diff-entry__action-glyph--update">~</span>
+											Renames document: “{document?.title || "Untitled"}” → “{proposal.new_title}”
+										</div>
+									</div>
+								)}
 								{changes.map((c) => (
 									<SemanticDiffEntry key={c.id} change={c} showTextDiff={showTextDiff} />
 								))}
@@ -324,11 +332,11 @@ const DecisionRoomPage: React.FC = () => {
 								</h2>
 							</div>
 							<p className="decision-room__conflict-explanation">
-								This proposal touches the same claims as{" "}
+								This proposal changes the same content as{" "}
 								{conflicts.length === 1
 									? "another open proposal"
 									: `${conflicts.length} other open proposals`}
-								. The group must pick one, combine, or supersede.
+								. Your team needs to decide which one to accept.
 							</p>
 							<div className="decision-room__conflict-list">
 								{conflicts.map(({ proposal: cp }) => (
@@ -343,7 +351,7 @@ const DecisionRoomPage: React.FC = () => {
 										</span>
 										<span className="decision-room__conflict-cta">
 											<ArrowsRightLeftIcon className="decision-room__conflict-cta-icon" />
-											open side-by-side
+											Compare
 										</span>
 									</button>
 								))}
@@ -371,8 +379,8 @@ const DecisionRoomPage: React.FC = () => {
 								)}
 								<h2 className="decision-room__outcome-title">
 									{proposal.state === "accepted"
-										? "Adopted — now part of shared truth"
-										: "Considered & Declined"}
+										? "Accepted — changes applied to document"
+										: "Declined"}
 								</h2>
 							</div>
 							{proposal.rejection_reason && (
@@ -392,13 +400,13 @@ const DecisionRoomPage: React.FC = () => {
 
 							{isAuthor && !canSelfReview && (
 								<div className="decision-room__author-note">
-									You authored this proposal. Another member of the group must accept or decline it.
+									You authored this proposal. Another team member must accept or decline it.
 								</div>
 							)}
 
 							{canSelfReview && (
 								<div className="decision-room__solo-note">
-									You're the only reviewer in this group. You can adopt or decline your own proposal.
+									You're the only reviewer on this team. You can accept or decline your own proposal.
 								</div>
 							)}
 
@@ -471,7 +479,7 @@ const DecisionRoomPage: React.FC = () => {
 													onClick={() => navigate(`/proposals/${conflicts[0]?.proposal.id}`)}
 												>
 													<ArrowsRightLeftIcon className="decision-room__action-icon" />
-													Combine with conflict
+													Compare proposals
 												</button>
 											)}
 										</div>
@@ -480,8 +488,7 @@ const DecisionRoomPage: React.FC = () => {
 									{acting === "accept" && (
 										<div className="decision-room__confirm-accept">
 											<p className="decision-room__confirm-text">
-												You are about to make this part of group truth. The reasoning above will be
-												permanently preserved alongside this decision.
+												This will apply the proposed changes to the document. The reasoning will be saved permanently.
 											</p>
 											<div className="decision-room__confirm-actions">
 												<button
@@ -491,7 +498,7 @@ const DecisionRoomPage: React.FC = () => {
 													disabled={submitting}
 												>
 													<CheckCircleIcon className="decision-room__action-icon" />
-													{submitting ? "Adopting…" : "Confirm & Adopt"}
+													{submitting ? "Accepting…" : "Accept"}
 												</button>
 												<button
 													type="button"
@@ -507,13 +514,13 @@ const DecisionRoomPage: React.FC = () => {
 									{acting === "decline" && declineStep === "reason" && (
 										<div className="decision-room__decline-form">
 											<label htmlFor="decline-reason" className="decision-room__decline-label">
-												A reason is required to decline. It becomes part of the permanent record.
+												Explain why you're declining. This will be saved permanently with the proposal.
 											</label>
 											<textarea
 												id="decline-reason"
 												className="decision-room__decline-textarea"
 												value={declineReason}
-												placeholder="Explain why this proposal is being declined…"
+												placeholder="Explain your decision…"
 												onChange={(e) => setDeclineReason(e.target.value)}
 												rows={4}
 											/>
@@ -525,7 +532,7 @@ const DecisionRoomPage: React.FC = () => {
 													disabled={!declineReason.trim() || submitting}
 												>
 													<XCircleIcon className="decision-room__action-icon" />
-													{submitting ? "Declining…" : "Confirm Decline"}
+													{submitting ? "Declining…" : "Decline"}
 												</button>
 												<button
 													type="button"
@@ -547,9 +554,9 @@ const DecisionRoomPage: React.FC = () => {
 							<div className="decision-room__litmus">
 								<p className="decision-room__litmus-heading">Before you decide, ask:</p>
 								<ul className="decision-room__litmus-list">
-									<li>Does this make change safer?</li>
-									<li>Does it preserve reasoning?</li>
-									<li>Does it reinforce proposal over edit?</li>
+									<li>Does this make the document better?</li>
+									<li>Is the reasoning clear?</li>
+									<li>Would you want this if someone else proposed it?</li>
 								</ul>
 							</div>
 						</div>

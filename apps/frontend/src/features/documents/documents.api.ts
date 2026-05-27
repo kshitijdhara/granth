@@ -1,8 +1,21 @@
 import { http } from "@/lib/http";
 import type { Document } from "./types";
 
+const inFlightGetAll = new Map<string, Promise<Document[]>>();
+
+function dedupeGetAll(factory: () => Promise<Document[]>): Promise<Document[]> {
+	const key = "all";
+	const existing = inFlightGetAll.get(key);
+	if (existing) return existing;
+	const promise = factory().finally(() => {
+		inFlightGetAll.delete(key);
+	});
+	inFlightGetAll.set(key, promise);
+	return promise;
+}
+
 export const documentsApi = {
-	getAll: () => http.get<Document[]>("/documents/all"),
+	getAll: () => dedupeGetAll(() => http.get<Document[]>("/documents/all")),
 
 	get: (id: string) => http.get<Document>(`/documents/${id}`),
 
