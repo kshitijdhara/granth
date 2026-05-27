@@ -39,7 +39,7 @@ const StateTag: React.FC<{ state: string }> = ({ state }) => {
 	const labels: Record<string, string> = {
 		open: "Open",
 		accepted: "Accepted",
-		rejected: "Considered & Declined",
+		rejected: "Declined",
 	};
 
 	return (
@@ -245,7 +245,7 @@ const InboxPage: React.FC = () => {
 													</div>
 													<div className="inbox__row-meta">
 														<span className="inbox__row-body">
-															in {document.title || "Untitled body"}
+															in {document.title || "Untitled document"}
 														</span>
 														<span className="inbox__row-dot">·</span>
 														<span className="inbox__row-time">
@@ -277,7 +277,7 @@ const InboxPage: React.FC = () => {
 
 						{mineInReview.length > 0 && (
 							<section className="inbox__section">
-								<h2 className="inbox__section-heading">Yours, in review</h2>
+								<h2 className="inbox__section-heading">Awaiting review</h2>
 								<ul className="inbox__list">
 									{mineInReview.map(({ proposal, document, hasConflict }) => (
 										<li key={proposal.id}>
@@ -292,7 +292,7 @@ const InboxPage: React.FC = () => {
 													</div>
 													<div className="inbox__row-meta">
 														<span className="inbox__row-body">
-															in {document.title || "Untitled body"}
+															in {document.title || "Untitled document"}
 														</span>
 														<span className="inbox__row-dot">·</span>
 														<span className="inbox__row-time">
@@ -327,13 +327,13 @@ const InboxPage: React.FC = () => {
 								<SparklesIcon className="inbox__empty-icon" />
 								<p className="inbox__empty-heading">Nothing pending</p>
 								<p className="inbox__empty-text">
-									No open proposals in your workspace right now.{" "}
+									No open proposals right now.{" "}
 									<button
 										type="button"
 										className="inbox__empty-link"
 										onClick={() => navigate("/truth")}
 									>
-										Explore the current truth
+										Browse the Library
 									</button>{" "}
 									and propose a change.
 								</p>
@@ -363,13 +363,13 @@ const InboxPage: React.FC = () => {
 												<div className="inbox__row-main">
 													<div className="inbox__row-title inbox__row-title--muted">
 														{proposal.state === "accepted"
-															? "Adopted: "
-															: "Considered & declined: "}
+															? "Accepted: "
+															: "Declined: "}
 														{proposal.title || "Untitled proposal"}
 													</div>
 													<div className="inbox__row-meta">
 														<span className="inbox__row-body">
-															in {document.title || "Untitled body"}
+															in {document.title || "Untitled document"}
 														</span>
 														<span className="inbox__row-dot">·</span>
 														<span className="inbox__row-time">

@@ -102,10 +102,9 @@ const MotionPage: React.FC = () => {
 		<div className="motion">
 			<div className="motion__container">
 				<header className="motion__header">
-					<h1 className="motion__title">In Motion</h1>
+					<h1 className="motion__title">Review</h1>
 					<p className="motion__subtitle">
-						All open proposals across your workspace — changes that have been proposed but not yet
-						decided.
+						All open proposals — waiting to be accepted or declined.
 					</p>
 				</header>
 
@@ -118,7 +117,7 @@ const MotionPage: React.FC = () => {
 					</div>
 				) : allOpen.length === 0 ? (
 					<div className="motion__empty">
-						<p className="motion__empty-heading">Nothing in motion</p>
+						<p className="motion__empty-heading">No open proposals</p>
 						<p className="motion__empty-text">
 							No open proposals right now.{" "}
 							<button
@@ -126,7 +125,7 @@ const MotionPage: React.FC = () => {
 								className="motion__empty-link"
 								onClick={() => navigate("/truth")}
 							>
-								Browse the truth
+								Browse the Library
 							</button>{" "}
 							and propose a change.
 						</p>
@@ -140,8 +139,7 @@ const MotionPage: React.FC = () => {
 									Conflicts ({conflicts.length})
 								</h2>
 								<p className="motion__conflict-description">
-									These proposals touch overlapping claims and cannot both be accepted without
-									resolution.
+									These proposals change the same content. Only one can be accepted as-is.
 								</p>
 								<ul className="motion__list">
 									{conflicts.map(({ proposal, document }) => (
@@ -156,7 +154,7 @@ const MotionPage: React.FC = () => {
 														{proposal.title || "Untitled proposal"}
 													</div>
 													<div className="motion__row-meta">
-														in {document.title || "Untitled body"}
+														in {document.title || "Untitled document"}
 														<span className="motion__row-dot">·</span>
 														{relativeTime(proposal.created_at)}
 													</div>
@@ -188,7 +186,7 @@ const MotionPage: React.FC = () => {
 														{proposal.title || "Untitled proposal"}
 													</div>
 													<div className="motion__row-meta">
-														in {document.title || "Untitled body"}
+														in {document.title || "Untitled document"}
 														<span className="motion__row-dot">·</span>
 														{relativeTime(proposal.created_at)}
 													</div>

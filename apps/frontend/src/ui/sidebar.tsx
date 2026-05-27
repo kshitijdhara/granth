@@ -27,10 +27,10 @@ interface SidebarProps {
 
 const NAV_ITEMS = [
 	{ key: "inbox", path: "/inbox", label: "Inbox", Icon: InboxIcon },
-	{ key: "truth", path: "/truth", label: "Truth", Icon: BookOpenIcon },
-	{ key: "motion", path: "/motion", label: "In Motion", Icon: SparklesIcon },
-	{ key: "archive", path: "/archive", label: "Archive", Icon: ArchiveBoxIcon },
-	{ key: "group", path: "/group", label: "Group", Icon: UsersIcon },
+	{ key: "truth", path: "/truth", label: "Library", Icon: BookOpenIcon },
+	{ key: "motion", path: "/motion", label: "Review", Icon: SparklesIcon },
+	{ key: "archive", path: "/archive", label: "Decisions", Icon: ArchiveBoxIcon },
+	{ key: "group", path: "/group", label: "Team", Icon: UsersIcon },
 ] as const;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {

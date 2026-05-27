@@ -5,6 +5,7 @@ export interface Proposal {
 	document_id: string;
 	affected_block_ids: string[];
 	title: string;
+	new_title?: string;
 	author_id: string;
 	intent: string;
 	scope: string;
@@ -47,6 +48,7 @@ export const proposalsApi = {
 		documentId: string,
 		data: {
 			title: string;
+			new_title?: string;
 			intent: string;
 			scope: string;
 			affected_block_ids: string[];

@@ -102,10 +102,9 @@ const ArchivePage: React.FC = () => {
 			<div className="archive__container">
 				<header className="archive__header">
 					<div className="archive__header-text">
-						<h1 className="archive__title">Reasoning archive</h1>
+						<h1 className="archive__title">Decisions</h1>
 						<p className="archive__subtitle">
-							Every decision your group has made — including the ones that were declined. The
-							reasoning behind each is preserved permanently.
+							Every proposal your team accepted or declined, with its reasoning preserved.
 						</p>
 					</div>
 					<div className="archive__search-wrapper">
@@ -149,7 +148,7 @@ const ArchivePage: React.FC = () => {
 										className="archive__group-title-btn"
 										onClick={() => navigate(`/truth/${document.id}`)}
 									>
-										{document.title || "Untitled body"}
+										{document.title || "Untitled document"}
 									</button>
 								</h2>
 								<ul className="archive__timeline">
@@ -174,7 +173,7 @@ const ArchivePage: React.FC = () => {
 													<span
 														className={`archive__entry-state archive__entry-state--${proposal.state}`}
 													>
-														{proposal.state === "accepted" ? "Adopted" : "Considered & Declined"}
+														{proposal.state === "accepted" ? "Accepted" : "Declined"}
 													</span>
 												</div>
 												<p className="archive__entry-title">
