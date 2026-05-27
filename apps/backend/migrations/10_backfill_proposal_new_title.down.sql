@@ -1,0 +1,2 @@
+ALTER TABLE proposals ALTER COLUMN new_title DROP NOT NULL;
+ALTER TABLE proposals ALTER COLUMN new_title DROP DEFAULT;
