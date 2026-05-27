@@ -10,10 +10,10 @@ import (
 )
 
 func registerUser(username, email, passwordHash string) (AuthResponse, error) {
-	_, existingUsername, _, err := GetUserByEmail(email)
+	dbuser, err := GetUserByEmail(email)
 	if err == nil {
 		// email already exists
-		if existingUsername == username {
+		if dbuser.Username == username {
 			return AuthResponse{}, fmt.Errorf("username already in use")
 		}
 		return AuthResponse{}, fmt.Errorf("email already in use")
@@ -27,50 +27,49 @@ func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 		return AuthResponse{}, fmt.Errorf("error hashing password: %w", err)
 	}
 	passwordHash = string(passwordHashBytes)
-
-	id, username, err := CreateUser(username, email, passwordHash)
+	user, err := CreateUser(username, email, passwordHash)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating user: %w", err)
 	}
 
-	accessToken, err := utils.CreateUserToken(id)
+	accessToken, err := utils.CreateUserToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(id)
+	refreshToken, err := utils.CreateRefreshToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}
 	return AuthResponse{
-		UserID:       id,
-		Username:     username,
+		UserID:       user.ID,
+		Username:     user.Username,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
 }
 
 func login(email, password string) (AuthResponse, error) {
-	id, username, passwordHash, err := GetUserByEmail(email)
+	user, err := GetUserByEmail(email)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("Error during login: %w", err)
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("Invalid Password")
 	}
-	accessToken, err := utils.CreateUserToken(id)
+	accessToken, err := utils.CreateUserToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(id)
+	refreshToken, err := utils.CreateRefreshToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}
 	return AuthResponse{
-		UserID:       id,
-		Username:     username,
+		UserID:       user.ID,
+		Username:     user.Username,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
