@@ -51,9 +51,15 @@
     align-items: center;
     gap: var(--spacing-6);
     padding: var(--spacing-3) var(--spacing-8);
-    background: var(--color-surface-primary);
-    border-bottom: 1px solid var(--color-border-light);
-    backdrop-filter: var(--blur-sm);
+    background: var(--glass-bg-light);
+    border-bottom: 1px solid var(--glass-border-light);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    @media (prefers-color-scheme: dark) {
+      background: var(--glass-bg-dark);
+      border-color: var(--glass-border-dark);
+    }
   }
 
   &__back {

@@ -1,7 +1,11 @@
-import { BuildingOffice2Icon, ChevronRightIcon, PlusIcon } from "@heroicons/react/24/solid";
-import React, { useState } from "react";
+import { ChevronRightIcon, PlusIcon } from "@heroicons/react/24/solid";
+import gsap from "gsap";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Avatar from "@/ui/avatar";
 import Button from "@/ui/button";
+import Card from "@/ui/card";
+import EmptyState from "@/ui/empty-state";
 import Input from "@/ui/input";
 import { useWorkspace } from "./workspace.context";
 import { workspacesApi } from "./workspaces.api";
@@ -10,12 +14,27 @@ import "./workspace-list.page.scss";
 const WorkspaceListPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { workspaces, loading, setCurrent, refresh } = useWorkspace();
+	const cardsRef = useRef<HTMLDivElement>(null);
 
 	const [creating, setCreating] = useState(false);
 	const [showForm, setShowForm] = useState(false);
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [error, setError] = useState<string | null>(null);
+
+	// Animate cards on mount
+	React.useEffect(() => {
+		if (cardsRef.current && !loading && workspaces.length > 0) {
+			const cards = cardsRef.current.querySelectorAll(".workspace-card");
+			gsap.from(cards, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.04,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, [loading, workspaces.length]);
 
 	const handleCreate = async () => {
 		if (!name.trim() || creating) return;
@@ -54,7 +73,7 @@ const WorkspaceListPage: React.FC = () => {
 			</header>
 
 			{showForm && (
-				<div className="workspaces-page__form">
+				<Card variant="glass" padding="lg" className="workspaces-page__form">
 					<h2 className="workspaces-page__form-title">Create a workspace</h2>
 					<Input
 						label="Name"
@@ -71,20 +90,18 @@ const WorkspaceListPage: React.FC = () => {
 					/>
 					{error && <p className="workspaces-page__error">{error}</p>}
 					<div className="workspaces-page__form-actions">
-						<Button variant="secondary" size="medium" onClick={() => setShowForm(false)} isFullWidth={false}>
+						<Button variant="secondary" onClick={() => setShowForm(false)}>
 							Cancel
 						</Button>
 						<Button
 							variant="primary"
-							size="medium"
 							onClick={handleCreate}
-							isDisabled={creating || !name.trim()}
-							isFullWidth={false}
+							disabled={creating || !name.trim()}
 						>
 							{creating ? "Creating…" : "Create"}
 						</Button>
 					</div>
-				</div>
+				</Card>
 			)}
 
 			<main className="workspaces-page__content">
@@ -96,34 +113,43 @@ const WorkspaceListPage: React.FC = () => {
 						))}
 					</div>
 				) : workspaces.length === 0 ? (
-					<div className="workspaces-page__empty">
-						<BuildingOffice2Icon className="workspaces-page__empty-icon" />
-						<p>No workspaces yet — create one to start collaborating.</p>
-					</div>
+					<EmptyState
+						heading="No workspaces yet"
+						description="Create one to start collaborating with your team."
+						cta={{
+							label: "Create a workspace",
+							onClick: () => setShowForm(true),
+						}}
+					/>
 				) : (
-					<ul className="workspaces-page__list">
+					<div className="workspaces-page__grid" ref={cardsRef}>
 						{workspaces.map((ws) => (
-							<li key={ws.id} className="workspaces-page__item">
-								<button
-									type="button"
-									className="workspaces-page__link"
-									onClick={() => handleSelect(ws.id)}
-									aria-label={`Open ${ws.name}`}
-								>
-									<div className="workspaces-page__link-icon">
-										<BuildingOffice2Icon />
+							<Card
+								key={ws.id}
+								variant="glass"
+								padding="md"
+								onClick={() => handleSelect(ws.id)}
+								className="workspace-card"
+							>
+								<div className="workspace-card__content">
+									<div className="workspace-card__header">
+										<Avatar
+											initials={(ws.name[0] ?? "W").toUpperCase()}
+											name={ws.name}
+											size="sm"
+										/>
+										<div className="workspace-card__title-col">
+											<h3 className="workspace-card__name">{ws.name}</h3>
+											{ws.description && (
+												<p className="workspace-card__desc">{ws.description}</p>
+											)}
+										</div>
 									</div>
-									<div className="workspaces-page__link-body">
-										<div className="workspaces-page__name">{ws.name}</div>
-										{ws.description && (
-											<div className="workspaces-page__desc">{ws.description}</div>
-										)}
-									</div>
-									<ChevronRightIcon className="workspaces-page__link-arrow" />
-								</button>
-							</li>
+									<ChevronRightIcon className="workspace-card__arrow" />
+								</div>
+							</Card>
 						))}
-					</ul>
+					</div>
 				)}
 			</main>
 		</div>

@@ -6,7 +6,9 @@ import { authApi } from "@/features/auth/auth.api";
 import { useAuth } from "@/features/auth/auth.context";
 import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
+import Avatar from "@/ui/avatar";
 import Button from "@/ui/button";
+import Card from "@/ui/card";
 import Input from "@/ui/input";
 import "./profile.page.scss";
 
@@ -109,11 +111,11 @@ const ProfilePage: React.FC = () => {
 				<div className="profile-page__header-actions">
 					{isEditing ? (
 						<>
-							<Button variant="secondary" size="small" onClick={cancelEdit} isDisabled={saving}>
+							<Button variant="secondary" size="small" onClick={cancelEdit} disabled={saving}>
 								<XMarkIcon style={{ width: 14, height: 14 }} />
 								Cancel
 							</Button>
-							<Button variant="primary" size="small" onClick={saveEdit} isDisabled={saving}>
+							<Button variant="primary" size="small" onClick={saveEdit} disabled={saving}>
 								{saving ? "Saving…" : "Save"}
 							</Button>
 						</>
@@ -127,13 +129,16 @@ const ProfilePage: React.FC = () => {
 			</header>
 
 			{/* Profile card */}
-			<section className="profile-page__card" aria-labelledby="profile-name">
-				<div className="profile-page__avatar" aria-hidden>
-					<span className="profile-page__initials">{initialsFrom(username)}</span>
-				</div>
-
-				<div className="profile-page__info">
-					{isEditing ? (
+			<Card variant="glass" padding="lg" className="profile-page__card">
+				<div className="profile-page__card-header">
+					<Avatar
+						initials={initialsFrom(username)}
+						name={username ?? ""}
+						size="lg"
+						className="profile-page__avatar"
+					/>
+					<div className="profile-page__info">
+				{isEditing ? (
 						<div className="profile-page__edit-field" onKeyDown={handleKeyDown}>
 							<Input
 								label="Username"
@@ -160,8 +165,9 @@ const ProfilePage: React.FC = () => {
 						)}
 						{userId && <span className="profile-page__id">ID · {userId.slice(0, 8)}</span>}
 					</div>
+					</div>
 				</div>
-			</section>
+			</Card>
 
 			{/* Recent activity */}
 			<section className="profile-page__activity" aria-labelledby="activity-heading">
@@ -179,15 +185,16 @@ const ProfilePage: React.FC = () => {
 				) : docs.length === 0 ? (
 					<p className="profile-page__empty">No documents yet — create one to get started.</p>
 				) : (
-					<ul className="profile-page__doc-list">
+					<div className="profile-page__doc-list">
 						{docs.map((d) => (
-							<li key={d.id}>
-								<button
-									type="button"
-									className="profile-page__doc-row"
-									onClick={() => navigate(`/documents/${d.id}`)}
-									aria-label={`Open ${d.title}`}
-								>
+							<Card
+								key={d.id}
+								variant="glass"
+								padding="md"
+								onClick={() => navigate(`/truth/${d.id}`)}
+								className="profile-page__doc-card"
+							>
+								<div className="profile-page__doc-card-content">
 									<div className="profile-page__doc-icon">
 										<DocumentTextIcon />
 									</div>
@@ -196,10 +203,10 @@ const ProfilePage: React.FC = () => {
 										<span className="profile-page__doc-meta">Updated {timeAgo(d.updated_at)}</span>
 									</div>
 									<ChevronRightIcon className="profile-page__doc-arrow" />
-								</button>
-							</li>
+								</div>
+							</Card>
 						))}
-					</ul>
+					</div>
 				)}
 			</section>
 		</main>

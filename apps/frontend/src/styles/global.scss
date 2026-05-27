@@ -135,8 +135,10 @@
   --color-border-hairline:  rgba(148, 163, 184, 0.25);
 
   // Extended type scale
-  --font-size-5xl:     2.5rem;   // 40px — document title
-  --font-size-display: 3rem;     // 48px — reserved
+  --font-size-5xl:       2.5rem;   // 40px
+  --font-size-display-sm: 2.5rem;  // 40px — display small (hero)
+  --font-size-display-lg: 3.5rem;  // 56px — display large (hero)
+  --font-size-display:    3rem;    // 48px — reserved
 
   // Truth / canonical reading surface
   --truth-max-width:      680px;
@@ -145,6 +147,17 @@
 
   // Composer layout
   --composer-max-width:   1200px;
+
+  // Glass tokens — Apple-depth glassmorphism
+  --glass-bg-light:        rgba(255, 255, 255, 0.72);
+  --glass-bg-dark:         rgba(15, 23, 42, 0.65);
+  --glass-border-light:    rgba(255, 255, 255, 0.55);
+  --glass-border-dark:     rgba(255, 255, 255, 0.08);
+  --glass-blur-primary:    blur(20px);
+  --glass-blur-secondary:  blur(12px);
+  --glass-blur-heavy:      blur(40px);
+  --glass-shadow-light:    0 8px 32px rgba(15, 23, 42, 0.08), 0 1px 0 rgba(255,255,255,0.5) inset;
+  --glass-shadow-dark:     0 8px 32px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
 
   // Proposal state — Open (amber)
   --color-proposal-open:            #B45309;
@@ -298,6 +311,75 @@ body {
   background-color: var(--color-background-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+
+  // Ambient blob background — light mode
+  &::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -100px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0) 70%);
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: var(--z-base);
+    animation: drift 24s ease-in-out infinite;
+  }
+
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    left: -100px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 70%);
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: var(--z-base);
+    animation: drift 28s ease-in-out infinite reverse;
+  }
+}
+
+// Dark mode — gradient background + ambient blobs
+@media (prefers-color-scheme: dark) {
+  body {
+    background-image: linear-gradient(135deg, #0A0F1E 0%, #0F172A 60%, #0A1628 100%);
+    background-attachment: fixed;
+
+    &::before {
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 70%);
+      opacity: 0.04;
+    }
+
+    &::after {
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 70%);
+      opacity: 0.04;
+    }
+  }
+}
+
+// Theme class overrides — gradient + ambient blobs
+.theme-dark body {
+  background-image: linear-gradient(135deg, #0A0F1E 0%, #0F172A 60%, #0A1628 100%);
+  background-attachment: fixed;
+
+  &::before {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 70%);
+    opacity: 0.04;
+  }
+
+  &::after {
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 70%);
+    opacity: 0.04;
+  }
 }
 
 // Typography
@@ -305,7 +387,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
   font-weight: var(--font-weight-semibold);
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
 h1 { font-size: var(--font-size-4xl); }
@@ -360,6 +442,61 @@ body * {
               color var(--motion-duration-medium) var(--motion-easing-standard);
 }
 
+// Motion keyframes — Apple-style entrances
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+  }
+  33% {
+    transform: translateX(30px) translateY(-20px);
+  }
+  66% {
+    transform: translateX(-20px) translateY(25px);
+  }
+}
+
 // Reduced motion
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -379,7 +516,7 @@ body * {
     transition: padding-left var(--motion-duration-medium) var(--motion-easing-standard);
 
     &--sidebar-open {
-      padding-left: 260px;
+      padding-left: 240px;
     }
 
     &--sidebar-closed {

@@ -1,0 +1,41 @@
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  font-family: var(--font-family-system);
+  font-weight: var(--font-weight-semibold);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+
+  &__text {
+    font-size: inherit;
+    line-height: 1;
+  }
+
+  // Sizes
+  &--xs {
+    width: 28px;
+    height: 28px;
+    font-size: var(--font-size-xs);
+  }
+
+  &--sm {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-sm);
+  }
+
+  &--md {
+    width: 40px;
+    height: 40px;
+    font-size: var(--font-size-base);
+  }
+
+  &--lg {
+    width: 56px;
+    height: 56px;
+    font-size: var(--font-size-xl);
+  }
+}

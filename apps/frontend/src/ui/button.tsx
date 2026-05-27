@@ -3,9 +3,10 @@ import "./button.scss";
 
 interface ButtonProps {
 	children: React.ReactNode;
-	variant?: "primary" | "secondary" | "danger";
+	variant?: "primary" | "secondary" | "ghost" | "danger" | "glass";
 	size?: "small" | "medium" | "large";
-	isDisabled?: boolean;
+	disabled?: boolean;
+	isLoading?: boolean;
 	isFullWidth?: boolean;
 	onClick?: () => void;
 	type?: "button" | "submit" | "reset";
@@ -16,26 +17,42 @@ const Button: React.FC<ButtonProps> = ({
 	children,
 	variant = "primary",
 	size = "medium",
-	isDisabled = false,
+	disabled = false,
+	isLoading = false,
 	isFullWidth = false,
 	onClick,
 	type = "button",
 	className,
 }) => {
+	const isDisabledOrLoading = disabled || isLoading;
+
 	const classes = [
 		"button",
 		`button--${variant}`,
 		`button--${size}`,
 		isFullWidth && "button--full-width",
-		isDisabled && "button--disabled",
+		isDisabledOrLoading && "button--disabled",
+		isLoading && "button--loading",
 		className || null,
 	]
 		.filter(Boolean)
 		.join(" ");
 
 	return (
-		<button className={classes} disabled={isDisabled} onClick={onClick} type={type}>
-			{children}
+		<button
+			className={classes}
+			disabled={isDisabledOrLoading}
+			onClick={onClick}
+			type={type}
+		>
+			{isLoading ? (
+				<>
+					<span className="button__spinner" />
+					{children}
+				</>
+			) : (
+				children
+			)}
 		</button>
 	);
 };

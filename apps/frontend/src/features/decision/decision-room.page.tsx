@@ -18,7 +18,11 @@ import { useWorkspace } from "@/features/workspaces/workspace.context";
 import { workspacesApi } from "@/features/workspaces/workspaces.api";
 import CommentThread from "@/features/comments/comment-thread";
 import type { ApprovalStatus } from "@/features/proposals/proposals.api";
+
+
 import Button from "@/ui/button";
+
+
 import "./decision-room.page.scss";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -184,7 +188,10 @@ const DecisionRoomPage: React.FC = () => {
 	};
 
 	const handleDecline = async () => {
-		if (!proposalId || !declineReason.trim()) return;
+		if (!proposalId || !declineReason.trim()) {
+			setError("Rejection reason is required");
+			return;
+		}
 		setSubmitting(true);
 		setError(null);
 		try {

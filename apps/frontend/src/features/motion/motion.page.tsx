@@ -1,6 +1,7 @@
 import { ExclamationTriangleIcon } from "@heroicons/react/24/solid";
+import gsap from "gsap";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
@@ -8,6 +9,9 @@ import type { Proposal } from "@/features/proposals/proposals.api";
 import { proposalsApi } from "@/features/proposals/proposals.api";
 import { useWorkspace } from "@/features/workspaces/workspace.context";
 import { workspacesApi } from "@/features/workspaces/workspaces.api";
+import Badge from "@/ui/badge";
+import Card from "@/ui/card";
+import EmptyState from "@/ui/empty-state";
 import "./motion.page.scss";
 
 interface ProposalWithDoc {
@@ -31,6 +35,7 @@ const MotionPage: React.FC = () => {
 	const { current: currentWorkspace } = useWorkspace();
 	const [loading, setLoading] = useState(true);
 	const [allOpen, setAllOpen] = useState<ProposalWithDoc[]>([]);
+	const cardsRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -95,6 +100,20 @@ const MotionPage: React.FC = () => {
 		};
 	}, [currentWorkspace]);
 
+	// Animate cards on mount
+	useEffect(() => {
+		if (cardsRef.current && !loading && allOpen.length > 0) {
+			const cards = cardsRef.current.querySelectorAll(".motion__card");
+			gsap.from(cards, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.04,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, [loading, allOpen.length]);
+
 	const conflicts = useMemo(() => allOpen.filter((p) => p.hasConflict), [allOpen]);
 	const normal = useMemo(() => allOpen.filter((p) => !p.hasConflict), [allOpen]);
 
@@ -102,10 +121,12 @@ const MotionPage: React.FC = () => {
 		<div className="motion">
 			<div className="motion__container">
 				<header className="motion__header">
-					<h1 className="motion__title">Review</h1>
-					<p className="motion__subtitle">
-						All open proposals — waiting to be accepted or declined.
-					</p>
+					<div>
+						<h1 className="motion__title">Review</h1>
+						<p className="motion__subtitle">
+							{allOpen.length} open {allOpen.length === 1 ? "proposal" : "proposals"} waiting for your team.
+						</p>
+					</div>
 				</header>
 
 				{loading ? (
@@ -116,88 +137,86 @@ const MotionPage: React.FC = () => {
 						))}
 					</div>
 				) : allOpen.length === 0 ? (
-					<div className="motion__empty">
-						<p className="motion__empty-heading">No open proposals</p>
-						<p className="motion__empty-text">
-							No open proposals right now.{" "}
-							<button
-								type="button"
-								className="motion__empty-link"
-								onClick={() => navigate("/truth")}
-							>
-								Browse the Library
-							</button>{" "}
-							and propose a change.
-						</p>
-					</div>
+					<EmptyState
+						heading="No open proposals"
+						description="All proposals have been decided. Browse the Library and propose a change."
+						cta={{
+							label: "Browse Library",
+							onClick: () => navigate("/truth"),
+						}}
+					/>
 				) : (
-					<div className="motion__sections">
+					<div className="motion__sections" ref={cardsRef}>
 						{conflicts.length > 0 && (
 							<section className="motion__section">
-								<h2 className="motion__section-heading motion__section-heading--conflict">
-									<ExclamationTriangleIcon className="motion__conflict-icon" />
-									Conflicts ({conflicts.length})
-								</h2>
+								<div className="motion__section-header">
+									<ExclamationTriangleIcon className="motion__conflict-warning-icon" />
+									<h2 className="motion__section-heading">Conflicts ({conflicts.length})</h2>
+								</div>
 								<p className="motion__conflict-description">
-									These proposals change the same content. Only one can be accepted as-is.
+									These proposals change the same content. Only one can be accepted.
 								</p>
-								<ul className="motion__list">
+								<div className="motion__conflict-group">
 									{conflicts.map(({ proposal, document }) => (
-										<li key={proposal.id}>
-											<button
-												type="button"
-												className="motion__row motion__row--conflict"
-												onClick={() => navigate(`/proposals/${proposal.id}`)}
-											>
-												<div className="motion__row-main">
-													<div className="motion__row-title">
+										<Card
+											key={proposal.id}
+											variant="glass"
+											padding="md"
+											onClick={() => navigate(`/proposals/${proposal.id}`)}
+											className="motion__card motion__card--conflict"
+										>
+											<div className="motion__card-content">
+												<div className="motion__card-header">
+													<h3 className="motion__card-title">
 														{proposal.title || "Untitled proposal"}
-													</div>
-													<div className="motion__row-meta">
-														in {document.title || "Untitled document"}
-														<span className="motion__row-dot">·</span>
-														{relativeTime(proposal.created_at)}
-													</div>
-													{proposal.intent && (
-														<div className="motion__row-intent">{proposal.intent}</div>
-													)}
+													</h3>
+													<Badge variant="conflict" size="small">
+														Conflict
+													</Badge>
 												</div>
-												<ExclamationTriangleIcon className="motion__row-conflict-icon" />
-											</button>
-										</li>
+												<p className="motion__card-meta">
+													in {document.title || "Untitled document"}
+													<span className="motion__card-dot">·</span>
+													{relativeTime(proposal.created_at)}
+												</p>
+												{proposal.intent && (
+													<p className="motion__card-intent">{proposal.intent}</p>
+												)}
+											</div>
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						)}
 
 						{normal.length > 0 && (
 							<section className="motion__section">
 								<h2 className="motion__section-heading">Open proposals ({normal.length})</h2>
-								<ul className="motion__list">
+								<div className="motion__cards">
 									{normal.map(({ proposal, document }) => (
-										<li key={proposal.id}>
-											<button
-												type="button"
-												className="motion__row"
-												onClick={() => navigate(`/proposals/${proposal.id}`)}
-											>
-												<div className="motion__row-main">
-													<div className="motion__row-title">
-														{proposal.title || "Untitled proposal"}
-													</div>
-													<div className="motion__row-meta">
-														in {document.title || "Untitled document"}
-														<span className="motion__row-dot">·</span>
-														{relativeTime(proposal.created_at)}
-													</div>
-													{proposal.intent && (
-														<div className="motion__row-intent">{proposal.intent}</div>
-													)}
-												</div>
-											</button>
-										</li>
+										<Card
+											key={proposal.id}
+											variant="glass"
+											padding="md"
+											onClick={() => navigate(`/proposals/${proposal.id}`)}
+											className="motion__card"
+										>
+											<div className="motion__card-content">
+												<h3 className="motion__card-title">
+													{proposal.title || "Untitled proposal"}
+												</h3>
+												<p className="motion__card-meta">
+													in {document.title || "Untitled document"}
+													<span className="motion__card-dot">·</span>
+													{relativeTime(proposal.created_at)}
+												</p>
+												{proposal.intent && (
+													<p className="motion__card-intent">{proposal.intent}</p>
+												)}
+											</div>
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						)}
 					</div>

@@ -1,5 +1,6 @@
+import gsap from "gsap";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/http";
 import Button from "@/ui/button";
@@ -11,6 +12,7 @@ import "./register.page.scss";
 const RegisterPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { register } = useAuth();
+	const formRef = useRef<HTMLFormElement>(null);
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -20,6 +22,21 @@ const RegisterPage: React.FC = () => {
 	const [passwordError, setPasswordError] = useState("");
 	const [confirmPasswordError, setConfirmPasswordError] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	useEffect(() => {
+		if (formRef.current) {
+			const children = formRef.current.querySelectorAll(
+				".register-form__fields > *, .register-form__actions"
+			);
+			gsap.from(children, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.06,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, []);
 
 	const validateName = (v: string) => {
 		if (!v.trim()) return "Name is required";
@@ -73,7 +90,7 @@ const RegisterPage: React.FC = () => {
 
 	return (
 		<AuthLayout>
-			<form className="register-form" onSubmit={handleSubmit}>
+			<form className="register-form" ref={formRef} onSubmit={handleSubmit}>
 				<div className="register-form__header">
 					<h1 className="register-form__title">Create account</h1>
 					<p className="register-form__subtitle">Join us today</p>
@@ -135,7 +152,7 @@ const RegisterPage: React.FC = () => {
 						type="submit"
 						variant="primary"
 						size="large"
-						isDisabled={isSubmitting}
+						isLoading={isSubmitting}
 						isFullWidth
 					>
 						{isSubmitting ? "Creating account…" : "Create account"}

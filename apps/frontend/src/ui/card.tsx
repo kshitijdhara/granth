@@ -5,7 +5,7 @@ interface CardProps {
 	children: React.ReactNode;
 	className?: string;
 	onClick?: () => void;
-	variant?: "default" | "elevated" | "outlined";
+	variant?: "glass" | "surface" | "elevated" | "outlined";
 	padding?: "none" | "sm" | "md" | "lg";
 }
 
@@ -13,7 +13,7 @@ const Card: React.FC<CardProps> = ({
 	children,
 	className = "",
 	onClick,
-	variant = "default",
+	variant = "glass",
 	padding = "md",
 }) => {
 	const classes = [

@@ -28,13 +28,27 @@ const Input: React.FC<InputProps> = ({
 	onBlur,
 }) => {
 	const id = useId();
+	const isFocused = false; // In a real app, track focus state
+	const hasValue = value && value.length > 0;
+	const shouldFloatLabel = hasValue || isFocused || !placeholder;
 
-	const classes = ["input", hasError && "input--error", isDisabled && "input--disabled"]
+	const classes = [
+		"input",
+		hasError && "input--error",
+		isDisabled && "input--disabled",
+	]
+		.filter(Boolean)
+		.join(" ");
+
+	const containerClasses = [
+		"input-container",
+		shouldFloatLabel && "input-container--floating",
+	]
 		.filter(Boolean)
 		.join(" ");
 
 	return (
-		<div className="input-container">
+		<div className={containerClasses}>
 			{label && (
 				<label htmlFor={id} className="input-label">
 					{label}

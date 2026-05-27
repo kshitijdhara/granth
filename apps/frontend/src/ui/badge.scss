@@ -1,0 +1,47 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-system);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--border-radius-full);
+  white-space: nowrap;
+  transition: all var(--motion-duration-fast) var(--motion-easing-standard);
+
+  // Sizes
+  &--small {
+    padding: 4px 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  &--medium {
+    padding: 6px 12px;
+    font-size: var(--font-size-sm);
+  }
+
+  // Variants — proposal states
+  &--open {
+    background-color: var(--color-proposal-open-tag-bg);
+    color: var(--color-proposal-open-tag-text);
+  }
+
+  &--accepted {
+    background-color: var(--color-proposal-accepted-tag-bg);
+    color: var(--color-proposal-accepted-tag-text);
+  }
+
+  &--declined {
+    background-color: var(--color-proposal-declined-tag-bg);
+    color: var(--color-proposal-declined-tag-text);
+  }
+
+  &--conflict {
+    background-color: var(--color-proposal-conflict-tag-bg);
+    color: var(--color-proposal-conflict-tag-text);
+  }
+
+  &--neutral {
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-secondary);
+  }
+}

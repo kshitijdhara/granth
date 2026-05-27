@@ -1,5 +1,6 @@
+import gsap from "gsap";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/http";
 import Button from "@/ui/button";
@@ -11,11 +12,27 @@ import "./login.page.scss";
 const LoginPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { login } = useAuth();
+	const formRef = useRef<HTMLFormElement>(null);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [emailError, setEmailError] = useState("");
 	const [passwordError, setPasswordError] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	useEffect(() => {
+		if (formRef.current) {
+			const children = formRef.current.querySelectorAll(
+				".login-form__fields > *, .login-form__actions"
+			);
+			gsap.from(children, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.06,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, []);
 
 	const validateEmail = (v: string) => {
 		if (!v) return "Email is required";
@@ -56,7 +73,7 @@ const LoginPage: React.FC = () => {
 
 	return (
 		<AuthLayout>
-			<form className="login-form" onSubmit={handleSubmit}>
+			<form className="login-form" ref={formRef} onSubmit={handleSubmit}>
 				<div className="login-form__header">
 					<h1 className="login-form__title">Welcome back</h1>
 					<p className="login-form__subtitle">Sign in to your account</p>
@@ -92,7 +109,7 @@ const LoginPage: React.FC = () => {
 						type="submit"
 						variant="primary"
 						size="large"
-						isDisabled={isSubmitting}
+						isLoading={isSubmitting}
 						isFullWidth
 					>
 						{isSubmitting ? "Signing in…" : "Sign in"}

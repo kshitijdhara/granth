@@ -6,8 +6,10 @@ import {
 } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { authApi } from "@/features/auth/auth.api";
 import { useAuth } from "@/features/auth/auth.context";
 import Button from "@/ui/button";
+import Card from "@/ui/card";
 import Input from "@/ui/input";
 import { useWorkspace } from "./workspace.context";
 import type { WorkspaceMember, WorkspaceRole } from "./types";
@@ -125,7 +127,9 @@ const WorkspaceSettingsPage: React.FC = () => {
 		setAddError(null);
 		try {
 			const member = await workspacesApi.addMember(id, addUserId.trim(), addRole);
-			setMembers((prev) => [...prev, member]);
+			const user = await authApi.getUserById(addUserId.trim());
+			const memberWithUsername = { ...member, username: user.username };
+			setMembers((prev) => [...prev, memberWithUsername]);
 			setAddUserId("");
 		} catch (err) {
 			setAddError(err instanceof Error ? err.message : "Failed to add member");
@@ -200,7 +204,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 
 			{/* Details section — admin only */}
 			{isAdmin && (
-				<section className="ws-settings__section">
+				<Card variant="glass" padding="lg" className="ws-settings__section">
 					<h2 className="ws-settings__section-title">Details</h2>
 					<div className="ws-settings__fields">
 						<Input label="Name" value={name} onChange={setName} isRequired />
@@ -211,16 +215,16 @@ const WorkspaceSettingsPage: React.FC = () => {
 						variant="primary"
 						size="medium"
 						onClick={handleSave}
-						isDisabled={saving || !name.trim()}
+						disabled={saving || !name.trim()}
 						isFullWidth={false}
 					>
 						{saving ? "Saving…" : "Save changes"}
 					</Button>
-				</section>
+				</Card>
 			)}
 
 			{/* Members section */}
-			<section className="ws-settings__section">
+			<Card variant="glass" padding="lg" className="ws-settings__section">
 				<h2 className="ws-settings__section-title">Members</h2>
 
 				{isAdmin && (
@@ -250,7 +254,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 							variant="primary"
 							size="medium"
 							onClick={handleAddMember}
-							isDisabled={adding || !addUserId.trim()}
+							disabled={adding || !addUserId.trim()}
 							isFullWidth={false}
 						>
 							<UserPlusIcon style={{ width: 16, height: 16 }} />
@@ -304,11 +308,11 @@ const WorkspaceSettingsPage: React.FC = () => {
 						))}
 					</ul>
 				)}
-			</section>
+			</Card>
 
 			{/* Review Policy — admin only */}
 			{isAdmin && (
-				<section className="ws-settings__section">
+				<Card variant="glass" padding="lg" className="ws-settings__section">
 					<h2 className="ws-settings__section-title">Review policy</h2>
 					<p className="ws-settings__section-desc">
 						Set how many approvals a proposal needs before it can be accepted.
@@ -345,17 +349,17 @@ const WorkspaceSettingsPage: React.FC = () => {
 						variant="primary"
 						size="medium"
 						onClick={handleSaveGovernance}
-						isDisabled={savingGov}
+						disabled={savingGov}
 						isFullWidth={false}
 					>
 						{savingGov ? "Saving…" : "Save policy"}
 					</Button>
-				</section>
+				</Card>
 			)}
 
 			{/* Danger zone — owner only */}
 			{isOwner && (
-				<section className="ws-settings__section ws-settings__section--danger">
+				<Card variant="glass" padding="lg" className="ws-settings__section ws-settings__section--danger">
 					<h2 className="ws-settings__section-title ws-settings__section-title--danger">
 						Danger zone
 					</h2>
@@ -388,7 +392,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 									variant="primary"
 									size="medium"
 									onClick={handleDelete}
-									isDisabled={deleting}
+									disabled={deleting}
 									isFullWidth={false}
 								>
 									{deleting ? "Deleting…" : "Yes, delete it"}
@@ -396,7 +400,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 							</div>
 						</div>
 					)}
-				</section>
+				</Card>
 			)}
 		</div>
 	);
