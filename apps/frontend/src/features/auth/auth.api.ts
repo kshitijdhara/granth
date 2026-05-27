@@ -27,4 +27,6 @@ export const authApi = {
 	getProfile: () => http.get<{ id: string; username: string; email: string }>("/auth/profile"),
 
 	updateProfile: (username: string) => http.put<{ username: string }>("/auth/profile", { username }),
+
+	getUserById: (userId: string) => http.get<{ id: string; username: string }>(`/auth/user/${userId}`),
 };

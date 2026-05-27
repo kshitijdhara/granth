@@ -1,6 +1,7 @@
 import { CheckCircleIcon, MagnifyingGlassIcon, XCircleIcon } from "@heroicons/react/24/solid";
+import gsap from "gsap";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
@@ -8,6 +9,9 @@ import type { Proposal } from "@/features/proposals/proposals.api";
 import { proposalsApi } from "@/features/proposals/proposals.api";
 import { useWorkspace } from "@/features/workspaces/workspace.context";
 import { workspacesApi } from "@/features/workspaces/workspaces.api";
+import Badge from "@/ui/badge";
+import Card from "@/ui/card";
+
 import "./archive.page.scss";
 
 interface ProposalWithDoc {
@@ -28,6 +32,7 @@ const ArchivePage: React.FC = () => {
 	const [loading, setLoading] = useState(true);
 	const [decided, setDecided] = useState<ProposalWithDoc[]>([]);
 	const [search, setSearch] = useState("");
+	const cardsRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -82,20 +87,32 @@ const ArchivePage: React.FC = () => {
 		);
 	}, [decided, search]);
 
-	// Group by document
+	// Group by month (reverse chronological)
 	const grouped = useMemo(() => {
-		const map = new Map<string, { document: Document; entries: ProposalWithDoc[] }>();
+		const monthMap = new Map<string, ProposalWithDoc[]>();
 		for (const item of filtered) {
-			const key = item.document.id;
-			const existing = map.get(key);
-			if (existing) {
-				existing.entries.push(item);
-			} else {
-				map.set(key, { document: item.document, entries: [item] });
-			}
+			const date = new Date(item.proposal.updated_at);
+			const key = date.toLocaleDateString("en-US", { year: "numeric", month: "long" });
+			const existing = monthMap.get(key) ?? [];
+			existing.push(item);
+			monthMap.set(key, existing);
 		}
-		return [...map.values()];
+		return [...monthMap.entries()].reverse();
 	}, [filtered]);
+
+	// Animate cards on mount
+	useEffect(() => {
+		if (cardsRef.current && !loading && filtered.length > 0) {
+			const cards = cardsRef.current.querySelectorAll(".archive__card");
+			gsap.from(cards, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.03,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, [loading, filtered.length]);
 
 	return (
 		<div className="archive">
@@ -139,58 +156,47 @@ const ArchivePage: React.FC = () => {
 						<p className="archive__empty-text">No decisions match your search.</p>
 					</div>
 				) : (
-					<div className="archive__groups">
-						{grouped.map(({ document, entries }) => (
-							<section key={document.id} className="archive__group">
-								<h2 className="archive__group-heading">
-									<button
-										type="button"
-										className="archive__group-title-btn"
-										onClick={() => navigate(`/truth/${document.id}`)}
-									>
-										{document.title || "Untitled document"}
-									</button>
-								</h2>
-								<ul className="archive__timeline">
+					<div className="archive__timeline" ref={cardsRef}>
+						{grouped.map(([month, entries]) => (
+							<section key={month} className="archive__month">
+								<h2 className="archive__month-heading">{month}</h2>
+								<div className="archive__month-cards">
 									{entries.map(({ proposal }) => (
-										<li key={proposal.id} className="archive__timeline-item">
-											<div className="archive__timeline-marker">
-												{proposal.state === "accepted" ? (
-													<CheckCircleIcon className="archive__timeline-icon archive__timeline-icon--accepted" />
-												) : (
-													<XCircleIcon className="archive__timeline-icon archive__timeline-icon--declined" />
-												)}
-											</div>
-											<button
-												type="button"
-												className="archive__entry"
-												onClick={() => navigate(`/proposals/${proposal.id}`)}
-											>
-												<div className="archive__entry-header">
-													<span className="archive__entry-date">
-														{formatDate(proposal.updated_at)}
-													</span>
-													<span
-														className={`archive__entry-state archive__entry-state--${proposal.state}`}
-													>
-														{proposal.state === "accepted" ? "Accepted" : "Declined"}
-													</span>
+										<Card
+											key={proposal.id}
+											variant="glass"
+											padding="md"
+											onClick={() => navigate(`/proposals/${proposal.id}`)}
+											className="archive__card"
+										>
+											<div className="archive__card-header">
+												<div className="archive__card-status">
+													{proposal.state === "accepted" ? (
+														<>
+															<CheckCircleIcon className="archive__card-icon archive__card-icon--accepted" />
+															<Badge variant="accepted" size="small">Accepted</Badge>
+														</>
+													) : (
+														<>
+															<XCircleIcon className="archive__card-icon archive__card-icon--declined" />
+															<Badge variant="declined" size="small">Declined</Badge>
+														</>
+													)}
 												</div>
-												<p className="archive__entry-title">
-													{proposal.title || "Untitled proposal"}
-												</p>
-												{proposal.intent && (
-													<p className="archive__entry-intent">{proposal.intent}</p>
-												)}
-												{proposal.rejection_reason && (
-													<blockquote className="archive__entry-reason">
-														"{proposal.rejection_reason}"
-													</blockquote>
-												)}
-											</button>
-										</li>
+												<span className="archive__card-date">{formatDate(proposal.updated_at)}</span>
+											</div>
+											<h3 className="archive__card-title">{proposal.title || "Untitled proposal"}</h3>
+											{proposal.intent && (
+												<p className="archive__card-intent">{proposal.intent}</p>
+											)}
+											{proposal.rejection_reason && (
+												<blockquote className="archive__card-reason">
+													"{proposal.rejection_reason}"
+												</blockquote>
+											)}
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						))}
 					</div>

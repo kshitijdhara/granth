@@ -152,13 +152,14 @@ const BlockEditor: React.FC<BlockEditorProps> = ({
 				onKeyDown={handleKey}
 				rows={1}
 			/>
-			<Button
-				
+			<button
+				type="button"
 				className="block-editor__delete"
 				onClick={() => onDelete(block.localId)}
+				title="Remove"
 			>
 				<TrashIcon className="block-editor__delete-icon" />
-			</Button>
+			</button>
 		</div>
 	);
 };
@@ -186,6 +187,7 @@ const ComposerPage: React.FC = () => {
 	// Focus management
 	const focusRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
 	const draftPaneRef = useRef<HTMLDivElement>(null);
+	const reasoningPaneRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!documentId) return;
@@ -218,12 +220,13 @@ const ComposerPage: React.FC = () => {
 
 	// Animate panes on mount
 	useEffect(() => {
-		if (!loading && draftPaneRef.current) {
-			gsap.from(draftPaneRef.current, {
+		if (!loading && draftPaneRef.current && reasoningPaneRef.current) {
+			gsap.from([draftPaneRef.current, reasoningPaneRef.current], {
 				opacity: 0,
 				y: 12,
 				duration: 0.4,
 				ease: "power2.out",
+				stagger: 0.06,
 			});
 		}
 	}, [loading]);
@@ -414,35 +417,35 @@ const ComposerPage: React.FC = () => {
 			{/* Chrome bar */}
 			<div className="composer__chrome">
 				<div className="composer__chrome-left">
-					<Button
-						
+					<button
+						type="button"
 						className="composer__back"
 						onClick={() => navigate(documentId ? `/truth/${documentId}` : "/truth")}
 					>
 						<ArrowLeftIcon className="composer__back-icon" />
 						{document?.title || "Truth"}
-					</Button>
+					</button>
 					<span className="composer__chrome-label">Proposing a change</span>
 				</div>
 				<div className="composer__chrome-right">
-					<Button
-						
+					<button
+						type="button"
 						variant="ghost" size="small"
 						onClick={() => navigate(documentId ? `/truth/${documentId}` : "/truth")}
 					>
 						<XMarkIcon style={{ width: 14, height: 14 }} />
 						Discard
-					</Button>
-					<Button
-						
+					</button>
+					<button
+						type="button"
 						variant="primary" size="small"
 						onClick={handleSend}
-						disabled={!canSend}
+						isDisabled={!canSend}
 							isLoading={submitting}
 					>
 						<PaperAirplaneIcon style={{ width: 14, height: 14 }} />
 						{submitting ? "Submitting…" : "Submit"}
-					</Button>
+					</button>
 				</div>
 			</div>
 
@@ -459,13 +462,13 @@ const ComposerPage: React.FC = () => {
 							{document?.title || "Untitled"}
 						</span>
 						{!renamingDoc ? (
-							<Button
-								
+							<button
+								type="button"
 								className="composer__rename-toggle"
 								onClick={() => { setRenamingDoc(true); setNewDocTitle(document?.title ?? ""); }}
 							>
 								Rename document
-							</Button>
+							</button>
 						) : (
 							<div className="composer__rename-input-row">
 								<input
@@ -476,13 +479,13 @@ const ComposerPage: React.FC = () => {
 									placeholder="New document title"
 									autoFocus
 								/>
-								<Button
-									
+								<button
+									type="button"
 									className="composer__rename-cancel"
 									onClick={() => { setRenamingDoc(false); setNewDocTitle(""); }}
 								>
 									Cancel
-								</Button>
+								</button>
 							</div>
 						)}
 					</div>
@@ -522,28 +525,29 @@ const ComposerPage: React.FC = () => {
 					</div>
 
 					<div className="composer__add-block">
-						<Button
-							
+						<button
+							type="button"
 							className="composer__add-btn"
 							onClick={() => handleAddBlock("text")}
+							title="Add paragraph"
 						>
 							<PlusIcon className="composer__add-icon" />
 							Add paragraph
-						</Button>
-						<Button
-							
+						</button>
+						<button
+							type="button"
 							className="composer__add-btn composer__add-btn--secondary"
 							onClick={() => handleAddBlock("header")}
 						>
 							Heading
-						</Button>
-						<Button
-							
+						</button>
+						<button
+							type="button"
 							className="composer__add-btn composer__add-btn--secondary"
 							onClick={() => handleAddBlock("code")}
 						>
 							Code
-						</Button>
+						</button>
 					</div>
 
 					{/* What this changes */}
@@ -551,13 +555,13 @@ const ComposerPage: React.FC = () => {
 						<div className="composer__diff-summary">
 							<div className="composer__diff-summary-header">
 								<span className="composer__diff-label">WHAT THIS CHANGES</span>
-								<Button
-									
+								<button
+									type="button"
 									className="composer__show-diff"
 									onClick={() => setShowTextDiff((v) => !v)}
 								>
 									{showTextDiff ? "hide text diff" : "› show text diff"}
-								</Button>
+								</button>
 							</div>
 							<ul className="composer__diff-list">
 								{semanticLabels.map((label) => (
@@ -586,18 +590,16 @@ const ComposerPage: React.FC = () => {
 				</div>
 
 				{/* Right: Reasoning pane */}
-				<Card variant="glass" padding="lg" className="composer__why">
+				<div className="composer__why">
 					<div className="composer__why-header">
-						<div>
-							<span className="composer__pane-label">REASONING</span>
-							<div
-								className="composer__why-hint"
-							>
-								<InformationCircleIcon className="composer__why-hint-icon" />
-								Required — your team uses this to decide
-							</div>
+						<span className="composer__pane-label">REASONING</span>
+						<div
+							className="composer__why-hint"
+							title="A proposal without reasoning is incomplete. Your team uses this to decide."
+						>
+							<InformationCircleIcon className="composer__why-hint-icon" />
+							Required — your team uses this to decide
 						</div>
-						<span className="composer__char-count">{reasoning.length}</span>
 					</div>
 
 					<textarea
@@ -616,18 +618,17 @@ const ComposerPage: React.FC = () => {
 					)}
 
 					{canSend && (
-						<Button
-							variant="primary"
-							size="small"
+						<button
+							type="button"
+							className="composer__send composer__send--inline composer__send--ready"
 							onClick={handleSend}
-							isLoading={submitting}
-							isFullWidth={true}
+							disabled={submitting}
 						>
 							<PaperAirplaneIcon style={{ width: 14, height: 14 }} />
 							{submitting ? "Submitting…" : "Submit"}
-						</Button>
+						</button>
 					)}
-				</Card>
+				</div>
 			</div>
 		</div>
 	);

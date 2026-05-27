@@ -79,7 +79,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 						autoFocus
 					/>
 					<div className="comment-thread__edit-actions">
-						<Button size="small" onClick={handleEditSave} isDisabled={!editBody.trim()}>
+						<Button size="small" onClick={handleEditSave} disabled={!editBody.trim()}>
 							Save
 						</Button>
 						<Button size="small" variant="secondary" onClick={() => { setEditing(false); setEditBody(comment.body); }}>
@@ -134,7 +134,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 						autoFocus
 					/>
 					<div className="comment-thread__reply-actions">
-						<Button size="small" onClick={onReplySubmit} isDisabled={!replyBody.trim()}>
+						<Button size="small" onClick={onReplySubmit} disabled={!replyBody.trim()}>
 							Reply
 						</Button>
 						<Button size="small" variant="secondary" onClick={onReplyCancel}>
@@ -314,7 +314,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
 						onChange={(e) => setDraftBody(e.target.value)}
 					/>
 					<div className="comment-thread__compose-actions">
-						<Button size="small" onClick={handlePost} isDisabled={!draftBody.trim()}>
+						<Button size="small" onClick={handlePost} disabled={!draftBody.trim()}>
 							Comment
 						</Button>
 					</div>

@@ -4,9 +4,14 @@ import {
 	SparklesIcon,
 	XCircleIcon,
 } from "@heroicons/react/24/solid";
+import gsap from "gsap";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import Badge from "@/ui/badge";
+import Card from "@/ui/card";
+import EmptyState from "@/ui/empty-state";
 import { useAuth } from "@/features/auth/auth.context";
 import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
@@ -35,18 +40,6 @@ const relativeTime = (iso: string): string => {
 	return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-const StateTag: React.FC<{ state: string }> = ({ state }) => {
-	const labels: Record<string, string> = {
-		open: "Open",
-		accepted: "Accepted",
-		rejected: "Declined",
-	};
-
-	return (
-		<span className={`inbox__state-tag inbox__state-tag--${state}`}>{labels[state] ?? state}</span>
-	);
-};
-
 const InboxPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { userId } = useAuth();
@@ -55,7 +48,9 @@ const InboxPage: React.FC = () => {
 	const [allProposals, setAllProposals] = useState<ProposalWithDoc[]>([]);
 	const [notifications, setNotifications] = useState<Notification[]>([]);
 	const [markingAllRead, setMarkingAllRead] = useState(false);
+	const cardsRef = useRef<HTMLDivElement>(null);
 
+	// Load proposals
 	useEffect(() => {
 		let cancelled = false;
 		setLoading(true);
@@ -82,7 +77,7 @@ const InboxPage: React.FC = () => {
 				}
 			}
 
-			// Detect conflicts: open proposals sharing affected_block_ids
+			// Conflict detection
 			const openProposals = flat.filter((p) => p.proposal.state === "open");
 			const blockToProposals = new Map<string, string[]>();
 			for (const { proposal } of openProposals) {
@@ -115,10 +110,24 @@ const InboxPage: React.FC = () => {
 		};
 	}, [currentWorkspace]);
 
-	// Fetch notifications on mount.
+	// Fetch notifications
 	useEffect(() => {
 		notificationsApi.list().then(setNotifications).catch(() => {});
 	}, []);
+
+	// Animate cards on mount
+	useEffect(() => {
+		if (cardsRef.current) {
+			const cards = cardsRef.current.querySelectorAll(".inbox__card");
+			gsap.from(cards, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.04,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, [loading, allProposals.length]);
 
 	const handleMarkAllRead = async () => {
 		setMarkingAllRead(true);
@@ -127,6 +136,17 @@ const InboxPage: React.FC = () => {
 			setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
 		} finally {
 			setMarkingAllRead(false);
+		}
+	};
+
+	const handleNotificationClick = async (notificationId: string, proposalId?: string) => {
+		try {
+			await notificationsApi.markRead(notificationId);
+			setNotifications((prev) =>
+				prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+			);
+		} finally {
+			if (proposalId) navigate(`/proposals/${proposalId}`);
 		}
 	};
 
@@ -153,54 +173,44 @@ const InboxPage: React.FC = () => {
 	return (
 		<div className="inbox">
 			<div className="inbox__container">
+				{/* Header */}
 				<header className="inbox__header">
-					<h1 className="inbox__title">Inbox</h1>
-					{!loading && (
-						<p className="inbox__summary">
-							{totalWaiting > 0 ? (
-								<>
-									<strong>{totalWaiting}</strong> {totalWaiting === 1 ? "proposal" : "proposals"}{" "}
-									waiting on you
-									{totalInReview > 0 && (
-										<>
-											{" · "}
-											<strong>{totalInReview}</strong> you authored{" "}
-											{totalInReview === 1 ? "is" : "are"} in review
-										</>
-									)}
-								</>
-							) : totalInReview > 0 ? (
-								<>
-									<strong>{totalInReview}</strong> of your proposals{" "}
-									{totalInReview === 1 ? "is" : "are"} in review
-								</>
-							) : (
-								"You're all caught up."
-							)}
-						</p>
-					)}
+					<div>
+						<h1 className="inbox__title">Inbox</h1>
+						{!loading && (
+							<p className="inbox__subtitle">
+								{totalWaiting > 0 ? (
+									<>
+										<strong>{totalWaiting}</strong> {totalWaiting === 1 ? "proposal" : "proposals"} waiting
+										{totalInReview > 0 && <> · <strong>{totalInReview}</strong> in review</>}
+									</>
+								) : totalInReview > 0 ? (
+									<><strong>{totalInReview}</strong> proposal{totalInReview === 1 ? "" : "s"} in review</>
+								) : (
+									"You're all caught up."
+								)}
+							</p>
+						)}
+					</div>
 				</header>
 
 				{loading ? (
 					<div className="inbox__loading">
 						<div className="inbox__skeleton" />
-						<div className="inbox__skeleton inbox__skeleton--short" />
 						<div className="inbox__skeleton" />
 						<div className="inbox__skeleton inbox__skeleton--short" />
 					</div>
 				) : (
-					<div className="inbox__sections">
-						{/* Notifications feed */}
+					<div className="inbox__sections" ref={cardsRef}>
+						{/* Notifications */}
 						{notifications.length > 0 && (
-							<section className="inbox__section inbox__section--notifications">
+							<section className="inbox__section">
 								<div className="inbox__section-header">
-									<h2 className="inbox__section-heading inbox__section-heading--muted">
-										Recent activity
-									</h2>
+									<h2 className="inbox__section-title">Recent Activity</h2>
 									{notifications.some((n) => !n.read) && (
 										<button
 											type="button"
-											className="inbox__mark-read-btn"
+											className="inbox__pill-button"
 											onClick={handleMarkAllRead}
 											disabled={markingAllRead}
 										>
@@ -208,182 +218,175 @@ const InboxPage: React.FC = () => {
 										</button>
 									)}
 								</div>
-								<ul className="inbox__list inbox__list--notifications">
-									{notifications.slice(0, 8).map((n) => (
-										<li key={n.id}>
-											<button
-												type="button"
-												className={`inbox__notification ${n.read ? "inbox__notification--read" : "inbox__notification--unread"}`}
-												onClick={() => {
-													if (n.payload.proposal_id) navigate(`/proposals/${n.payload.proposal_id}`);
-												}}
-											>
-												{!n.read && <span className="inbox__notification-dot" aria-hidden />}
-												<span className="inbox__notification-label">{notificationLabel(n)}</span>
-												<span className="inbox__notification-time">{relativeTime(n.created_at)}</span>
-											</button>
-										</li>
+								<div className="inbox__cards">
+									{notifications.slice(0, 5).map((n) => (
+										<Card
+											key={n.id}
+											variant="glass"
+											padding="md"
+											onClick={() => handleNotificationClick(n.id, n.payload.proposal_id)}
+											className="inbox__card"
+										>
+											<div className="inbox__notification-row">
+												{!n.read && <span className="inbox__unread-dot" />}
+												<div className="inbox__notification-content">
+													<p className="inbox__notification-text">{notificationLabel(n)}</p>
+													<span className="inbox__notification-time">{relativeTime(n.created_at)}</span>
+												</div>
+											</div>
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						)}
 
+						{/* Needs Decision */}
 						{needsDecision.length > 0 && (
 							<section className="inbox__section">
-								<h2 className="inbox__section-heading">Needs your decision</h2>
-								<ul className="inbox__list">
+								<h2 className="inbox__section-title">Needs Your Decision</h2>
+								<div className="inbox__cards">
 									{needsDecision.map(({ proposal, document, hasConflict }) => (
-										<li key={proposal.id}>
-											<button
-												type="button"
-												className="inbox__row inbox__row--needs-action"
-												onClick={() => navigate(`/proposals/${proposal.id}`)}
-											>
-												<div className="inbox__row-main">
-													<div className="inbox__row-title">
-														{proposal.title || "Untitled proposal"}
-													</div>
-													<div className="inbox__row-meta">
-														<span className="inbox__row-body">
-															in {document.title || "Untitled document"}
-														</span>
-														<span className="inbox__row-dot">·</span>
-														<span className="inbox__row-time">
-															{relativeTime(proposal.created_at)}
-														</span>
-													</div>
-													{proposal.intent && (
-														<div className="inbox__row-intent">{proposal.intent}</div>
-													)}
+										<Card
+											key={proposal.id}
+											variant="glass"
+											padding="md"
+											onClick={() => navigate(`/proposals/${proposal.id}`)}
+											className="inbox__card inbox__card--proposal"
+										>
+											<div className="inbox__proposal-header">
+												<Badge variant="open" size="small">
+													Open
+												</Badge>
+												{hasConflict && (
+													<Badge variant="conflict" size="small">
+														<ExclamationTriangleIcon width={12} height={12} style={{ marginRight: 4 }} />
+														Conflict
+													</Badge>
+												)}
+											</div>
+											<div className="inbox__proposal-content">
+												<h3 className="inbox__proposal-title">
+													{proposal.title || "Untitled proposal"}
+												</h3>
+												{proposal.intent && (
+													<p className="inbox__proposal-intent">{proposal.intent}</p>
+												)}
+												<div className="inbox__proposal-meta">
+													<span>{document.title || "Untitled"}</span>
+													<span className="inbox__meta-dot">·</span>
+													<span>{relativeTime(proposal.created_at)}</span>
 												</div>
-												<div className="inbox__row-side">
-													<StateTag state={proposal.state} />
-													{hasConflict && (
-														<span
-															className="inbox__conflict-flag"
-															title="Conflicts with another open proposal"
-														>
-															<ExclamationTriangleIcon className="inbox__conflict-icon" />
-															conflict
-														</span>
-													)}
-												</div>
-											</button>
-										</li>
+											</div>
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						)}
 
+						{/* Awaiting Review */}
 						{mineInReview.length > 0 && (
 							<section className="inbox__section">
-								<h2 className="inbox__section-heading">Awaiting review</h2>
-								<ul className="inbox__list">
+								<h2 className="inbox__section-title">Awaiting Review</h2>
+								<div className="inbox__cards">
 									{mineInReview.map(({ proposal, document, hasConflict }) => (
-										<li key={proposal.id}>
-											<button
-												type="button"
-												className="inbox__row inbox__row--mine"
-												onClick={() => navigate(`/proposals/${proposal.id}`)}
-											>
-												<div className="inbox__row-main">
-													<div className="inbox__row-title">
-														{proposal.title || "Untitled proposal"}
-													</div>
-													<div className="inbox__row-meta">
-														<span className="inbox__row-body">
-															in {document.title || "Untitled document"}
-														</span>
-														<span className="inbox__row-dot">·</span>
-														<span className="inbox__row-time">
-															{relativeTime(proposal.created_at)}
-														</span>
-													</div>
-													{proposal.intent && (
-														<div className="inbox__row-intent">{proposal.intent}</div>
-													)}
+										<Card
+											key={proposal.id}
+											variant="glass"
+											padding="md"
+											onClick={() => navigate(`/proposals/${proposal.id}`)}
+											className="inbox__card inbox__card--proposal"
+										>
+											<div className="inbox__proposal-header">
+												<Badge variant="open" size="small">
+													Pending Review
+												</Badge>
+												{hasConflict && (
+													<Badge variant="conflict" size="small">
+														<ExclamationTriangleIcon width={12} height={12} style={{ marginRight: 4 }} />
+														Conflict
+													</Badge>
+												)}
+											</div>
+											<div className="inbox__proposal-content">
+												<h3 className="inbox__proposal-title">
+													{proposal.title || "Untitled proposal"}
+												</h3>
+												{proposal.intent && (
+													<p className="inbox__proposal-intent">{proposal.intent}</p>
+												)}
+												<div className="inbox__proposal-meta">
+													<span>{document.title || "Untitled"}</span>
+													<span className="inbox__meta-dot">·</span>
+													<span>{relativeTime(proposal.created_at)}</span>
 												</div>
-												<div className="inbox__row-side">
-													<StateTag state={proposal.state} />
-													{hasConflict && (
-														<span
-															className="inbox__conflict-flag"
-															title="Conflicts with another open proposal"
-														>
-															<ExclamationTriangleIcon className="inbox__conflict-icon" />
-															conflict
-														</span>
-													)}
-												</div>
-											</button>
-										</li>
+											</div>
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						)}
 
+						{/* Empty State */}
 						{needsDecision.length === 0 && mineInReview.length === 0 && (
-							<div className="inbox__empty">
-								<SparklesIcon className="inbox__empty-icon" />
-								<p className="inbox__empty-heading">Nothing pending</p>
-								<p className="inbox__empty-text">
-									No open proposals right now.{" "}
-									<button
-										type="button"
-										className="inbox__empty-link"
-										onClick={() => navigate("/truth")}
-									>
-										Browse the Library
-									</button>{" "}
-									and propose a change.
-								</p>
+							<div className="inbox__empty-wrapper">
+								<EmptyState
+									icon={<SparklesIcon width={32} height={32} />}
+									heading="You're all caught up"
+									description="No open proposals right now. Browse the Library and propose a change."
+									cta={{
+										label: "Browse Library",
+										onClick: () => navigate("/truth"),
+									}}
+								/>
 							</div>
 						)}
 
+						{/* Recently Decided */}
 						{recentlyDecided.length > 0 && (
-							<section className="inbox__section inbox__section--decided">
-								<h2 className="inbox__section-heading inbox__section-heading--muted">
-									Recently decided
-								</h2>
-								<ul className="inbox__list">
+							<section className="inbox__section">
+								<h2 className="inbox__section-title">Recently Decided</h2>
+								<div className="inbox__cards">
 									{recentlyDecided.map(({ proposal, document }) => (
-										<li key={proposal.id}>
-											<button
-												type="button"
-												className="inbox__row inbox__row--decided"
-												onClick={() => navigate(`/proposals/${proposal.id}`)}
-											>
-												<div className="inbox__row-icon">
-													{proposal.state === "accepted" ? (
-														<CheckCircleIcon className="inbox__decided-icon inbox__decided-icon--accepted" />
-													) : (
-														<XCircleIcon className="inbox__decided-icon inbox__decided-icon--declined" />
-													)}
+										<Card
+											key={proposal.id}
+											variant="glass"
+											padding="md"
+											onClick={() => navigate(`/proposals/${proposal.id}`)}
+											className="inbox__card inbox__card--decided"
+										>
+											<div className="inbox__decided-header">
+												{proposal.state === "accepted" ? (
+													<>
+														<CheckCircleIcon width={20} height={20} className="inbox__icon-accepted" />
+														<Badge variant="accepted" size="small">
+															Accepted
+														</Badge>
+													</>
+												) : (
+													<>
+														<XCircleIcon width={20} height={20} className="inbox__icon-declined" />
+														<Badge variant="declined" size="small">
+															Declined
+														</Badge>
+													</>
+												)}
+											</div>
+											<div className="inbox__proposal-content">
+												<h3 className="inbox__proposal-title">
+													{proposal.title || "Untitled proposal"}
+												</h3>
+												{proposal.rejection_reason && (
+													<p className="inbox__rejection-reason">"{proposal.rejection_reason}"</p>
+												)}
+												<div className="inbox__proposal-meta">
+													<span>{document.title || "Untitled"}</span>
+													<span className="inbox__meta-dot">·</span>
+													<span>{relativeTime(proposal.updated_at)}</span>
 												</div>
-												<div className="inbox__row-main">
-													<div className="inbox__row-title inbox__row-title--muted">
-														{proposal.state === "accepted"
-															? "Accepted: "
-															: "Declined: "}
-														{proposal.title || "Untitled proposal"}
-													</div>
-													<div className="inbox__row-meta">
-														<span className="inbox__row-body">
-															in {document.title || "Untitled document"}
-														</span>
-														<span className="inbox__row-dot">·</span>
-														<span className="inbox__row-time">
-															{relativeTime(proposal.updated_at)}
-														</span>
-													</div>
-													{proposal.rejection_reason && (
-														<div className="inbox__row-reason">"{proposal.rejection_reason}"</div>
-													)}
-												</div>
-											</button>
-										</li>
+											</div>
+										</Card>
 									))}
-								</ul>
+								</div>
 							</section>
 						)}
 					</div>

@@ -1,6 +1,7 @@
-import { ArrowLeftIcon, ClockIcon, PencilSquareIcon, PlusIcon } from "@heroicons/react/24/solid";
+import { ArrowLeftIcon, PencilSquareIcon, PlusIcon } from "@heroicons/react/24/solid";
+import gsap from "gsap";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { blocksApi } from "@/features/documents/blocks.api";
 import { documentsApi } from "@/features/documents/documents.api";
@@ -9,8 +10,11 @@ import type { Proposal } from "@/features/proposals/proposals.api";
 import { proposalsApi } from "@/features/proposals/proposals.api";
 import { useWorkspace } from "@/features/workspaces/workspace.context";
 import { workspacesApi } from "@/features/workspaces/workspaces.api";
+
+import Badge from "@/ui/badge";
 import Button from "@/ui/button";
 import Card from "@/ui/card";
+import EmptyState from "@/ui/empty-state";
 import "./truth.page.scss";
 
 const relativeDate = (iso: string): string => {
@@ -36,9 +40,8 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 	const [proposals, setProposals] = useState<Proposal[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [creating, setCreating] = useState(false);
-
-	// Map block_id → open proposals that touch it
 	const [blockProposalMap, setBlockProposalMap] = useState<Map<string, Proposal[]>>(new Map());
+	const articleRef = useRef<HTMLElement>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -107,6 +110,20 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 		navigate(`/truth/${documentId}/compose`);
 	};
 
+	// Animate blocks on mount
+	useEffect(() => {
+		if (articleRef.current && !loading && blocks.length > 0) {
+			const blockElements = articleRef.current.querySelectorAll(".truth-detail__block");
+			gsap.from(blockElements, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.03,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, [loading, blocks.length]);
+
 	const openProposals = proposals.filter((p) => p.state === "open");
 	const openCount = openProposals.length;
 
@@ -128,7 +145,7 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 		return (
 			<div className="truth-detail truth-detail--error">
 				<p>This document could not be found.</p>
-				<Button variant="secondary" size="small" onClick={() => navigate("/truth")}>
+				<Button variant="secondary" onClick={() => navigate("/truth")}>
 					Back to Library
 				</Button>
 			</div>
@@ -137,34 +154,31 @@ const TruthDetailView: React.FC<{ documentId: string }> = ({ documentId }) => {
 
 	return (
 		<div className="truth-detail">
-			<div className="truth-detail__chrome">
+			<div className="truth-detail__toolbar">
 				<button type="button" className="truth-detail__back" onClick={() => navigate("/truth")}>
 					<ArrowLeftIcon className="truth-detail__back-icon" />
 					Library
 				</button>
-				<div className="truth-detail__chrome-right">
+				<div className="truth-detail__toolbar-center">
+					<h2 className="truth-detail__toolbar-title">{document.title || "Untitled"}</h2>
+				</div>
+				<div className="truth-detail__toolbar-right">
 					{openCount > 0 && (
-						<span className="truth-detail__proposal-count">
-							{openCount} open {openCount === 1 ? "proposal" : "proposals"}
-						</span>
+						<Badge variant="open" size="small">
+							{openCount} {openCount === 1 ? "proposal" : "proposals"}
+						</Badge>
 					)}
-					<div className="truth-detail__time-tag">
-						<ClockIcon className="truth-detail__time-icon" />
-						<span>as of today</span>
-					</div>
-					<button
-						type="button"
-						className="truth-detail__compose-btn"
-						onClick={handleAddThought}
-						disabled={creating}
-					>
-						<PencilSquareIcon className="truth-detail__compose-icon" />
-						{creating ? "Opening…" : "Propose a change"}
-					</button>
+					<Button variant="primary" size="small" onClick={handleAddThought} disabled={creating}>
+						<PencilSquareIcon style={{ width: 14, height: 14 }} />
+						{creating ? "Opening…" : "Propose"}
+					</Button>
 				</div>
 			</div>
 
-			<article className="truth-detail__article">
+			<article className="truth-detail__article" ref={articleRef}>
+				<div className="truth-detail__breadcrumb">
+					Library / {document.title || "Untitled"}
+				</div>
 				<header className="truth-detail__article-header">
 					<h1 className="truth-detail__doc-title">{document.title || "Untitled"}</h1>
 					<p className="truth-detail__doc-meta">
@@ -263,6 +277,7 @@ const TruthListView: React.FC = () => {
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [creating, setCreating] = useState(false);
+	const cardsRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (workspaceLoading) return;
@@ -306,17 +321,31 @@ const TruthListView: React.FC = () => {
 		}
 	};
 
+	// Animate cards on mount
+	useEffect(() => {
+		if (cardsRef.current && !loading && documents.length > 0) {
+			const cards = cardsRef.current.querySelectorAll(".truth-list__card");
+			gsap.from(cards, {
+				opacity: 0,
+				y: 12,
+				stagger: 0.04,
+				duration: 0.4,
+				ease: "power2.out",
+			});
+		}
+	}, [loading, documents.length]);
+
 	return (
 		<div className="truth-list">
 			<div className="truth-list__container">
 				<header className="truth-list__header">
-					<div className="truth-list__header-text">
+					<div>
 						<h1 className="truth-list__title">Library</h1>
 						<p className="truth-list__subtitle">
-							Your team's documents — every accepted change recorded with its reasoning.
+							Your team's shared knowledge. Every accepted change recorded with its reasoning.
 						</p>
 					</div>
-					<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={creating}>
+					<Button variant="primary" onClick={handleCreate} disabled={creating}>
 						<PlusIcon style={{ width: 16, height: 16 }} />
 						{creating ? "Creating…" : "New document"}
 					</Button>
@@ -330,53 +359,47 @@ const TruthListView: React.FC = () => {
 						))}
 					</div>
 				) : documents.length === 0 ? (
-					<div className="truth-list__empty">
-						<p className="truth-list__empty-heading">No documents yet</p>
-						<p className="truth-list__empty-text">
-							Documents hold your team's shared knowledge. Every accepted change is saved with its reasoning, permanently.
-						</p>
-						<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={creating}>
-							<PlusIcon style={{ width: 16, height: 16 }} />
-							{creating ? "Creating…" : "Create your first document"}
-						</Button>
-					</div>
+					<EmptyState
+						heading="No documents yet"
+						description="Documents hold your team's shared knowledge. Every accepted change is saved with its reasoning, permanently."
+						cta={{
+							label: "Create your first document",
+							onClick: handleCreate,
+						}}
+					/>
 				) : (
-					<ul className="truth-list__items">
+					<div className="truth-list__grid" ref={cardsRef}>
 						{documents.map((doc) => (
-							<li key={doc.id}>
-								<Card
-									variant="default"
-									padding="md"
-									onClick={() => navigate(`/truth/${doc.id}`)}
-									className="truth-list__item"
-								>
-									<div className="truth-list__item-main">
-										<h2 className="truth-list__item-title">{doc.title || "Untitled"}</h2>
-										<p className="truth-list__item-meta">
-											Last amended{" "}
-											{new Date(doc.updated_at).toLocaleDateString("en-US", {
-												month: "short",
-												day: "numeric",
-												year: "numeric",
-											})}
-										</p>
-									</div>
-									<div className="truth-list__item-actions">
-										<button
-											type="button"
-											className="truth-list__item-propose"
-											onClick={(e) => {
-												e.stopPropagation();
-												navigate(`/truth/${doc.id}/compose`);
-											}}
-										>
-											Propose a change
-										</button>
-									</div>
-								</Card>
-							</li>
+							<Card
+								key={doc.id}
+								variant="glass"
+								padding="md"
+								onClick={() => navigate(`/truth/${doc.id}`)}
+								className="truth-list__card"
+							>
+								<div className="truth-list__card-content">
+									<h2 className="truth-list__card-title">{doc.title || "Untitled"}</h2>
+									<p className="truth-list__card-meta">
+										{new Date(doc.updated_at).toLocaleDateString("en-US", {
+											month: "short",
+											day: "numeric",
+											year: "numeric",
+										})}
+									</p>
+									<button
+										type="button"
+										className="truth-list__card-propose"
+										onClick={(e) => {
+											e.stopPropagation();
+											navigate(`/truth/${doc.id}/compose`);
+										}}
+									>
+										Propose a change
+									</button>
+								</div>
+							</Card>
 						))}
-					</ul>
+					</div>
 				)}
 			</div>
 		</div>
