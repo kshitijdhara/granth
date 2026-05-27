@@ -1,3 +1,5 @@
+import { isAccessTokenExpired } from "@/lib/auth-token";
+
 export class ApiError extends Error {
 	readonly status: number;
 	constructor(status: number, message: string) {
@@ -39,7 +41,41 @@ function drainQueue(err?: unknown) {
 	}
 }
 
+function isPublicAuthPath(path: string): boolean {
+	return path.startsWith("/auth/");
+}
+
+async function ensureFreshAccessToken(path: string): Promise<void> {
+	if (isPublicAuthPath(path) || !_onRefresh) return;
+
+	const token = _getToken?.() ?? null;
+	if (!token || !isAccessTokenExpired(token)) return;
+
+	if (isRefreshing) {
+		await new Promise<void>((resolve, reject) => {
+			refreshQueue.push({ resolve, reject });
+		});
+		return;
+	}
+
+	isRefreshing = true;
+	try {
+		await _onRefresh();
+		drainQueue();
+	} catch (err) {
+		drainQueue(err);
+		_onLogout?.();
+		throw new ApiError(401, "Session expired");
+	} finally {
+		isRefreshing = false;
+	}
+}
+
 async function request<T>(method: string, path: string, body?: unknown, retry = false): Promise<T> {
+	if (!retry) {
+		await ensureFreshAccessToken(path);
+	}
+
 	const token = _getToken?.() ?? null;
 
 	const res = await fetch(`${BASE_URL}${path}`, {

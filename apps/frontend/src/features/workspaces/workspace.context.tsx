@@ -66,6 +66,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		} else {
 			setWorkspaces([]);
 			setCurrentId(null);
+			setLoading(false);
 		}
 	}, [isAuthenticated, refresh]);
 

@@ -1,6 +1,7 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isAccessTokenExpired } from "@/lib/auth-token";
 import { configureHttp } from "@/lib/http";
 import { authApi } from "./auth.api";
 
@@ -16,6 +17,7 @@ interface AuthContextValue {
 	username: string | null;
 	accessToken: string | null;
 	isAuthenticated: boolean;
+	/** True while login/register is in progress. */
 	isLoading: boolean;
 	login: (email: string, password: string) => Promise<void>;
 	register: (name: string, email: string, password: string) => Promise<void>;
@@ -97,14 +99,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		navigate("/login");
 	};
 
-	// Wire http module once; callbacks read fresh from storage to avoid stale closures
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — configureHttp is wired once on mount; callbacks read fresh from localStorage, not from React state
+	// Wire http + restore session on mount. Proactive refresh in http.ts covers in-flight calls.
 	useEffect(() => {
 		configureHttp({
 			getToken: () => readStorage()?.accessToken ?? null,
 			onRefresh: refreshAccessToken,
 			onLogout: () => void logout(),
 		});
+
+		const current = readStorage();
+		if (current?.accessToken && isAccessTokenExpired(current.accessToken)) {
+			void refreshAccessToken().catch(() => clearUser());
+		}
+		// Mount-only; callbacks read fresh from localStorage, not React state.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional
 	}, []);
 
 	const login = async (email: string, password: string) => {
