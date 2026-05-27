@@ -14,7 +14,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func createProposal(documentID string, title string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) (string, error) {
+func createProposal(documentID string, title string, newTitle string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) (string, error) {
 	userID, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return "", fmt.Errorf("user ID not found in context")
@@ -24,6 +24,7 @@ func createProposal(documentID string, title string, intent string, scope string
 		DocumentID:       documentID,
 		AffectedBlockIDs: affectedBlockIDs,
 		Title:            title,
+		NewTitle:         newTitle,
 		AuthorID:         userID,
 		Intent:           intent,
 		Scope:            scope,
@@ -70,7 +71,7 @@ func getProposalsForDocument(documentID string, ctx context.Context) ([]*Proposa
 	return proposals, nil
 }
 
-func updateProposal(proposalID string, title string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) error {
+func updateProposal(proposalID string, title string, newTitle string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) error {
 	userID, ok := utils.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
@@ -86,6 +87,7 @@ func updateProposal(proposalID string, title string, intent string, scope string
 	}
 
 	proposal.Title = title
+	proposal.NewTitle = newTitle
 	proposal.Intent = intent
 	proposal.Scope = scope
 	proposal.AffectedBlockIDs = affectedBlockIDs
@@ -211,6 +213,16 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 		}
 		if err != nil {
 			return fmt.Errorf("error applying block change (%s): %w", change.Action, err)
+		}
+	}
+
+	// Apply document title rename if the proposal carries one.
+	if proposal.NewTitle != "" {
+		_, err = tx.ExecContext(ctx,
+			"UPDATE documents SET title = $1, updated_at = $2, updated_by = $3 WHERE id = $4",
+			proposal.NewTitle, now, userID, proposal.DocumentID)
+		if err != nil {
+			return fmt.Errorf("error applying document title rename: %w", err)
 		}
 	}
 

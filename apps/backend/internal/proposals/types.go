@@ -17,6 +17,7 @@ type Proposal struct {
 	DocumentID       string   `json:"document_id"`
 	AffectedBlockIDs []string `json:"affected_block_ids"`
 	Title            string   `json:"title"`
+	NewTitle         string   `json:"new_title"`
 	AuthorID         string   `json:"author_id"`
 	Intent           string   `json:"intent"`
 	Scope            string   `json:"scope"`
