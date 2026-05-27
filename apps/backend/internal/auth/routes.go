@@ -130,7 +130,7 @@ func handleGetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := GetUserByID(claims.UserID)
+	username, email, _, err := GetUserByID(claims.UserID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -138,9 +138,9 @@ func handleGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"id":       user.ID,
-		"username": user.Username,
-		"email":    user.Email,
+		"id":       claims.UserID,
+		"username": username,
+		"email":    email,
 	})
 }
 
@@ -181,16 +181,15 @@ func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	user, err := GetUserByID(id)
+	username, _, _, err := GetUserByID(id)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"id":       user.ID,
-		"username": user.Username,
-		"email":    user.Email,
+		"id":       id,
+		"username": username,
 	})
 }
 
