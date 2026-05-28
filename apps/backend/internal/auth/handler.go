@@ -15,8 +15,9 @@ func AuthRouter() http.Handler {
 
 	r.Post("/login", handleLogin)
 	r.Post("/register", handleRegister)
-	r.With(foundation.AuthMiddleware).Post("/logout", handleLogout)
 	r.Post("/refreshToken", handleRefreshToken)
+	r.With(foundation.AuthMiddleware).Patch("/updatePassword", handleUpdatePassword)
+	r.With(foundation.AuthMiddleware).Post("/logout", handleLogout)
 	r.With(foundation.AuthMiddleware).Get("/profile", handleGetProfile)
 	r.With(foundation.AuthMiddleware).Put("/profile", handleUpdateProfile)
 	r.With(foundation.AuthMiddleware).Get("/users/{id}", handleGetUserByID)
@@ -152,6 +153,30 @@ func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 		"username": user.Username,
 		"email":    user.Email,
 	})
+}
+
+func handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
+	claims, ok := foundation.GetClaimsFromContext(r.Context())
+	if !ok {
+		shared.WriteError(w, shared.ErrUnauthorized)
+		return
+	}
+
+	var req struct {
+		CurrentPassword string `json:"currentPassword"`
+		NewPassword     string `json:"newPassword"`
+	}
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
+		return
+	}
+	if err := updatePassword(claims.UserID, req.CurrentPassword, req.NewPassword); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Password update failed: "+err.Error()))
+		return
+	}
+
+	shared.WriteJSON(w, http.StatusOK, map[string]string{"message": "Password updated successfully"})
 }
 
 func handleRefreshToken(w http.ResponseWriter, r *http.Request) {

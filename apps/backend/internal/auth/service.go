@@ -113,3 +113,25 @@ func refreshAccessToken(refreshToken string, ctx context.Context) (AuthResponse,
 		RefreshToken: newRefreshToken,
 	}, nil
 }
+
+func updatePassword(userID, currentPassword, newPassword string) error {
+	user, err := GetUserByID(userID)
+	if err != nil {
+		return fmt.Errorf("error fetching user: %w", err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return fmt.Errorf("current password is incorrect")
+	}
+
+	newPasswordHashBytes, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("error hashing new password: %w", err)
+	}
+
+	if err := UpdateUserPassword(userID, string(newPasswordHashBytes)); err != nil {
+		return fmt.Errorf("error updating password: %w", err)
+	}
+
+	return nil
+}
