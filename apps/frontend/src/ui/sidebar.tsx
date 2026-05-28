@@ -3,12 +3,12 @@ import {
 	ArrowRightStartOnRectangleIcon,
 	Bars3Icon,
 	BookOpenIcon,
+	BuildingOffice2Icon,
 	InboxIcon,
 	MoonIcon,
 	SparklesIcon,
 	SunIcon,
 	UserCircleIcon,
-	UsersIcon,
 	XMarkIcon,
 } from "@heroicons/react/24/solid";
 import type React from "react";
@@ -30,7 +30,7 @@ const NAV_ITEMS = [
 	{ key: "truth", path: "/truth", label: "Library", Icon: BookOpenIcon },
 	{ key: "motion", path: "/motion", label: "Review", Icon: SparklesIcon },
 	{ key: "archive", path: "/archive", label: "Decisions", Icon: ArchiveBoxIcon },
-	{ key: "group", path: "/group", label: "Team", Icon: UsersIcon },
+	{ key: "group", path: "/group", label: "Workspace", Icon: BuildingOffice2Icon },
 ] as const;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {

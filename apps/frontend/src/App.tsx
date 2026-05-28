@@ -9,8 +9,7 @@ import InboxPage from "@/features/inbox/inbox.page";
 import MotionPage from "@/features/motion/motion.page";
 import TruthPage from "@/features/truth/truth.page";
 import ProfilePage from "@/features/user/profile.page";
-import WorkspaceListPage from "@/features/workspaces/workspace-list.page";
-import WorkspaceSettingsPage from "@/features/workspaces/workspace-settings.page";
+import WorkplacePage from "@/features/workspaces/workplace.page";
 import MainLayout from "@/layouts/main.layout";
 import "@/styles/global.scss";
 
@@ -44,8 +43,7 @@ const App: React.FC = () => (
 		</Route>
 
 		<Route path="/group" element={<MainLayout />}>
-			<Route index element={<WorkspaceListPage />} />
-			<Route path=":id/settings" element={<WorkspaceSettingsPage />} />
+			<Route index element={<WorkplacePage />} />
 		</Route>
 
 		<Route path="/profile" element={<MainLayout />}>
