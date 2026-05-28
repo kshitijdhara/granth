@@ -361,71 +361,100 @@ const WorkplacePage: React.FC = () => {
 				{/* Members Tab */}
 				{tab === "members" && (
 					<>
+						{/* Add Member Card */}
 						{isAdmin && (
 							<section className="workplace__section">
-								<h2 className="workplace__section-title">Add Member</h2>
-								<div className="workplace__form-row">
-									<Input
-										label="User ID"
+								<div className="workplace__add-member-header">
+									<h2 className="workplace__section-title">Invite someone</h2>
+									<p className="workplace__add-member-hint">Add a user by their ID</p>
+								</div>
+
+								<div className="workplace__field">
+									<label className="workplace__field-label" htmlFor="user-id-input">User ID</label>
+									<input
+										id="user-id-input"
+										type="text"
+										className="workplace__field-input"
 										value={addUserId}
-										onChange={setAddUserId}
+										onChange={(e) => setAddUserId(e.target.value)}
 										placeholder="Paste a user ID"
-										isDisabled={adding}
-										hasError={!!addError}
-										errorMessage={addError}
+										disabled={adding}
 									/>
-									<div className="workplace__form-group">
-										<label className="workplace__label" htmlFor="add-role">
-											Role
-										</label>
-										<select
-											id="add-role"
-											className="workplace__select"
-											value={addRole}
-											onChange={(e) => setAddRole(e.target.value as WorkspaceRole)}
-											disabled={adding}
-										>
-											<option value="contributor">Contributor</option>
-											<option value="reviewer">Reviewer</option>
-											<option value="admin">Admin</option>
-										</select>
-									</div>
-									<Button
-										variant="primary"
-										size="medium"
+								</div>
+
+								<div className="workplace__field">
+									<label className="workplace__field-label" htmlFor="role-select">Role</label>
+									<select
+										id="role-select"
+										className="workplace__field-select"
+										value={addRole}
+										onChange={(e) => setAddRole(e.target.value as WorkspaceRole)}
+										disabled={adding}
+									>
+										<option value="contributor">Contributor</option>
+										<option value="reviewer">Reviewer</option>
+										<option value="admin">Admin</option>
+									</select>
+								</div>
+
+								{addError && <p className="workplace__field-error">{addError}</p>}
+
+								<div className="workplace__form-footer">
+									<button
+										type="button"
+										className="workplace__invite-btn"
 										onClick={handleAddMember}
-										isDisabled={adding || !addUserId.trim()}
+										disabled={adding || !addUserId.trim()}
 									>
 										<UserPlusIcon style={{ width: 16, height: 16 }} />
-										{adding ? "Adding..." : "Add"}
-									</Button>
+										{adding ? "Adding..." : "Invite member"}
+									</button>
 								</div>
 							</section>
 						)}
 
+						{/* Members Card */}
 						<section className="workplace__section">
-							<h2 className="workplace__section-title">Members</h2>
+							<div className="workplace__section-header">
+								<h2 className="workplace__section-title">{members.length} member{members.length !== 1 ? "s" : ""}</h2>
+							</div>
+
 							{membersLoading ? (
-								<div className="workplace__member-skeleton" />
+								<div className="workplace__loading">
+									{Array.from({ length: 3 }).map((_, i) => (
+										<div key={i} className="workplace__skeleton-row">
+											<div className="workplace__skeleton" style={{ width: 44, height: 44, borderRadius: "50%" }} />
+											<div className="workplace__skeleton" style={{ flex: 1, height: 18 }} />
+										</div>
+									))}
+								</div>
 							) : members.length === 0 ? (
-								<p className="workplace__empty-text">No members yet.</p>
+								<div className="workplace__empty-documents">
+									<p className="workplace__empty-title">No members yet</p>
+									<p className="workplace__empty-text">Members will appear here once you invite them.</p>
+								</div>
 							) : (
-								<ul className="workplace__member-list">
+								<ul className="workplace__member-list" style={{ listStyle: "none", margin: 0, padding: 0 }}>
 									{members.map((member) => (
-										<li key={member.user_id} className="workplace__member-item">
-											<div className="workplace__member-info">
-												<div className="workplace__member-avatar">{initialsFrom(member.username)}</div>
-												<div className="workplace__member-text">
-													<span className="workplace__member-name">{member.username}</span>
-													<span className={`workplace__role-badge workplace__role-badge--${member.role}`}>
+										<li key={member.user_id} className="workplace__member-row">
+											<div className="workplace__member-avatar-lg">
+												{initialsFrom(member.username)}
+											</div>
+											<div className="workplace__member-body">
+												<span className="workplace__member-username">{member.username}</span>
+												<div className="workplace__member-badges">
+													<span className={`workplace__role-pill workplace__role-pill--${member.role}`}>
 														{member.role.charAt(0).toUpperCase() + member.role.slice(1)}
 													</span>
+													{member.user_id === userId && (
+														<span className="workplace__you-badge">you</span>
+													)}
 												</div>
 											</div>
 											{isAdmin && member.user_id !== userId && (
-												<div className="workplace__member-actions">
+												<div className="workplace__member-controls">
 													<select
-														className="workplace__select workplace__select--inline"
+														className="workplace__role-select-sm"
 														value={member.role}
 														onChange={(e) => handleUpdateMemberRole(member, e.target.value as WorkspaceRole)}
 													>
