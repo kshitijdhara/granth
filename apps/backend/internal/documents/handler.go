@@ -1,11 +1,11 @@
 package documents
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"granth/internal/blocks"
+	"granth/internal/shared"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -31,55 +31,39 @@ func DocumentsRouter() http.Handler {
 func handleGetAllDocuments(w http.ResponseWriter, r *http.Request) {
 	documents, err := getAllDocuments(r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching documents: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching documents: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	jsondata, err := json.Marshal(documents)
-	if err != nil {
-		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsondata)
+	shared.WriteJSON(w, http.StatusOK, documents)
 }
 
 func handleGetLatestDocuments(w http.ResponseWriter, r *http.Request) {
 	limitStr := chi.URLParam(r, "limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		http.Error(w, "Invalid limit parameter: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	documents, err := getLatestDocuments(r.Context(), limit)
-	if err != nil {
-		http.Error(w, "Error fetching latest documents: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Invalid limit parameter: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	jsondata, err := json.Marshal(documents)
+	documents, err := getLatestDocuments(r.Context(), limit)
 	if err != nil {
-		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching latest documents: "+err.Error()))
 		return
 	}
-	w.Write(jsondata)
+
+	shared.WriteJSON(w, http.StatusOK, documents)
 }
+
 func handleGetDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
 	document, err := getDocument(documentID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching document: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching document: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	jsondata, err := json.Marshal(document)
-	if err != nil {
-		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsondata)
+	shared.WriteJSON(w, http.StatusOK, document)
 }
 
 func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
@@ -87,45 +71,39 @@ func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 		Title       string  `json:"title"`
 		WorkspaceID *string `json:"workspace_id"`
 	}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	if req.Title == "" {
-		http.Error(w, "Title is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Title is required"))
 		return
 	}
 
 	documentID, err := createNewDocument(req.Title, req.WorkspaceID, r.Context())
 	if err != nil {
-		http.Error(w, "Error creating document: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error creating document: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	jsondata, err := json.Marshal(map[string]string{"document_id": documentID})
-	if err != nil {
-		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsondata)
+	shared.WriteJSON(w, http.StatusCreated, map[string]string{"document_id": documentID})
 }
 
 func handleUpdateDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
 	var document Document
-	err := json.NewDecoder(r.Body).Decode(&document)
-	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &document); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	document.ID = documentID
 
-	err = updateDocumentByID(&document, r.Context())
-	if err != nil {
-		http.Error(w, "Error updating document: "+err.Error(), http.StatusInternalServerError)
+	if err := updateDocumentByID(&document, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error updating document: "+err.Error()))
 		return
 	}
 
@@ -135,9 +113,8 @@ func handleUpdateDocument(w http.ResponseWriter, r *http.Request) {
 func handleDeleteDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
 
-	err := DeleteDocument(documentID, r.Context())
-	if err != nil {
-		http.Error(w, "Error deleting document: "+err.Error(), http.StatusInternalServerError)
+	if err := DeleteDocument(documentID, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error deleting document: "+err.Error()))
 		return
 	}
 
@@ -148,48 +125,42 @@ func handleGetAllBlocksForDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
 	blocks, err := getAllBlocksForDocument(documentID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching blocks: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching blocks: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	jsondata, err := json.Marshal(blocks)
-	if err != nil {
-		http.Error(w, "Error encoding JSON: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsondata)
+	shared.WriteJSON(w, http.StatusOK, blocks)
 }
 
 func handleCreateBlockForDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "id")
 	var block blocks.Block
-	err := json.NewDecoder(r.Body).Decode(&block)
-	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &block); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	block.DocumentID = documentID
 
-	err = createBlockForDocument(&block, r.Context())
-	if err != nil {
-		http.Error(w, "Error creating block: "+err.Error(), http.StatusInternalServerError)
+	if err := createBlockForDocument(&block, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error creating block: "+err.Error()))
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 }
+
 func handleUpdateBlockForDocument(w http.ResponseWriter, r *http.Request) {
 	var block blocks.Block
-	err := json.NewDecoder(r.Body).Decode(&block)
-	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &block); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
-	err = blocks.UpdateBlock(&block, r.Context())
-	if err != nil {
-		http.Error(w, "Error updating block: "+err.Error(), http.StatusInternalServerError)
+	if err := blocks.UpdateBlock(&block, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error updating block: "+err.Error()))
 		return
 	}
 
@@ -200,19 +171,19 @@ func handleDeleteBlockForDocument(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		BlockID string `json:"block_id"`
 	}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	if req.BlockID == "" {
-		http.Error(w, "Block ID is required", http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
-	err = blocks.DeleteBlock(req.BlockID, r.Context())
-	if err != nil {
-		http.Error(w, "Error deleting block: "+err.Error(), http.StatusInternalServerError)
+	if req.BlockID == "" {
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Block ID is required"))
+		return
+	}
+
+	if err := blocks.DeleteBlock(req.BlockID, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error deleting block: "+err.Error()))
 		return
 	}
 

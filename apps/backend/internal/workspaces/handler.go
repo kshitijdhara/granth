@@ -2,10 +2,11 @@ package workspaces
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"granth/internal/foundation"
 	"net/http"
+
+	"granth/internal/foundation"
+	"granth/internal/shared"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -68,13 +69,15 @@ func fetchDocumentsByWorkspaceID(workspaceID string, ctx context.Context) ([]*wo
 func handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
 	workspaces, err := getUserWorkspaces(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+
 	if workspaces == nil {
 		workspaces = []*Workspace{}
 	}
-	writeJSON(w, http.StatusOK, workspaces)
+
+	shared.WriteJSON(w, http.StatusOK, workspaces)
 }
 
 func handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
@@ -82,35 +85,39 @@ func handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	if req.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "name is required"))
 		return
 	}
 
 	workspace, err := createWorkspace(req.Name, req.Description, r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
 	}
-	writeJSON(w, http.StatusCreated, workspace)
+
+	shared.WriteJSON(w, http.StatusCreated, workspace)
 }
 
 func handleGetWorkspace(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	workspace, err := getWorkspace(id, r.Context())
 	if err != nil {
+		statusCode := http.StatusInternalServerError
 		if err.Error() == "access denied" || err.Error() == "workspace not found" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
-	writeJSON(w, http.StatusOK, workspace)
+
+	shared.WriteJSON(w, http.StatusOK, workspace)
 }
 
 func handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
@@ -119,36 +126,41 @@ func handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	if req.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "name is required"))
 		return
 	}
 
 	if err := updateWorkspaceDetails(id, req.Name, req.Description, r.Context()); err != nil {
+		statusCode := http.StatusInternalServerError
 		if err.Error() == "only admins can update workspace details" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
 func handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+
 	if err := deleteWorkspaceByID(id, r.Context()); err != nil {
+		statusCode := http.StatusInternalServerError
 		if err.Error() == "only the workspace owner can delete it" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -156,17 +168,19 @@ func handleListMembers(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	members, err := getWorkspaceMembers(id, r.Context())
 	if err != nil {
+		statusCode := http.StatusInternalServerError
 		if err.Error() == "access denied" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
+
 	if members == nil {
 		members = []*WorkspaceMember{}
 	}
-	writeJSON(w, http.StatusOK, members)
+
+	shared.WriteJSON(w, http.StatusOK, members)
 }
 
 func handleAddMember(w http.ResponseWriter, r *http.Request) {
@@ -175,25 +189,28 @@ func handleAddMember(w http.ResponseWriter, r *http.Request) {
 		UserID string `json:"user_id"`
 		Role   string `json:"role"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	if req.UserID == "" || req.Role == "" {
-		http.Error(w, "user_id and role are required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "user_id and role are required"))
 		return
 	}
 
 	member, err := addMember(workspaceID, req.UserID, req.Role, r.Context())
 	if err != nil {
+		statusCode := http.StatusBadRequest
 		if err.Error() == "only admins can add members" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
-	writeJSON(w, http.StatusCreated, member)
+
+	shared.WriteJSON(w, http.StatusCreated, member)
 }
 
 func handleUpdateMemberRole(w http.ResponseWriter, r *http.Request) {
@@ -202,23 +219,26 @@ func handleUpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Role string `json:"role"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
+
 	if req.Role == "" {
-		http.Error(w, "role is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "role is required"))
 		return
 	}
 
 	if err := updateMember(workspaceID, targetUID, req.Role, r.Context()); err != nil {
+		statusCode := http.StatusBadRequest
 		if err.Error() == "only admins can change member roles" || err.Error() == "cannot demote the last admin" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -227,13 +247,14 @@ func handleRemoveMember(w http.ResponseWriter, r *http.Request) {
 	targetUID := chi.URLParam(r, "uid")
 
 	if err := removeMemberFromWorkspace(workspaceID, targetUID, r.Context()); err != nil {
+		statusCode := http.StatusBadRequest
 		if err.Error() == "only admins can remove members" || err.Error() == "cannot remove the last admin" {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+			statusCode = http.StatusForbidden
 		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -242,29 +263,24 @@ func handleListWorkspaceDocuments(w http.ResponseWriter, r *http.Request) {
 
 	isMember, err := IsMember(workspaceID, r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+
 	if !isMember {
-		http.Error(w, "access denied", http.StatusForbidden)
+		shared.WriteError(w, shared.NewAPIError(http.StatusForbidden, "access denied"))
 		return
 	}
 
 	docs, err := fetchDocumentsByWorkspaceID(workspaceID, r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+
 	if docs == nil {
 		docs = []*workspaceDocument{}
 	}
-	writeJSON(w, http.StatusOK, docs)
-}
 
-func writeJSON(w http.ResponseWriter, status int, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		http.Error(w, "error encoding JSON: "+err.Error(), http.StatusInternalServerError)
-	}
+	shared.WriteJSON(w, http.StatusOK, docs)
 }
