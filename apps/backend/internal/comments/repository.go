@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"granth/internal/config"
+	"granth/internal/foundation"
 )
 
 // FetchCommentsByProposal returns all comments for a proposal, ordered by
 // creation time ascending. AuthorUsername is populated via JOIN.
 func FetchCommentsByProposal(proposalID string, ctx context.Context) ([]*Comment, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT c.id, c.proposal_id, c.author_id, u.username, c.parent_id,
 		        c.body, c.created_at, c.updated_at
 		 FROM proposal_comments c
@@ -43,7 +43,7 @@ func FetchCommentsByProposal(proposalID string, ctx context.Context) ([]*Comment
 // FetchCommentByID returns a single comment by ID, with AuthorUsername joined.
 func FetchCommentByID(id string, ctx context.Context) (*Comment, error) {
 	c := &Comment{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT c.id, c.proposal_id, c.author_id, u.username, c.parent_id,
 		        c.body, c.created_at, c.updated_at
 		 FROM proposal_comments c
@@ -67,7 +67,7 @@ func FetchCommentByID(id string, ctx context.Context) (*Comment, error) {
 // generated ID and author_username via a CTE.
 func CreateComment(c *Comment, ctx context.Context) error {
 	now := time.Now().UTC().Format(time.RFC3339)
-	return config.PostgresDB.QueryRowContext(ctx,
+	return foundation.PostgresDB.QueryRowContext(ctx,
 		`WITH ins AS (
 		     INSERT INTO proposal_comments (proposal_id, author_id, parent_id, body, created_at, updated_at)
 		     VALUES ($1, $2, $3, $4, $5, $5)
@@ -87,7 +87,7 @@ func CreateComment(c *Comment, ctx context.Context) error {
 // UpdateCommentBody updates the body and updated_at of a comment.
 func UpdateCommentBody(id, body string, ctx context.Context) error {
 	now := time.Now().UTC().Format(time.RFC3339)
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`UPDATE proposal_comments SET body = $1, updated_at = $2 WHERE id = $3`,
 		body, now, id,
 	)
@@ -99,7 +99,7 @@ func UpdateCommentBody(id, body string, ctx context.Context) error {
 
 // DeleteComment hard-deletes a comment by ID.
 func DeleteComment(id string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`DELETE FROM proposal_comments WHERE id = $1`, id,
 	)
 	if err != nil {
@@ -112,7 +112,7 @@ func DeleteComment(id string, ctx context.Context) error {
 // Used to guard against deleting a comment that has replies.
 func CountReplies(commentID string, ctx context.Context) (int, error) {
 	var count int
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM proposal_comments WHERE parent_id = $1`,
 		commentID,
 	).Scan(&count)

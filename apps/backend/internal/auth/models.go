@@ -6,3 +6,11 @@ type AuthResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }
+
+type User struct {
+	ID           string `json:"id"`
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"-"`
+	CreatedAt    string `json:"createdAt"`
+}

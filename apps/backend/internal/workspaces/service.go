@@ -3,12 +3,12 @@ package workspaces
 import (
 	"context"
 	"fmt"
-	"granth/internal/utils"
+	"granth/internal/foundation"
 	"time"
 )
 
 func createWorkspace(name, description string, ctx context.Context) (*Workspace, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -29,7 +29,7 @@ func createWorkspace(name, description string, ctx context.Context) (*Workspace,
 }
 
 func getWorkspace(id string, ctx context.Context) (*Workspace, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -51,7 +51,7 @@ func getWorkspace(id string, ctx context.Context) (*Workspace, error) {
 }
 
 func getUserWorkspaces(ctx context.Context) ([]*Workspace, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -59,7 +59,7 @@ func getUserWorkspaces(ctx context.Context) ([]*Workspace, error) {
 }
 
 func updateWorkspaceDetails(id, name, description string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -82,7 +82,7 @@ func updateWorkspaceDetails(id, name, description string, ctx context.Context) e
 }
 
 func deleteWorkspaceByID(id string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -99,7 +99,7 @@ func deleteWorkspaceByID(id string, ctx context.Context) error {
 }
 
 func getWorkspaceMembers(workspaceID string, ctx context.Context) ([]*WorkspaceMember, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -116,7 +116,7 @@ func getWorkspaceMembers(workspaceID string, ctx context.Context) ([]*WorkspaceM
 }
 
 func addMember(workspaceID, targetUserID, role string, ctx context.Context) (*WorkspaceMember, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -155,7 +155,7 @@ func addMember(workspaceID, targetUserID, role string, ctx context.Context) (*Wo
 }
 
 func updateMember(workspaceID, targetUserID, role string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -193,7 +193,7 @@ func updateMember(workspaceID, targetUserID, role string, ctx context.Context) e
 }
 
 func removeMemberFromWorkspace(workspaceID, targetUserID string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -230,7 +230,7 @@ func removeMemberFromWorkspace(workspaceID, targetUserID string, ctx context.Con
 // IsMember returns whether the requesting user is a member of the given workspace.
 // This is exported for use by other packages (e.g., documents).
 func IsMember(workspaceID string, ctx context.Context) (bool, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return false, fmt.Errorf("user ID not found in context")
 	}

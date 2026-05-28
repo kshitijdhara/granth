@@ -7,7 +7,7 @@ import (
 
 	"granth/internal/notifications"
 	"granth/internal/proposals"
-	"granth/internal/utils"
+	"granth/internal/foundation"
 )
 
 // proposalIsOpen fetches the proposal and returns an error if it is not open.
@@ -36,7 +36,7 @@ func listComments(proposalID string, ctx context.Context) ([]*Comment, error) {
 // createComment posts a new top-level comment or reply to a proposal.
 // The proposal must be open (deliberation is not sealed).
 func createComment(proposalID string, parentID *string, body string, ctx context.Context) (*Comment, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -100,7 +100,7 @@ func createComment(proposalID string, parentID *string, body string, ctx context
 // editComment updates the body of an existing comment.
 // Only the comment's author may edit, and only while the proposal is still open.
 func editComment(commentID, body string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -128,7 +128,7 @@ func editComment(commentID, body string, ctx context.Context) error {
 // deleteComment removes a comment. Only the author may delete their own comment,
 // the proposal must still be open, and the comment must have no replies.
 func deleteComment(commentID string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}

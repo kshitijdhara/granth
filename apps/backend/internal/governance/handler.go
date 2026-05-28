@@ -1,9 +1,10 @@
 package governance
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
+
+	"granth/internal/shared"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -33,24 +34,10 @@ func HandleApprove(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 	status, err := castApproval(proposalID, r.Context())
 	if err != nil {
-		msg := err.Error()
-		code := http.StatusInternalServerError
-		switch {
-		case strings.Contains(msg, "not open"):
-			code = http.StatusBadRequest
-		case strings.Contains(msg, "not a member"):
-			code = http.StatusForbidden
-		case strings.Contains(msg, "contributors cannot"):
-			code = http.StatusForbidden
-		case strings.Contains(msg, "authors cannot"):
-			code = http.StatusForbidden
-		case strings.Contains(msg, "already approved"):
-			code = http.StatusConflict
-		}
-		http.Error(w, msg, code)
+		writeGovernanceError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, status)
+	shared.WriteJSON(w, http.StatusOK, status)
 }
 
 // HandleGetApprovals handles GET /governance/proposals/{id}/approvals
@@ -58,10 +45,10 @@ func HandleGetApprovals(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 	status, err := getApprovalStatus(proposalID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching approval status: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching approval status: "+err.Error()))
 		return
 	}
-	writeJSON(w, http.StatusOK, status)
+	shared.WriteJSON(w, http.StatusOK, status)
 }
 
 // HandleGetGovernance handles GET /governance/workspaces/{id}
@@ -69,11 +56,12 @@ func HandleGetGovernance(w http.ResponseWriter, r *http.Request) {
 	workspaceID := chi.URLParam(r, "id")
 	gov, err := getGovernance(workspaceID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching governance: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching governance: "+err.Error()))
 		return
 	}
+
 	if gov == nil {
-		writeJSON(w, http.StatusOK, map[string]interface{}{
+		shared.WriteJSON(w, http.StatusOK, map[string]interface{}{
 			"workspace_id":        workspaceID,
 			"min_reviewers":       1,
 			"require_role":        nil,
@@ -82,7 +70,8 @@ func HandleGetGovernance(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	writeJSON(w, http.StatusOK, gov)
+
+	shared.WriteJSON(w, http.StatusOK, gov)
 }
 
 // HandleUpsertGovernance handles PUT /governance/workspaces/{id}
@@ -90,30 +79,41 @@ func HandleUpsertGovernance(w http.ResponseWriter, r *http.Request) {
 	workspaceID := chi.URLParam(r, "id")
 
 	var req Governance
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	gov, err := upsertGovernance(workspaceID, &req, r.Context())
 	if err != nil {
-		msg := err.Error()
-		code := http.StatusInternalServerError
-		if strings.Contains(msg, "only workspace admins") {
-			code = http.StatusForbidden
-		} else if strings.Contains(msg, "min_reviewers") {
-			code = http.StatusBadRequest
-		}
-		http.Error(w, msg, code)
+		writeGovernanceError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, gov)
+
+	shared.WriteJSON(w, http.StatusOK, gov)
 }
 
-func writeJSON(w http.ResponseWriter, status int, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		http.Error(w, "error encoding JSON: "+err.Error(), http.StatusInternalServerError)
+// writeGovernanceError maps service-layer error messages to appropriate HTTP status codes.
+func writeGovernanceError(w http.ResponseWriter, err error) {
+	msg := err.Error()
+	var statusCode int
+	switch {
+	case strings.Contains(msg, "not open"):
+		statusCode = http.StatusBadRequest
+	case strings.Contains(msg, "not a member"):
+		statusCode = http.StatusForbidden
+	case strings.Contains(msg, "contributors cannot"):
+		statusCode = http.StatusForbidden
+	case strings.Contains(msg, "authors cannot"):
+		statusCode = http.StatusForbidden
+	case strings.Contains(msg, "already approved"):
+		statusCode = http.StatusConflict
+	case strings.Contains(msg, "only workspace admins"):
+		statusCode = http.StatusForbidden
+	case strings.Contains(msg, "min_reviewers"):
+		statusCode = http.StatusBadRequest
+	default:
+		statusCode = http.StatusInternalServerError
 	}
+	shared.WriteError(w, shared.NewAPIError(statusCode, msg))
 }

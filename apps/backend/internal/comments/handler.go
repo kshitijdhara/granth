@@ -1,9 +1,10 @@
 package comments
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
+
+	"granth/internal/shared"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -24,13 +25,13 @@ func CommentsRouter() http.Handler {
 func handleListComments(w http.ResponseWriter, r *http.Request) {
 	proposalID := r.URL.Query().Get("proposal_id")
 	if proposalID == "" {
-		http.Error(w, "proposal_id query parameter is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "proposal_id query parameter is required"))
 		return
 	}
 
 	comments, err := listComments(proposalID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching comments: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching comments: "+err.Error()))
 		return
 	}
 
@@ -39,7 +40,7 @@ func handleListComments(w http.ResponseWriter, r *http.Request) {
 		comments = []*Comment{}
 	}
 
-	writeJSON(w, http.StatusOK, comments)
+	shared.WriteJSON(w, http.StatusOK, comments)
 }
 
 func handleCreateComment(w http.ResponseWriter, r *http.Request) {
@@ -48,13 +49,14 @@ func handleCreateComment(w http.ResponseWriter, r *http.Request) {
 		ParentID   *string `json:"parent_id"`
 		Body       string  `json:"body"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	if req.ProposalID == "" {
-		http.Error(w, "proposal_id is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "proposal_id is required"))
 		return
 	}
 
@@ -64,7 +66,7 @@ func handleCreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, comment)
+	shared.WriteJSON(w, http.StatusCreated, comment)
 }
 
 func handleEditComment(w http.ResponseWriter, r *http.Request) {
@@ -73,8 +75,9 @@ func handleEditComment(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Body string `json:"body"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
@@ -100,25 +103,20 @@ func handleDeleteComment(w http.ResponseWriter, r *http.Request) {
 // writeCommentError maps service-layer error messages to appropriate HTTP status codes.
 func writeCommentError(w http.ResponseWriter, err error) {
 	msg := err.Error()
+	var statusCode int
 	switch {
 	case strings.Contains(msg, "deliberation is sealed"):
-		http.Error(w, msg, http.StatusBadRequest)
+		statusCode = http.StatusBadRequest
 	case strings.Contains(msg, "only the comment author"):
-		http.Error(w, msg, http.StatusForbidden)
+		statusCode = http.StatusForbidden
 	case strings.Contains(msg, "cannot delete a comment that has replies"):
-		http.Error(w, msg, http.StatusConflict)
+		statusCode = http.StatusConflict
 	case strings.Contains(msg, "comment body cannot be empty"):
-		http.Error(w, msg, http.StatusBadRequest)
+		statusCode = http.StatusBadRequest
 	case strings.Contains(msg, "not found"):
-		http.Error(w, msg, http.StatusNotFound)
+		statusCode = http.StatusNotFound
 	default:
-		http.Error(w, msg, http.StatusInternalServerError)
+		statusCode = http.StatusInternalServerError
 	}
-}
-
-// writeJSON is a minimal JSON response helper.
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	shared.WriteError(w, shared.NewAPIError(statusCode, msg))
 }

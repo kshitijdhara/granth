@@ -3,12 +3,12 @@ package documents
 import (
 	"context"
 	"fmt"
-	"granth/internal/config"
+	"granth/internal/foundation"
 )
 
 func FetchDocumentByID(id string, ctx context.Context) (*Document, error) {
 	document := &Document{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT id, title, workspace_id, created_by, created_at, updated_at, updated_by
 		 FROM documents WHERE id = $1`, id,
 	).Scan(&document.ID, &document.Title, &document.WorkspaceID, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy)
@@ -20,7 +20,7 @@ func FetchDocumentByID(id string, ctx context.Context) (*Document, error) {
 
 func FetchDocumentByTitle(title string, ctx context.Context) (*Document, error) {
 	document := &Document{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT id, title, workspace_id, created_by, created_at, updated_at, updated_by
 		 FROM documents WHERE title = $1`, title,
 	).Scan(&document.ID, &document.Title, &document.WorkspaceID, &document.CreatedBy, &document.CreatedAt, &document.UpdatedAt, &document.UpdatedBy)
@@ -31,7 +31,7 @@ func FetchDocumentByTitle(title string, ctx context.Context) (*Document, error) 
 }
 
 func CreateDocument(document *Document, ctx context.Context) error {
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`INSERT INTO documents (title, workspace_id, created_by, created_at, updated_at, updated_by)
 		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
 		document.Title, document.WorkspaceID, document.CreatedBy, document.CreatedAt, document.UpdatedAt, document.UpdatedBy,
@@ -40,7 +40,7 @@ func CreateDocument(document *Document, ctx context.Context) error {
 }
 
 func UpdateDocument(document *Document, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`UPDATE documents SET title = $1, updated_at = $2, updated_by = $3 WHERE id = $4`,
 		document.Title, document.UpdatedAt, document.UpdatedBy, document.ID,
 	)
@@ -48,12 +48,12 @@ func UpdateDocument(document *Document, ctx context.Context) error {
 }
 
 func DeleteDocument(id string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx, `DELETE FROM documents WHERE id = $1`, id)
+	_, err := foundation.PostgresDB.ExecContext(ctx, `DELETE FROM documents WHERE id = $1`, id)
 	return err
 }
 
 func FetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Document, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT id, title, workspace_id, created_by, created_at, updated_at, updated_by
 		 FROM documents WHERE created_by = $1 ORDER BY created_at DESC`, ownerID,
 	)
@@ -77,7 +77,7 @@ func FetchAllDocumentsByOwnerID(ownerID string, ctx context.Context) ([]*Documen
 }
 
 func fetchLatestDocuments(limit int, userid string, ctx context.Context) ([]*Document, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT id, title, workspace_id, created_by, created_at, updated_at, updated_by
 		 FROM documents WHERE created_by = $1 ORDER BY created_at DESC LIMIT $2`,
 		userid, limit,

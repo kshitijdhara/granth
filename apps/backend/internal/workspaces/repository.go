@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"granth/internal/config"
+	"granth/internal/foundation"
 	"time"
 )
 
 // ── Workspaces ────────────────────────────────────────────────────────────────
 
 func createWorkspaceInTx(w *Workspace, memberID string, ctx context.Context) error {
-	tx, err := config.PostgresDB.BeginTx(ctx, nil)
+	tx, err := foundation.PostgresDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error starting transaction: %w", err)
 	}
@@ -40,7 +40,7 @@ func createWorkspaceInTx(w *Workspace, memberID string, ctx context.Context) err
 
 func fetchWorkspaceByID(id string, ctx context.Context) (*Workspace, error) {
 	w := &Workspace{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT id, name, COALESCE(description, ''), owner_id, created_at, updated_at
 		 FROM workspaces WHERE id = $1`, id,
 	).Scan(&w.ID, &w.Name, &w.Description, &w.OwnerID, &w.CreatedAt, &w.UpdatedAt)
@@ -54,7 +54,7 @@ func fetchWorkspaceByID(id string, ctx context.Context) (*Workspace, error) {
 }
 
 func fetchWorkspacesForUser(userID string, ctx context.Context) ([]*Workspace, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT w.id, w.name, COALESCE(w.description, ''), w.owner_id, w.created_at, w.updated_at
 		 FROM workspaces w
 		 INNER JOIN workspace_members wm ON wm.workspace_id = w.id
@@ -78,7 +78,7 @@ func fetchWorkspacesForUser(userID string, ctx context.Context) ([]*Workspace, e
 }
 
 func updateWorkspace(w *Workspace, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`UPDATE workspaces SET name = $1, description = $2, updated_at = $3 WHERE id = $4`,
 		w.Name, w.Description, w.UpdatedAt, w.ID,
 	)
@@ -89,7 +89,7 @@ func updateWorkspace(w *Workspace, ctx context.Context) error {
 }
 
 func deleteWorkspace(id string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx, `DELETE FROM workspaces WHERE id = $1`, id)
+	_, err := foundation.PostgresDB.ExecContext(ctx, `DELETE FROM workspaces WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("error deleting workspace: %w", err)
 	}
@@ -100,7 +100,7 @@ func deleteWorkspace(id string, ctx context.Context) error {
 
 func fetchMember(workspaceID, userID string, ctx context.Context) (*WorkspaceMember, error) {
 	m := &WorkspaceMember{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT wm.id, wm.workspace_id, wm.user_id, u.username, wm.role, wm.invited_by, wm.joined_at
 		 FROM workspace_members wm
 		 INNER JOIN users u ON u.id = wm.user_id
@@ -117,7 +117,7 @@ func fetchMember(workspaceID, userID string, ctx context.Context) (*WorkspaceMem
 }
 
 func fetchMembersForWorkspace(workspaceID string, ctx context.Context) ([]*WorkspaceMember, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT wm.id, wm.workspace_id, wm.user_id, u.username, wm.role, wm.invited_by, wm.joined_at
 		 FROM workspace_members wm
 		 INNER JOIN users u ON u.id = wm.user_id
@@ -142,7 +142,7 @@ func fetchMembersForWorkspace(workspaceID string, ctx context.Context) ([]*Works
 }
 
 func insertMember(m *WorkspaceMember, ctx context.Context) error {
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`INSERT INTO workspace_members (workspace_id, user_id, role, invited_by, joined_at)
 		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
 		m.WorkspaceID, m.UserID, m.Role, m.InvitedBy, m.JoinedAt,
@@ -154,7 +154,7 @@ func insertMember(m *WorkspaceMember, ctx context.Context) error {
 }
 
 func updateMemberRole(workspaceID, userID, role string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`UPDATE workspace_members SET role = $1 WHERE workspace_id = $2 AND user_id = $3`,
 		role, workspaceID, userID,
 	)
@@ -165,7 +165,7 @@ func updateMemberRole(workspaceID, userID, role string, ctx context.Context) err
 }
 
 func removeMember(workspaceID, userID string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`DELETE FROM workspace_members WHERE workspace_id = $1 AND user_id = $2`,
 		workspaceID, userID,
 	)
@@ -177,7 +177,7 @@ func removeMember(workspaceID, userID string, ctx context.Context) error {
 
 func countAdmins(workspaceID string, ctx context.Context) (int, error) {
 	var count int
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM workspace_members WHERE workspace_id = $1 AND role = 'admin'`,
 		workspaceID,
 	).Scan(&count)
@@ -202,7 +202,7 @@ func FetchMembersForWorkspace(workspaceID string, ctx context.Context) ([]*Works
 // The block is only enforced in workspaces with more than one member.
 func CountMembers(workspaceID string, ctx context.Context) (int, error) {
 	var count int
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM workspace_members WHERE workspace_id = $1`,
 		workspaceID,
 	).Scan(&count)

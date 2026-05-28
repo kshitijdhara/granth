@@ -8,14 +8,14 @@ import (
 	"granth/internal/documents"
 	"granth/internal/notifications"
 	"granth/internal/proposals"
-	"granth/internal/utils"
+	"granth/internal/foundation"
 	"granth/internal/workspaces"
 )
 
 // castApproval records a reviewer's approval vote and auto-accepts the proposal
 // if the workspace governance threshold is met.
 func castApproval(proposalID string, ctx context.Context) (*ApprovalStatus, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}
@@ -171,10 +171,10 @@ func getGovernance(workspaceID string, ctx context.Context) (*Governance, error)
 	return gov, nil
 }
 
-// upsertGovernance creates or replaces the governance config.
+// upsertGovernance creates or replaces the governance foundation.
 // Only workspace admins may call this.
 func upsertGovernance(workspaceID string, req *Governance, ctx context.Context) (*Governance, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}

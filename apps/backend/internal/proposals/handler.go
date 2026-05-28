@@ -1,9 +1,10 @@
 package proposals
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
+
+	"granth/internal/shared"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -28,12 +29,11 @@ func handleGetProposalsForDocument(w http.ResponseWriter, r *http.Request) {
 	documentID := chi.URLParam(r, "documentID")
 	proposals, err := getProposalsForDocument(documentID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching proposals: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching proposals: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(proposals)
+	shared.WriteJSON(w, http.StatusOK, proposals)
 }
 
 func handleCreateProposal(w http.ResponseWriter, r *http.Request) {
@@ -46,32 +46,30 @@ func handleCreateProposal(w http.ResponseWriter, r *http.Request) {
 		Scope            string   `json:"scope"`
 		AffectedBlockIDs []string `json:"affected_block_ids"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	proposalID, err := createProposal(documentID, req.Title, req.NewTitle, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context())
 	if err != nil {
-		http.Error(w, "Error creating proposal: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error creating proposal: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"proposal_id": proposalID})
+	shared.WriteJSON(w, http.StatusCreated, map[string]string{"proposal_id": proposalID})
 }
 
 func handleGetProposal(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 	proposal, err := getProposal(proposalID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching proposal: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching proposal: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(proposal)
+	shared.WriteJSON(w, http.StatusOK, proposal)
 }
 
 func handleUpdateProposal(w http.ResponseWriter, r *http.Request) {
@@ -84,14 +82,14 @@ func handleUpdateProposal(w http.ResponseWriter, r *http.Request) {
 		Scope            string   `json:"scope"`
 		AffectedBlockIDs []string `json:"affected_block_ids"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
-	err := updateProposal(proposalID, req.Title, req.NewTitle, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context())
-	if err != nil {
-		http.Error(w, "Error updating proposal: "+err.Error(), http.StatusInternalServerError)
+	if err := updateProposal(proposalID, req.Title, req.NewTitle, req.Intent, req.Scope, req.AffectedBlockIDs, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error updating proposal: "+err.Error()))
 		return
 	}
 
@@ -101,16 +99,13 @@ func handleUpdateProposal(w http.ResponseWriter, r *http.Request) {
 func handleDeleteProposal(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 
-	// TODO: Check permissions
-	err := DeleteProposal(proposalID, r.Context())
-	if err != nil {
-		http.Error(w, "Error deleting proposal: "+err.Error(), http.StatusInternalServerError)
+	if err := DeleteProposal(proposalID, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error deleting proposal: "+err.Error()))
 		return
 	}
 
-	err = DeleteChangesByProposal(proposalID, r.Context())
-	if err != nil {
-		http.Error(w, "Error deleting changes: "+err.Error(), http.StatusInternalServerError)
+	if err := DeleteChangesByProposal(proposalID, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error deleting changes: "+err.Error()))
 		return
 	}
 
@@ -120,9 +115,8 @@ func handleDeleteProposal(w http.ResponseWriter, r *http.Request) {
 func handleAcceptProposal(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 
-	err := acceptProposal(proposalID, r.Context())
-	if err != nil {
-		http.Error(w, "Error accepting proposal: "+err.Error(), http.StatusInternalServerError)
+	if err := acceptProposal(proposalID, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error accepting proposal: "+err.Error()))
 		return
 	}
 
@@ -135,21 +129,19 @@ func handleRejectProposal(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Reason string `json:"reason"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
-	// Phase 1.2 — enforce non-empty reason at the API layer.
-	// "Considered and declined" is only meaningful with a recorded rationale.
 	if strings.TrimSpace(req.Reason) == "" {
-		http.Error(w, "rejection_reason is required", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "rejection_reason is required"))
 		return
 	}
 
-	err := rejectProposal(proposalID, req.Reason, r.Context())
-	if err != nil {
-		http.Error(w, "Error rejecting proposal: "+err.Error(), http.StatusInternalServerError)
+	if err := rejectProposal(proposalID, req.Reason, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error rejecting proposal: "+err.Error()))
 		return
 	}
 
@@ -160,12 +152,11 @@ func handleGetBlockChangesForProposal(w http.ResponseWriter, r *http.Request) {
 	proposalID := chi.URLParam(r, "id")
 	changes, err := getBlockChangesForProposal(proposalID, r.Context())
 	if err != nil {
-		http.Error(w, "Error fetching changes: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error fetching changes: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(changes)
+	shared.WriteJSON(w, http.StatusOK, changes)
 }
 
 func handleAddBlockChangeToProposal(w http.ResponseWriter, r *http.Request) {
@@ -178,14 +169,14 @@ func handleAddBlockChangeToProposal(w http.ResponseWriter, r *http.Request) {
 		OrderPath []int64 `json:"order_path"`
 		Content   string  `json:"content"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
-	err := addBlockChangeToProposal(proposalID, req.BlockID, req.Action, req.BlockType, req.OrderPath, req.Content, r.Context())
-	if err != nil {
-		http.Error(w, "Error adding change: "+err.Error(), http.StatusInternalServerError)
+	if err := addBlockChangeToProposal(proposalID, req.BlockID, req.Action, req.BlockType, req.OrderPath, req.Content, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error adding change: "+err.Error()))
 		return
 	}
 
