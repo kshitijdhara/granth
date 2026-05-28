@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -9,7 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func registerUser(username, email, passwordHash string) (AuthResponse, error) {
+func registerUser(username, email, password string, ctx context.Context) (AuthResponse, error) {
 	dbuser, err := GetUserByEmail(email)
 	if err == nil {
 		// email already exists
@@ -22,12 +23,12 @@ func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 		return AuthResponse{}, fmt.Errorf("error checking existing user: %w", err)
 	}
 
-	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(passwordHash), bcrypt.DefaultCost)
+	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error hashing password: %w", err)
 	}
-	passwordHash = string(passwordHashBytes)
-	user, err := CreateUser(username, email, passwordHash)
+
+	user, err := CreateUser(username, email, string(passwordHashBytes))
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating user: %w", err)
 	}
@@ -41,6 +42,12 @@ func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}
+
+	// Store refresh token in Redis
+	if err := foundation.RedisClient.Set(ctx, "refresh:"+user.ID, refreshToken, foundation.RefreshTokenTTL).Err(); err != nil {
+		return AuthResponse{}, fmt.Errorf("error storing refresh token: %w", err)
+	}
+
 	return AuthResponse{
 		UserID:       user.ID,
 		Username:     user.Username,
@@ -49,15 +56,16 @@ func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 	}, nil
 }
 
-func login(email, password string) (AuthResponse, error) {
+func login(email, password string, ctx context.Context) (AuthResponse, error) {
 	user, err := GetUserByEmail(email)
 	if err != nil {
-		return AuthResponse{}, fmt.Errorf("Error during login: %w", err)
+		return AuthResponse{}, fmt.Errorf("error during login: %w", err)
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
-	if err != nil {
-		return AuthResponse{}, fmt.Errorf("Invalid Password")
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return AuthResponse{}, fmt.Errorf("invalid password")
 	}
+
 	accessToken, err := foundation.CreateUserToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
@@ -67,10 +75,41 @@ func login(email, password string) (AuthResponse, error) {
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}
+
+	// Store refresh token in Redis
+	if err := foundation.RedisClient.Set(ctx, "refresh:"+user.ID, refreshToken, foundation.RefreshTokenTTL).Err(); err != nil {
+		return AuthResponse{}, fmt.Errorf("error storing refresh token: %w", err)
+	}
+
 	return AuthResponse{
 		UserID:       user.ID,
 		Username:     user.Username,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+	}, nil
+}
+
+func logout(userID string, ctx context.Context) error {
+	if err := foundation.RedisClient.Del(ctx, "refresh:"+userID).Err(); err != nil {
+		return fmt.Errorf("error deleting refresh token: %w", err)
+	}
+	return nil
+}
+
+func refreshAccessToken(refreshToken string, ctx context.Context) (AuthResponse, error) {
+	accessToken, newRefreshToken, userID, err := foundation.RefreshToken(refreshToken)
+	if err != nil {
+		return AuthResponse{}, fmt.Errorf("error refreshing token: %w", err)
+	}
+
+	// Update stored refresh token in Redis
+	if err := foundation.RedisClient.Set(ctx, "refresh:"+userID, newRefreshToken, foundation.RefreshTokenTTL).Err(); err != nil {
+		return AuthResponse{}, fmt.Errorf("error storing new refresh token: %w", err)
+	}
+
+	return AuthResponse{
+		UserID:       userID,
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
 	}, nil
 }

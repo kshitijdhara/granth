@@ -9,6 +9,8 @@ import (
 
 var secretKey, _ = os.LookupEnv("JWT_SECRET")
 
+const RefreshTokenTTL = 24 * time.Hour
+
 type Claims struct {
 	UserID     string `json:"user_id"`
 	Authorized bool   `json:"authorized"`

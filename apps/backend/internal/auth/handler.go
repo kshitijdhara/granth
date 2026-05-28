@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"time"
 
 	"granth/internal/foundation"
 	"granth/internal/shared"
@@ -41,15 +40,9 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := login(req.Email, req.Password)
+	data, err := login(req.Email, req.Password, r.Context())
 	if err != nil {
 		shared.WriteError(w, shared.NewAPIError(http.StatusUnauthorized, "Login failed: "+err.Error()))
-		return
-	}
-
-	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
-	if ok.Err() != nil {
-		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error storing refresh token: "+ok.Err().Error()))
 		return
 	}
 
@@ -73,15 +66,9 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := registerUser(req.Name, req.Email, req.Password)
+	data, err := registerUser(req.Name, req.Email, req.Password, r.Context())
 	if err != nil {
 		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Registration failed: "+err.Error()))
-		return
-	}
-
-	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
-	if ok.Err() != nil {
-		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error storing refresh token: "+ok.Err().Error()))
 		return
 	}
 
@@ -95,11 +82,8 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := claims.UserID
-
-	okRedis := foundation.RedisClient.Del(r.Context(), "refresh:"+userID)
-	if okRedis.Err() != nil {
-		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error deleting refresh token: "+okRedis.Err().Error()))
+	if err := logout(claims.UserID, r.Context()); err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Logout failed: "+err.Error()))
 		return
 	}
 
@@ -185,22 +169,11 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, newRefreshToken, userID, err := foundation.RefreshToken(req.RefreshToken)
+	data, err := refreshAccessToken(req.RefreshToken, r.Context())
 	if err != nil {
 		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Token refresh failed: "+err.Error()))
 		return
 	}
 
-	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+userID, newRefreshToken, time.Hour*24)
-	if ok.Err() != nil {
-		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error storing new refresh token: "+ok.Err().Error()))
-		return
-	}
-
-	response := map[string]string{
-		"accessToken":  accessToken,
-		"refreshToken": newRefreshToken,
-	}
-
-	shared.WriteJSON(w, http.StatusOK, response)
+	shared.WriteJSON(w, http.StatusOK, data)
 }
