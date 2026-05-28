@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/http";
 import Button from "@/ui/button";
 import Input from "@/ui/input";
+import PasswordInput from "@/ui/password-input";
 import { useAuth } from "./auth.context";
 import AuthLayout from "./auth.layout";
 import "./login.page.scss";
@@ -74,9 +75,8 @@ const LoginPage: React.FC = () => {
 						onChange={setEmail}
 						onBlur={() => setEmailError(validateEmail(email))}
 					/>
-					<Input
+					<PasswordInput
 						label="Password"
-						type="password"
 						value={password}
 						placeholder="Enter your password"
 						isRequired

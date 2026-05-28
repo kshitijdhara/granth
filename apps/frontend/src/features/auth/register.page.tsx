@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/http";
 import Button from "@/ui/button";
 import Input from "@/ui/input";
+import PasswordInput from "@/ui/password-input";
 import { useAuth } from "./auth.context";
 import AuthLayout from "./auth.layout";
 import "./register.page.scss";
@@ -102,9 +103,8 @@ const RegisterPage: React.FC = () => {
 						onChange={setEmail}
 						onBlur={() => setEmailError(validateEmail(email))}
 					/>
-					<Input
+					<PasswordInput
 						label="Password"
-						type="password"
 						value={password}
 						placeholder="Create a password"
 						isRequired
@@ -117,9 +117,8 @@ const RegisterPage: React.FC = () => {
 						}}
 						onBlur={() => setPasswordError(validatePassword(password))}
 					/>
-					<Input
+					<PasswordInput
 						label="Confirm password"
-						type="password"
 						value={confirmPassword}
 						placeholder="Confirm your password"
 						isRequired

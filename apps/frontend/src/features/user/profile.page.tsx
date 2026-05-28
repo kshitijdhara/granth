@@ -8,6 +8,7 @@ import { documentsApi } from "@/features/documents/documents.api";
 import type { Document } from "@/features/documents/types";
 import Button from "@/ui/button";
 import Input from "@/ui/input";
+import PasswordInput from "@/ui/password-input";
 import "./profile.page.scss";
 
 const initialsFrom = (name?: string | null) => {
@@ -43,6 +44,14 @@ const ProfilePage: React.FC = () => {
 	const [draftName, setDraftName] = useState(username ?? "");
 	const [nameError, setNameError] = useState("");
 	const [saving, setSaving] = useState(false);
+
+	const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+	const [currentPassword, setCurrentPassword] = useState("");
+	const [newPassword, setNewPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [passwordError, setPasswordError] = useState("");
+	const [passwordSuccess, setPasswordSuccess] = useState("");
+	const [savingPassword, setSavingPassword] = useState(false);
 
 	useEffect(() => {
 		authApi
@@ -97,6 +106,55 @@ const ProfilePage: React.FC = () => {
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") void saveEdit();
 		if (e.key === "Escape") cancelEdit();
+	};
+
+	const openPasswordModal = () => {
+		setCurrentPassword("");
+		setNewPassword("");
+		setConfirmPassword("");
+		setPasswordError("");
+		setPasswordSuccess("");
+		setIsPasswordModalOpen(true);
+	};
+
+	const closePasswordModal = () => {
+		setIsPasswordModalOpen(false);
+		setCurrentPassword("");
+		setNewPassword("");
+		setConfirmPassword("");
+		setPasswordError("");
+		setPasswordSuccess("");
+	};
+
+	const savePassword = async () => {
+		setPasswordError("");
+		setPasswordSuccess("");
+
+		if (!currentPassword || !newPassword || !confirmPassword) {
+			setPasswordError("All fields are required.");
+			return;
+		}
+
+		if (newPassword !== confirmPassword) {
+			setPasswordError("New passwords do not match.");
+			return;
+		}
+
+		if (newPassword.length < 8) {
+			setPasswordError("New password must be at least 8 characters.");
+			return;
+		}
+
+		setSavingPassword(true);
+		try {
+			await authApi.updatePassword(currentPassword, newPassword);
+			setPasswordSuccess("Password updated successfully!");
+			setTimeout(() => closePasswordModal(), 1500);
+		} catch {
+			setPasswordError("Failed to update password. Please check your current password and try again.");
+		} finally {
+			setSavingPassword(false);
+		}
 	};
 
 	return (
@@ -162,6 +220,97 @@ const ProfilePage: React.FC = () => {
 					</div>
 				</div>
 			</section>
+
+			{/* Password change section */}
+			<section className="profile-page__card" aria-labelledby="password-heading">
+				<div>
+					<h2 id="password-heading" className="profile-page__section-title">
+						Security
+					</h2>
+					<p className="profile-page__subtitle">Manage your password and account security.</p>
+				</div>
+				<Button variant="secondary" size="small" onClick={openPasswordModal}>
+					Change Password
+				</Button>
+			</section>
+
+			{/* Password change modal */}
+			{isPasswordModalOpen && (
+				<div className="profile-page__modal-overlay" onClick={closePasswordModal}>
+					<div className="profile-page__modal" onClick={(e) => e.stopPropagation()}>
+						<div className="profile-page__modal-header">
+							<h3>Change Password</h3>
+							<button
+								type="button"
+								className="profile-page__modal-close"
+								onClick={closePasswordModal}
+								aria-label="Close"
+							>
+								<XMarkIcon style={{ width: 20, height: 20 }} />
+							</button>
+						</div>
+
+						<div className="profile-page__modal-body">
+							{passwordSuccess && (
+								<div className="profile-page__success-message">{passwordSuccess}</div>
+							)}
+							{passwordError && (
+								<div className="profile-page__error-message">{passwordError}</div>
+							)}
+
+							<div className="profile-page__form-group">
+								<PasswordInput
+									label="Current Password"
+									value={currentPassword}
+									onChange={setCurrentPassword}
+									hasError={!!passwordError}
+									isDisabled={savingPassword}
+									placeholder="Enter your current password"
+								/>
+							</div>
+
+							<div className="profile-page__form-group">
+								<PasswordInput
+									label="New Password"
+									value={newPassword}
+									onChange={setNewPassword}
+									hasError={!!passwordError}
+									isDisabled={savingPassword}
+									placeholder="Enter new password (min 8 characters)"
+								/>
+							</div>
+
+							<div className="profile-page__form-group">
+								<PasswordInput
+									label="Confirm Password"
+									value={confirmPassword}
+									onChange={setConfirmPassword}
+									hasError={!!passwordError}
+									isDisabled={savingPassword}
+									placeholder="Confirm new password"
+								/>
+							</div>
+						</div>
+
+						<div className="profile-page__modal-footer">
+							<Button
+								variant="secondary"
+								onClick={closePasswordModal}
+								isDisabled={savingPassword}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="primary"
+								onClick={savePassword}
+								isDisabled={savingPassword}
+							>
+								{savingPassword ? "Updating…" : "Update Password"}
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Recent activity */}
 			<section className="profile-page__activity" aria-labelledby="activity-heading">
