@@ -1,8 +1,11 @@
 import {
 	BuildingOffice2Icon,
+	CalendarDaysIcon,
 	DocumentTextIcon,
+	ShieldCheckIcon,
 	UserMinusIcon,
 	UserPlusIcon,
+	UsersIcon,
 } from "@heroicons/react/24/solid";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -243,21 +246,30 @@ const WorkplacePage: React.FC = () => {
 				{/* Overview Tab */}
 				{tab === "overview" && (
 					<>
-						<section className="workplace__section">
-							<div className="workplace__card-header">
-								<h2 className="workplace__section-title">About</h2>
+						{/* Identity Card */}
+						<section className="workplace__section workplace__identity">
+							<div className="workplace__identity-icon">
+								<BuildingOffice2Icon />
 							</div>
-							<p className="workplace__description">
-								{workspace.description || "No description yet"}
-							</p>
-							<div className="workplace__meta-grid">
-								<div className="workplace__meta-item">
-									<span className="workplace__meta-label">Owner</span>
-									<span className="workplace__meta-value">{members.find((m) => m.user_id === workspace.owner_id)?.username ?? "Unknown"}</span>
-								</div>
-								<div className="workplace__meta-item">
-									<span className="workplace__meta-label">Created</span>
-									<span className="workplace__meta-value">
+							<div className="workplace__identity-body">
+								<h2 className="workplace__identity-name">{workspace.name}</h2>
+								<p className={`workplace__identity-description ${!workspace.description ? "workplace__identity-description--empty" : ""}`}>
+									{workspace.description || "No description yet"}
+								</p>
+								<div className="workplace__identity-chips">
+									{/* Owner Chip */}
+									<span className="workplace__chip workplace__chip--owner">
+										<span className="workplace__chip-avatar">
+											{initialsFrom(members.find((m) => m.user_id === workspace.owner_id)?.username)}
+										</span>
+										<span className="workplace__chip-label">
+											{members.find((m) => m.user_id === workspace.owner_id)?.username ?? "Unknown"}
+										</span>
+										<span className="workplace__chip-role">owner</span>
+									</span>
+									{/* Created Date Chip */}
+									<span className="workplace__chip">
+										<CalendarDaysIcon style={{ width: 14, height: 14 }} />
 										{new Date(workspace.created_at).toLocaleDateString("en-US", {
 											month: "short",
 											day: "numeric",
@@ -268,9 +280,62 @@ const WorkplacePage: React.FC = () => {
 							</div>
 						</section>
 
-						{documents.length > 0 && (
-							<section className="workplace__section">
-								<h2 className="workplace__section-title">Recent Documents</h2>
+						{/* Stats Strip */}
+						<div className="workplace__stats">
+							<div className="workplace__stat-pill">
+								<UsersIcon style={{ width: 14, height: 14 }} />
+								<strong>{members.length}</strong> {members.length === 1 ? "member" : "members"}
+							</div>
+							<div className="workplace__stat-pill">
+								<DocumentTextIcon style={{ width: 14, height: 14 }} />
+								<strong>{documents.length}</strong> {documents.length === 1 ? "document" : "documents"}
+							</div>
+							{governance?.min_reviewers && (
+								<div className="workplace__stat-pill">
+									<ShieldCheckIcon style={{ width: 14, height: 14 }} />
+									<strong>{governance.min_reviewers}</strong> min reviewer{governance.min_reviewers !== 1 ? "s" : ""}
+								</div>
+							)}
+						</div>
+
+						{/* Documents Card */}
+						<section className="workplace__section">
+							<div className="workplace__section-header">
+								<h2 className="workplace__section-title">Recently Updated</h2>
+								{documents.length > 3 && (
+									<button
+										type="button"
+										className="workplace__section-action"
+										onClick={() => setTab("documents")}
+									>
+										See all →
+									</button>
+								)}
+							</div>
+
+							{docsLoading ? (
+								<div className="workplace__loading">
+									{Array.from({ length: 3 }).map((_, i) => (
+										<div key={i} className="workplace__skeleton-row">
+											<div className="workplace__skeleton" style={{ width: 20, height: 20, borderRadius: "50%" }} />
+											<div className="workplace__skeleton" style={{ flex: 1 }} />
+										</div>
+									))}
+								</div>
+							) : documents.length === 0 ? (
+								<div className="workplace__empty-documents">
+									<DocumentTextIcon style={{ width: 32, height: 32, opacity: 0.4 }} />
+									<p className="workplace__empty-title">No documents yet</p>
+									<p className="workplace__empty-text">Your workspace doesn't have any documents. Create one to get started.</p>
+									<button
+										type="button"
+										className="workplace__form-button"
+										onClick={() => navigate("/truth")}
+									>
+										Create first document
+									</button>
+								</div>
+							) : (
 								<ul className="workplace__doc-list">
 									{documents.slice(0, 3).map((doc) => (
 										<li key={doc.id}>
@@ -281,15 +346,15 @@ const WorkplacePage: React.FC = () => {
 											>
 												<DocumentTextIcon style={{ width: 18, height: 18 }} />
 												<div className="workplace__doc-info">
-													<span className="workplace__doc-title">{doc.title}</span>
+													<span className="workplace__doc-title">{doc.title || "Untitled"}</span>
 													<span className="workplace__doc-meta">Updated {timeAgo(doc.updated_at)}</span>
 												</div>
 											</button>
 										</li>
 									))}
 								</ul>
-							</section>
-						)}
+							)}
+						</section>
 					</>
 				)}
 

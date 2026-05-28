@@ -156,6 +156,232 @@
 		gap: var(--spacing-2);
 	}
 
+	// Identity card layout for Overview tab
+	&__identity {
+		display: flex;
+		gap: var(--spacing-4);
+		align-items: flex-start;
+		margin-bottom: var(--spacing-8);
+	}
+
+	&__identity-icon {
+		width: 48px;
+		height: 48px;
+		color: var(--color-text-secondary);
+		flex-shrink: 0;
+	}
+
+	&__identity-body {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__identity-name {
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
+		margin: 0 0 var(--spacing-2) 0;
+		line-height: 1.2;
+	}
+
+	&__identity-description {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		line-height: 1.6;
+		margin: 0 0 var(--spacing-4) 0;
+
+		&--empty {
+			font-style: italic;
+		}
+	}
+
+	&__identity-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-3);
+	}
+
+	// Chips (glass pill badges)
+	&__chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-1) var(--spacing-3);
+		background: rgba(255, 255, 255, 0.5);
+		border: 1px solid rgba(255, 255, 255, 0.6);
+		border-radius: var(--border-radius-full);
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+		backdrop-filter: blur(8px);
+
+		svg {
+			width: 14px;
+			height: 14px;
+			flex-shrink: 0;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			background: rgba(30, 41, 59, 0.4);
+			border-color: rgba(148, 163, 184, 0.2);
+		}
+
+		&--owner {
+			gap: var(--spacing-2);
+		}
+	}
+
+	&__chip-avatar {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: var(--color-accent-primary);
+		color: white;
+		font-size: 10px;
+		font-weight: var(--font-weight-bold);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	&__chip-label {
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-primary);
+	}
+
+	&__chip-role {
+		background: rgba(37, 99, 235, 0.1);
+		color: var(--color-accent-primary);
+		padding: 2px 6px;
+		border-radius: var(--border-radius-full);
+		font-size: 10px;
+		font-weight: var(--font-weight-semibold);
+	}
+
+	// Stats strip (not a card)
+	&__stats {
+		display: flex;
+		gap: var(--spacing-3);
+		flex-wrap: wrap;
+		margin-bottom: var(--spacing-8);
+	}
+
+	&__stat-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-2);
+		padding: var(--spacing-2) var(--spacing-4);
+		background: rgba(255, 255, 255, 0.5);
+		border: 1px solid rgba(255, 255, 255, 0.6);
+		border-radius: var(--border-radius-full);
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+		backdrop-filter: blur(8px);
+
+		strong {
+			color: var(--color-text-primary);
+			font-weight: var(--font-weight-bold);
+		}
+
+		svg {
+			width: 14px;
+			height: 14px;
+			flex-shrink: 0;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			background: rgba(30, 41, 59, 0.4);
+			border-color: rgba(148, 163, 184, 0.2);
+		}
+	}
+
+	// Section header with optional right action
+	&__section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: var(--spacing-6);
+
+		.workplace__section-title {
+			margin-bottom: 0;
+		}
+	}
+
+	&__section-action {
+		font-size: var(--font-size-sm);
+		color: var(--color-accent-primary);
+		background: none;
+		border: none;
+		cursor: pointer;
+		font-weight: var(--font-weight-medium);
+		padding: var(--spacing-1) var(--spacing-2);
+		border-radius: var(--border-radius-sm);
+		transition: background var(--motion-duration-fast) var(--motion-easing-standard);
+		white-space: nowrap;
+
+		&:hover {
+			background: rgba(37, 99, 235, 0.08);
+		}
+
+		&:focus-visible {
+			outline: 2px solid rgba(37, 99, 235, 0.5);
+			outline-offset: 2px;
+		}
+	}
+
+	// Empty documents state in overview
+	&__empty-documents {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-3);
+		padding: var(--spacing-8);
+		text-align: center;
+		min-height: 200px;
+	}
+
+	&__empty-title {
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		margin: 0;
+	}
+
+	&__empty-text {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		margin: 0;
+		max-width: 280px;
+		line-height: 1.5;
+	}
+
+	// Skeleton loading row
+	&__skeleton-row {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-3);
+		padding: var(--spacing-3);
+		border-radius: var(--border-radius-lg);
+
+		.workplace__skeleton {
+			height: 16px;
+
+			&:first-child {
+				width: 20px;
+				height: 20px;
+				border-radius: 50%;
+				flex-shrink: 0;
+			}
+		}
+	}
+
+	&__loading {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-2);
+	}
+
 	// Overview section specific
 	&__workspace-card {
 		display: flex;
