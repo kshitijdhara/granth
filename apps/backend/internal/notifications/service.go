@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"granth/internal/utils"
+	"granth/internal/foundation"
 )
 
 // Emit fires a best-effort notification for a single recipient in a goroutine.
@@ -48,7 +48,7 @@ func EmitToMany(kind string, recipientIDs []string, payload interface{}) {
 // ── Route-level service functions ─────────────────────────────────────────────
 
 func listNotifications(ctx context.Context) ([]*Notification, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, context.Canceled
 	}
@@ -63,7 +63,7 @@ func listNotifications(ctx context.Context) ([]*Notification, error) {
 }
 
 func markNotificationRead(id string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return context.Canceled
 	}
@@ -71,7 +71,7 @@ func markNotificationRead(id string, ctx context.Context) error {
 }
 
 func markAllNotificationsRead(ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return context.Canceled
 	}
@@ -79,7 +79,7 @@ func markAllNotificationsRead(ctx context.Context) error {
 }
 
 func countUnreadNotifications(ctx context.Context) (int, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return 0, context.Canceled
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"granth/internal/config"
+	"granth/internal/foundation"
 )
 
 // ── Governance config ─────────────────────────────────────────────────────────
@@ -14,7 +14,7 @@ import (
 // FetchGovernance returns the governance config for a workspace, or nil if none is configured.
 func FetchGovernance(workspaceID string, ctx context.Context) (*Governance, error) {
 	g := &Governance{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT id, workspace_id, min_reviewers, require_role, allow_author_review, created_at, updated_at
 		 FROM workspace_governance
 		 WHERE workspace_id = $1`,
@@ -33,7 +33,7 @@ func FetchGovernance(workspaceID string, ctx context.Context) (*Governance, erro
 func UpsertGovernance(g *Governance, ctx context.Context) (*Governance, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	out := &Governance{}
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`INSERT INTO workspace_governance (workspace_id, min_reviewers, require_role, allow_author_review, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6)
 		 ON CONFLICT (workspace_id) DO UPDATE
@@ -55,7 +55,7 @@ func UpsertGovernance(g *Governance, ctx context.Context) (*Governance, error) {
 // InsertApproval records one reviewer's approval. Returns a unique-violation error
 // if the reviewer has already approved this proposal.
 func InsertApproval(proposalID, reviewerID string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`INSERT INTO proposal_approvals (proposal_id, reviewer_id)
 		 VALUES ($1, $2)`,
 		proposalID, reviewerID,
@@ -68,7 +68,7 @@ func InsertApproval(proposalID, reviewerID string, ctx context.Context) error {
 
 // FetchApprovals returns all approvals for a proposal.
 func FetchApprovals(proposalID string, ctx context.Context) ([]*Approval, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT id, proposal_id, reviewer_id, approved_at
 		 FROM proposal_approvals
 		 WHERE proposal_id = $1
@@ -94,7 +94,7 @@ func FetchApprovals(proposalID string, ctx context.Context) ([]*Approval, error)
 // CountApprovals returns the number of approvals for a proposal.
 func CountApprovals(proposalID string, ctx context.Context) (int, error) {
 	var count int
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM proposal_approvals WHERE proposal_id = $1`,
 		proposalID,
 	).Scan(&count)
@@ -107,7 +107,7 @@ func CountApprovals(proposalID string, ctx context.Context) (int, error) {
 // HasApproved reports whether a given reviewer has already approved a proposal.
 func HasApproved(proposalID, reviewerID string, ctx context.Context) (bool, error) {
 	var exists bool
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT EXISTS(SELECT 1 FROM proposal_approvals WHERE proposal_id = $1 AND reviewer_id = $2)`,
 		proposalID, reviewerID,
 	).Scan(&exists)

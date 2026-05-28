@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"granth/internal/blocks"
-	"granth/internal/utils"
+	"granth/internal/foundation"
 	"time"
 )
 
 func createNewDocument(title string, workspaceID *string, ctx context.Context) (string, error) {
-	userId, ok := utils.GetUserIDFromContext(ctx)
+	userId, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return "", fmt.Errorf("User ID not found in context")
 	}
@@ -37,7 +37,7 @@ func getDocument(documentID string, ctx context.Context) (*Document, error) {
 }
 
 func getAllDocuments(ctx context.Context) ([]*Document, error) {
-	userId, ok := utils.GetUserIDFromContext(ctx)
+	userId, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("User ID not found in context")
 	}
@@ -49,7 +49,7 @@ func getAllDocuments(ctx context.Context) ([]*Document, error) {
 }
 
 func updateDocumentByID(document *Document, ctx context.Context) error {
-	userId, ok := utils.GetUserIDFromContext(ctx)
+	userId, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("User ID not found in context")
 	}
@@ -70,7 +70,7 @@ func getAllBlocksForDocument(documentID string, ctx context.Context) ([]*blocks.
 	return blocks, nil
 }
 func createBlockForDocument(block *blocks.Block, ctx context.Context) error {
-	userId, ok := utils.GetUserIDFromContext(ctx)
+	userId, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("User ID not found in context")
 	}
@@ -86,7 +86,7 @@ func createBlockForDocument(block *blocks.Block, ctx context.Context) error {
 }
 
 func updateBlockForDocument(block *blocks.Block, ctx context.Context) error {
-	userId, ok := utils.GetUserIDFromContext(ctx)
+	userId, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("User ID not found in context")
 	}
@@ -108,7 +108,7 @@ func deleteBlockForDocument(blockID string, ctx context.Context) error {
 }
 
 func getLatestDocuments(ctx context.Context, limit int) ([]*Document, error) {
-	userid, ok := utils.GetUserIDFromContext(ctx)
+	userid, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context")
 	}

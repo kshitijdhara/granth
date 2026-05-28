@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 
-	"granth/internal/config"
+	"granth/internal/foundation"
 )
 
 // InsertNotification inserts a new notification row.
 func InsertNotification(n *Notification, ctx context.Context) error {
-	return config.PostgresDB.QueryRowContext(ctx,
+	return foundation.PostgresDB.QueryRowContext(ctx,
 		`INSERT INTO notifications (user_id, kind, payload)
 		 VALUES ($1, $2, $3)
 		 RETURNING id, created_at`,
@@ -20,7 +20,7 @@ func InsertNotification(n *Notification, ctx context.Context) error {
 
 // FetchForUser returns up to 50 notifications for a user — unread first, then by recency.
 func FetchForUser(userID string, ctx context.Context) ([]*Notification, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT id, user_id, kind, payload, read, created_at
 		 FROM notifications
 		 WHERE user_id = $1
@@ -46,7 +46,7 @@ func FetchForUser(userID string, ctx context.Context) ([]*Notification, error) {
 
 // MarkRead marks a single notification as read, scoped to the owning user.
 func MarkRead(id, userID string, ctx context.Context) error {
-	res, err := config.PostgresDB.ExecContext(ctx,
+	res, err := foundation.PostgresDB.ExecContext(ctx,
 		`UPDATE notifications SET read = true WHERE id = $1 AND user_id = $2`,
 		id, userID,
 	)
@@ -62,7 +62,7 @@ func MarkRead(id, userID string, ctx context.Context) error {
 
 // MarkAllRead marks all unread notifications for a user as read.
 func MarkAllRead(userID string, ctx context.Context) error {
-	_, err := config.PostgresDB.ExecContext(ctx,
+	_, err := foundation.PostgresDB.ExecContext(ctx,
 		`UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`,
 		userID,
 	)
@@ -75,7 +75,7 @@ func MarkAllRead(userID string, ctx context.Context) error {
 // CountUnread returns the number of unread notifications for a user.
 func CountUnread(userID string, ctx context.Context) (int, error) {
 	var count int
-	err := config.PostgresDB.QueryRowContext(ctx,
+	err := foundation.PostgresDB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read = false`,
 		userID,
 	).Scan(&count)

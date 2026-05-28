@@ -9,7 +9,7 @@ import (
 	"granth/internal/governance"
 	"granth/internal/notifications"
 	"granth/internal/proposals"
-	"granth/internal/utils"
+	"granth/internal/foundation"
 	"granth/internal/workspaces"
 
 	"github.com/go-chi/chi/v5"
@@ -33,19 +33,19 @@ func BaseRouter() http.Handler {
 
 	r.Use(middleware.Logger, middleware.Recoverer, middleware.RealIP, middleware.Heartbeat("/api/health"))
 
-	r.With(utils.AuthMiddleware).Get("/api", func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := utils.GetUserIDFromContext(r.Context())
+	r.With(foundation.AuthMiddleware).Get("/api", func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := foundation.GetUserIDFromContext(r.Context())
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"message": "Welcome to Granth, authenticated user!", "userID": "` + userID + `"}`))
 	})
 
 	r.Mount("/api/auth", auth.AuthRouter())
-	r.With(utils.AuthMiddleware).Mount("/api/workspaces", workspaces.WorkspacesRouter())
-	r.With(utils.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
-	r.With(utils.AuthMiddleware).Mount("/api/proposals", proposals.ProposalsRouter())
-	r.With(utils.AuthMiddleware).Mount("/api/comments", comments.CommentsRouter())
-	r.With(utils.AuthMiddleware).Mount("/api/notifications", notifications.NotificationsRouter())
-	r.With(utils.AuthMiddleware).Mount("/api/governance", governance.GovernanceRouter())
+	r.With(foundation.AuthMiddleware).Mount("/api/workspaces", workspaces.WorkspacesRouter())
+	r.With(foundation.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
+	r.With(foundation.AuthMiddleware).Mount("/api/proposals", proposals.ProposalsRouter())
+	r.With(foundation.AuthMiddleware).Mount("/api/comments", comments.CommentsRouter())
+	r.With(foundation.AuthMiddleware).Mount("/api/notifications", notifications.NotificationsRouter())
+	r.With(foundation.AuthMiddleware).Mount("/api/governance", governance.GovernanceRouter())
 
 	return r
 }

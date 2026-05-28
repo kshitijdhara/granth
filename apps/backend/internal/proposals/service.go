@@ -3,19 +3,19 @@ package proposals
 import (
 	"context"
 	"fmt"
-	"granth/internal/config"
-	"granth/internal/documents"
-	"granth/internal/notifications"
-	"granth/internal/utils"
-	"granth/internal/workspaces"
 	"strings"
 	"time"
+
+	"granth/internal/documents"
+	"granth/internal/foundation"
+	"granth/internal/notifications"
+	"granth/internal/workspaces"
 
 	"github.com/lib/pq"
 )
 
 func createProposal(documentID string, title string, newTitle string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) (string, error) {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return "", fmt.Errorf("user ID not found in context")
 	}
@@ -72,7 +72,7 @@ func getProposalsForDocument(documentID string, ctx context.Context) ([]*Proposa
 }
 
 func updateProposal(proposalID string, title string, newTitle string, intent string, scope string, affectedBlockIDs []string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -146,7 +146,7 @@ func checkAuthorBlock(proposal *Proposal, userID string, ctx context.Context) er
 }
 
 func acceptProposal(proposalID string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -182,7 +182,7 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 		return fmt.Errorf("error fetching block changes: %w", err)
 	}
 
-	tx, err := config.PostgresDB.BeginTx(ctx, nil)
+	tx, err := foundation.PostgresDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error starting transaction: %w", err)
 	}
@@ -245,7 +245,7 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 }
 
 func rejectProposal(proposalID string, reason string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx) // was `_, ok` — now enforced
+	userID, ok := foundation.GetUserIDFromContext(ctx) // was `_, ok` — now enforced
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}
@@ -276,7 +276,7 @@ func rejectProposal(proposalID string, reason string, ctx context.Context) error
 }
 
 func addBlockChangeToProposal(proposalID string, blockID *string, action string, blockType string, orderPath []int64, content string, ctx context.Context) error {
-	userID, ok := utils.GetUserIDFromContext(ctx)
+	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("user ID not found in context")
 	}

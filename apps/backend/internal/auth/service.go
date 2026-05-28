@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"granth/internal/utils"
+	"granth/internal/foundation"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,12 +32,12 @@ func registerUser(username, email, passwordHash string) (AuthResponse, error) {
 		return AuthResponse{}, fmt.Errorf("error creating user: %w", err)
 	}
 
-	accessToken, err := utils.CreateUserToken(user.ID)
+	accessToken, err := foundation.CreateUserToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(user.ID)
+	refreshToken, err := foundation.CreateRefreshToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}
@@ -58,12 +58,12 @@ func login(email, password string) (AuthResponse, error) {
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("Invalid Password")
 	}
-	accessToken, err := utils.CreateUserToken(user.ID)
+	accessToken, err := foundation.CreateUserToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(user.ID)
+	refreshToken, err := foundation.CreateRefreshToken(user.ID)
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating refresh token: %w", err)
 	}

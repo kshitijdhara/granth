@@ -1,4 +1,4 @@
-package utils
+package foundation
 
 import (
 	"os"
@@ -8,6 +8,13 @@ import (
 )
 
 var secretKey, _ = os.LookupEnv("JWT_SECRET")
+
+type Claims struct {
+	UserID     string `json:"user_id"`
+	Authorized bool   `json:"authorized"`
+	TokenType  string `json:"token_type"`
+	jwt.RegisteredClaims
+}
 
 func CreateUserToken(userID string) (string, error) {
 	claims := Claims{

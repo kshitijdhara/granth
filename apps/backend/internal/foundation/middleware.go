@@ -1,19 +1,10 @@
-package utils
+package foundation
 
 import (
 	"context"
 	"net/http"
 	"strings"
-
-	"github.com/golang-jwt/jwt/v5"
 )
-
-type Claims struct {
-	UserID     string `json:"user_id"`
-	Authorized bool   `json:"authorized"`
-	TokenType  string `json:"token_type"`
-	jwt.RegisteredClaims
-}
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

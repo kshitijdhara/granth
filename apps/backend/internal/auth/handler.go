@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"granth/internal/config"
-	"granth/internal/utils"
+	"granth/internal/foundation"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -18,11 +17,11 @@ func AuthRouter() http.Handler {
 
 	r.Post("/login", handleLogin)
 	r.Post("/register", handleRegister)
-	r.With(utils.AuthMiddleware).Post("/logout", handleLogout)
+	r.With(foundation.AuthMiddleware).Post("/logout", handleLogout)
 	r.Post("/refreshToken", handleRefreshToken)
-	r.With(utils.AuthMiddleware).Get("/profile", handleGetProfile)
-	r.With(utils.AuthMiddleware).Put("/profile", handleUpdateProfile)
-	r.With(utils.AuthMiddleware).Get("/users/{id}", handleGetUserByID)
+	r.With(foundation.AuthMiddleware).Get("/profile", handleGetProfile)
+	r.With(foundation.AuthMiddleware).Put("/profile", handleUpdateProfile)
+	r.With(foundation.AuthMiddleware).Get("/users/{id}", handleGetUserByID)
 
 	return r
 }
@@ -54,7 +53,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
 	if ok.Err() != nil {
 		http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
 		return
@@ -92,7 +91,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	ok := config.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
 	if ok.Err() != nil {
 		http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
 		return
@@ -103,7 +102,7 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogout(w http.ResponseWriter, r *http.Request) {
-	claims, ok := utils.GetClaimsFromContext(r.Context())
+	claims, ok := foundation.GetClaimsFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -112,7 +111,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 	userID := claims.UserID
 
 	// Delete refresh token from Redis
-	okRedis := config.RedisClient.Del(r.Context(), "refresh:"+userID)
+	okRedis := foundation.RedisClient.Del(r.Context(), "refresh:"+userID)
 	if okRedis.Err() != nil {
 		http.Error(w, "Error deleting refresh token: "+okRedis.Err().Error(), http.StatusInternalServerError)
 		return
@@ -124,7 +123,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetProfile(w http.ResponseWriter, r *http.Request) {
-	claims, ok := utils.GetClaimsFromContext(r.Context())
+	claims, ok := foundation.GetClaimsFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -145,7 +144,7 @@ func handleGetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
-	claims, ok := utils.GetClaimsFromContext(r.Context())
+	claims, ok := foundation.GetClaimsFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -215,14 +214,14 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, newRefreshToken, userID, err := utils.RefreshToken(req.RefreshToken)
+	accessToken, newRefreshToken, userID, err := foundation.RefreshToken(req.RefreshToken)
 	if err != nil {
 		http.Error(w, "Token refresh failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Update stored refresh token
-	ok := config.RedisClient.Set(r.Context(), "refresh:"+userID, newRefreshToken, time.Hour*24)
+	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+userID, newRefreshToken, time.Hour*24)
 	if ok.Err() != nil {
 		http.Error(w, "Error storing new refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
 		return

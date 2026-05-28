@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"granth/internal/config"
+	"granth/internal/foundation"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -42,7 +42,7 @@ type workspaceDocument struct {
 }
 
 func fetchDocumentsByWorkspaceID(workspaceID string, ctx context.Context) ([]*workspaceDocument, error) {
-	rows, err := config.PostgresDB.QueryContext(ctx,
+	rows, err := foundation.PostgresDB.QueryContext(ctx,
 		`SELECT id, title, workspace_id, created_by, created_at, updated_at
 		 FROM documents WHERE workspace_id = $1 ORDER BY created_at DESC`,
 		workspaceID,
