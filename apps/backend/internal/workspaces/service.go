@@ -87,6 +87,14 @@ func deleteWorkspaceByID(id string, ctx context.Context) error {
 		return fmt.Errorf("user ID not found in context")
 	}
 
+	count, err := CountUserWorkspaces(userID)
+	if err != nil {
+		return fmt.Errorf("error checking workspace count: %w", err)
+	}
+	if count <= 1 {
+		return fmt.Errorf("cannot delete your only workspace")
+	}
+
 	w, err := fetchWorkspaceByID(id, ctx)
 	if err != nil {
 		return err
