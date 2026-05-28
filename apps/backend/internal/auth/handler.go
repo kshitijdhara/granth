@@ -1,12 +1,11 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"granth/internal/foundation"
+	"granth/internal/shared"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -31,36 +30,30 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-	contentType := r.Header.Get("Content-Type")
-	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
-		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
-		return
-	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	if req.Email == "" || req.Password == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Missing required fields"))
 		return
 	}
 
 	data, err := login(req.Email, req.Password)
 	if err != nil {
-		http.Error(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
+		shared.WriteError(w, shared.NewAPIError(http.StatusUnauthorized, "Login failed: "+err.Error()))
 		return
 	}
 
 	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
 	if ok.Err() != nil {
-		http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error storing refresh token: "+ok.Err().Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	shared.WriteJSON(w, http.StatusOK, data)
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -70,73 +63,63 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	contentType := r.Header.Get("Content-Type")
-	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
-		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	if req.Name == "" || req.Email == "" || req.Password == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Missing required fields"))
 		return
 	}
 
 	data, err := registerUser(req.Name, req.Email, req.Password)
 	if err != nil {
-		http.Error(w, "Registration failed: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
-	if ok.Err() != nil {
-		http.Error(w, "Error storing refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Registration failed: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+data.UserID, data.RefreshToken, time.Hour*24)
+	if ok.Err() != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error storing refresh token: "+ok.Err().Error()))
+		return
+	}
+
+	shared.WriteJSON(w, http.StatusCreated, data)
 }
 
 func handleLogout(w http.ResponseWriter, r *http.Request) {
 	claims, ok := foundation.GetClaimsFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		shared.WriteError(w, shared.ErrUnauthorized)
 		return
 	}
 
 	userID := claims.UserID
 
-	// Delete refresh token from Redis
 	okRedis := foundation.RedisClient.Del(r.Context(), "refresh:"+userID)
 	if okRedis.Err() != nil {
-		http.Error(w, "Error deleting refresh token: "+okRedis.Err().Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error deleting refresh token: "+okRedis.Err().Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+	shared.WriteJSON(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
 }
 
 func handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	claims, ok := foundation.GetClaimsFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		shared.WriteError(w, shared.ErrUnauthorized)
 		return
 	}
 
 	user, err := GetUserByID(claims.UserID)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		shared.WriteError(w, shared.ErrNotFound)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	shared.WriteJSON(w, http.StatusOK, map[string]string{
 		"id":       claims.UserID,
 		"username": user.Username,
 		"email":    user.Email,
@@ -146,47 +129,41 @@ func handleGetProfile(w http.ResponseWriter, r *http.Request) {
 func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	claims, ok := foundation.GetClaimsFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	contentType := r.Header.Get("Content-Type")
-	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
-		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
+		shared.WriteError(w, shared.ErrUnauthorized)
 		return
 	}
 
 	var req struct {
 		Username string `json:"username"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	if req.Username == "" {
-		http.Error(w, "Username cannot be empty", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Username cannot be empty"))
 		return
 	}
 
 	if err := UpdateUsername(claims.UserID, req.Username); err != nil {
-		http.Error(w, "Update failed: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Update failed: "+err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"username": req.Username})
+	shared.WriteJSON(w, http.StatusOK, map[string]string{"username": req.Username})
 }
 
 func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	user, err := GetUserByID(id)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		shared.WriteError(w, shared.ErrNotFound)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+
+	shared.WriteJSON(w, http.StatusOK, map[string]string{
 		"id":       user.ID,
 		"username": user.Username,
 		"email":    user.Email,
@@ -198,32 +175,25 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refreshToken"`
 	}
 
-	contentType := r.Header.Get("Content-Type")
-	if contentType == "" || !strings.HasPrefix(contentType, "application/json") {
-		http.Error(w, "Content-Type must be application/json", http.StatusBadRequest)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+	if err := shared.DecodeJSON(r, &req); err != nil {
+		shared.WriteError(w, err.(shared.APIError))
 		return
 	}
 
 	if req.RefreshToken == "" {
-		http.Error(w, "Missing refresh token", http.StatusBadRequest)
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Missing refresh token"))
 		return
 	}
 
 	accessToken, newRefreshToken, userID, err := foundation.RefreshToken(req.RefreshToken)
 	if err != nil {
-		http.Error(w, "Token refresh failed: "+err.Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Token refresh failed: "+err.Error()))
 		return
 	}
 
-	// Update stored refresh token
 	ok := foundation.RedisClient.Set(r.Context(), "refresh:"+userID, newRefreshToken, time.Hour*24)
 	if ok.Err() != nil {
-		http.Error(w, "Error storing new refresh token: "+ok.Err().Error(), http.StatusInternalServerError)
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error storing new refresh token: "+ok.Err().Error()))
 		return
 	}
 
@@ -232,6 +202,5 @@ func handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		"refreshToken": newRefreshToken,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	shared.WriteJSON(w, http.StatusOK, response)
 }
