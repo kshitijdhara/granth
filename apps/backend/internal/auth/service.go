@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"granth/internal/foundation"
+	"granth/internal/workspaces"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -31,6 +33,10 @@ func registerUser(username, email, password string, ctx context.Context) (AuthRe
 	user, err := CreateUser(username, email, string(passwordHashBytes))
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("error creating user: %w", err)
+	}
+
+	if err := workspaces.ProvisionDefaultWorkspace(user.ID, user.Username); err != nil {
+		log.Printf("warning: failed to provision default workspace for user %s: %v", user.ID, err)
 	}
 
 	accessToken, err := foundation.CreateUserToken(user.ID)
