@@ -84,6 +84,7 @@ const WorkspaceSettingsPage: React.FC = () => {
 	}, [id]);
 
 	const isAdmin = members.some((m) => m.user_id === userId && m.role === "admin");
+	const isOnlyWorkspace = workspaces.length <= 1;
 
 	const handleSaveGovernance = async () => {
 		if (!id || savingGov) return;
@@ -360,15 +361,23 @@ const WorkspaceSettingsPage: React.FC = () => {
 						Danger zone
 					</h2>
 					{!confirmDelete ? (
-						<Button
-							variant="secondary"
-							size="medium"
-							onClick={() => setConfirmDelete(true)}
-							isFullWidth={false}
-						>
-							<TrashIcon style={{ width: 14, height: 14 }} />
-							Delete workspace
-						</Button>
+						<>
+							<Button
+								variant="secondary"
+								size="medium"
+								onClick={() => setConfirmDelete(true)}
+								isDisabled={isOnlyWorkspace}
+								isFullWidth={false}
+							>
+								<TrashIcon style={{ width: 14, height: 14 }} />
+								Delete workspace
+							</Button>
+							{isOnlyWorkspace && (
+								<p className="ws-settings__danger-note">
+									You must keep at least one workspace.
+								</p>
+							)}
+						</>
 					) : (
 						<div className="ws-settings__confirm-delete">
 							<p className="ws-settings__confirm-text">

@@ -296,10 +296,10 @@ const TruthListView: React.FC = () => {
 	}, [workspaceId, workspaceLoading]);
 
 	const handleCreate = async () => {
-		if (creating) return;
+		if (creating || !currentWorkspace) return;
 		setCreating(true);
 		try {
-			const res = await documentsApi.create("Untitled", currentWorkspace?.id);
+			const res = await documentsApi.create("Untitled", currentWorkspace.id);
 			if (res?.document_id) navigate(`/truth/${res.document_id}/compose`);
 		} catch {
 			setCreating(false);
@@ -316,7 +316,7 @@ const TruthListView: React.FC = () => {
 							Your team's documents — every accepted change recorded with its reasoning.
 						</p>
 					</div>
-					<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={creating}>
+					<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={!currentWorkspace || creating}>
 						<PlusIcon style={{ width: 16, height: 16 }} />
 						{creating ? "Creating…" : "New document"}
 					</Button>
@@ -335,7 +335,7 @@ const TruthListView: React.FC = () => {
 						<p className="truth-list__empty-text">
 							Documents hold your team's shared knowledge. Every accepted change is saved with its reasoning, permanently.
 						</p>
-						<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={creating}>
+						<Button variant="primary" size="medium" onClick={handleCreate} isDisabled={!currentWorkspace || creating}>
 							<PlusIcon style={{ width: 16, height: 16 }} />
 							{creating ? "Creating…" : "Create your first document"}
 						</Button>
