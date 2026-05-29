@@ -1,16 +1,16 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:18
     environment:
-      POSTGRES_USER: granth_user
-      POSTGRES_PASSWORD: granth_password
-      POSTGRES_DB: granth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: granth
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U granth_user -d granth_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d granth"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,8 +24,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
+  seaweedFs:
+    image: chrislusf/seaweedfs
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=secret
+      - S3_BUCKET=granth
+    ports:
+      - "8333:8333" # S3 endpoint
+      - "9333:9333" # Master server UI
+      - "9340:9340" # Volume server UI
+      - "8888:8888" # Filer server UI
+      - "7333:7333" # WebDAV endpoint
+      - "23646:23646" # webUI endpoint
+    command: ["server", "-s3"]
 
   backend:
+    profiles:
+      - app
     build:
       context: ../apps/backend
       dockerfile: Dockerfile.dev
@@ -43,6 +60,8 @@ services:
         condition: service_healthy
 
   frontend:
+    profiles:
+      - app
     build:
       context: ../apps/frontend
       dockerfile: Dockerfile.dev
