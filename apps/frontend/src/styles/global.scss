@@ -1,281 +1,193 @@
 // Global styles for Granth frontend
-// Design system: Editorial serif (canonical) + Plus Jakarta Sans (chrome/proposals)
+// Design system: Liquid Truth — dark-mode-only glassmorphism
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&display=swap');
+// Metropolis is not on Google Fonts; load from CDN or self-host.
+// Install via: npm install @fontsource/metropolis  (then import in main.tsx)
+// Or replace with your preferred CDN import below.
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  // Colors — light mode
-  --color-background-primary: #F8FAFC;
-  --color-background-secondary: #F1F5F9;
-  --color-surface-primary: rgba(255, 255, 255, 0.9);
-  --color-surface-secondary: rgba(255, 255, 255, 0.6);
-  --color-surface-glass: rgba(255, 255, 255, 0.75);
+  color-scheme: dark;
 
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #64748B;
-  --color-text-tertiary: #94A3B8;
-  --color-text-inverse: #F8FAFC;
+  // ── Surface / Background ────────────────────────────────────────────────
+  --color-background-primary:   #131315;   // surface / background (canvas)
+  --color-background-secondary: #201f22;   // surface-container
 
-  --color-accent-primary: #2563EB;
-  --color-accent-secondary: #3B82F6;
-  --color-accent-light: #EFF6FF;
-  --color-accent-dark: #1D4ED8;
+  --color-surface-primary:      rgba(255, 255, 255, 0.08);  // glass-surface
+  --color-surface-secondary:    rgba(255, 255, 255, 0.05);  // glass-surface dim
+  --color-surface-glass:        rgba(255, 255, 255, 0.08);  // glass-surface
 
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #06B6D4;
+  --color-surface-editor:       #1c1b1d;   // surface-container-low
+  --color-surface-toolbar:      rgba(19, 19, 21, 0.85);
+  --color-surface-overlay:      rgba(32, 31, 34, 0.92);
 
-  --color-border-light: rgba(148, 163, 184, 0.2);
-  --color-border-medium: rgba(148, 163, 184, 0.35);
-  --color-border-strong: rgba(148, 163, 184, 0.5);
+  // ── Text ────────────────────────────────────────────────────────────────
+  --color-text-primary:         #e5e1e4;   // on-surface
+  --color-text-secondary:       #c4c7c8;   // on-surface-variant
+  --color-text-tertiary:        rgba(255, 255, 255, 0.45); // text-muted
+  --color-text-inverse:         #131315;
 
-  // RGB tokens for rgba() usages
-  --color-accent-primary-rgb: 37, 99, 235;
-  --color-accent-secondary-rgb: 59, 130, 246;
-  --color-success-rgb: 16, 185, 129;
-  --color-warning-rgb: 245, 158, 11;
-  --color-error-rgb: 239, 68, 68;
+  // ── Accent (Apple Blue) ─────────────────────────────────────────────────
+  --color-accent-primary:       #a3c9ff;   // secondary
+  --color-accent-secondary:     #2193fb;   // secondary-container
+  --color-accent-light:         rgba(163, 201, 255, 0.12);
+  --color-accent-dark:          #d3e3ff;   // secondary-fixed
 
-  color-scheme: light;
+  // RGB tokens for rgba() usage
+  --color-accent-primary-rgb:   163, 201, 255;
+  --color-accent-secondary-rgb: 33, 147, 251;
 
-  // Typography
-  --font-family-system: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  --font-family-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-family-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  --font-weight-light: 300;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
+  // ── Semantic ────────────────────────────────────────────────────────────
+  --color-success:     #32D74B;  // success-green
+  --color-warning:     #ffd60a;
+  --color-error:       #ffb4ab;  // error
+  --color-info:        #a3c9ff;
+
+  --color-success-rgb: 50, 215, 75;
+  --color-warning-rgb: 255, 214, 10;
+  --color-error-rgb:   255, 180, 171;
+
+  // ── Borders (glass-edge system) ─────────────────────────────────────────
+  --color-border-light:    rgba(255, 255, 255, 0.08);
+  --color-border-medium:   rgba(255, 255, 255, 0.15); // glass-edge
+  --color-border-strong:   rgba(255, 255, 255, 0.25);
+
+  // Hairline border (Apple HIG 0.5px separators)
+  --border-width-hairline:     0.5px;
+  --color-border-hairline:     rgba(255, 255, 255, 0.10);
+
+  // Surface tint for focus rings / interactive states
+  --color-surface-tint:        #c6c6c7;
+
+  // ── Typography ──────────────────────────────────────────────────────────
+  --font-family-system: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  // Metropolis for display/headings; falls back to Inter if not loaded
+  --font-family-serif:  'Metropolis', 'Inter', sans-serif;
+  --font-family-mono:   'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
+  --font-weight-bold:     700;
 
   // Type scale
-  --font-size-xs: 0.75rem;    // 12px
-  --font-size-sm: 0.875rem;   // 14px
-  --font-size-base: 1rem;     // 16px
-  --font-size-lg: 1.125rem;   // 18px
-  --font-size-xl: 1.25rem;    // 20px
-  --font-size-2xl: 1.5rem;    // 24px
-  --font-size-3xl: 1.875rem;  // 30px
-  --font-size-4xl: 2.25rem;   // 36px
+  --font-size-xs:   0.75rem;    // 12px
+  --font-size-sm:   0.875rem;   // 14px — ui-label
+  --font-size-base: 1rem;       // 16px
+  --font-size-lg:   1.125rem;   // 18px
+  --font-size-xl:   1.25rem;    // 20px
+  --font-size-2xl:  1.5rem;     // 24px
+  --font-size-3xl:  1.875rem;   // 30px
+  --font-size-4xl:  2.25rem;    // 36px
+  --font-size-5xl:  2.5rem;     // 40px — display-lg
+  --font-size-display: 3rem;    // 48px — reserved
 
-  // Border radius
-  --border-radius-xs: 4px;
-  --border-radius-sm: 6px;
-  --border-radius-small: 6px;
-  --border-radius-medium: 10px;
-  --border-radius-large: 14px;
-  --border-radius-xlarge: 18px;
-  --border-radius-xxlarge: 24px;
-  --border-radius-full: 9999px;
+  // ── Border Radius (Liquid Truth spec) ───────────────────────────────────
+  --border-radius-xs:      2px;
+  --border-radius-sm:      0.5rem;  // 8px
+  --border-radius-small:   0.5rem;  // 8px
+  --border-radius-medium:  1.5rem;  // 24px — inputs, default buttons
+  --border-radius-large:   2rem;    // 32px — cards, large buttons (rounded-lg)
+  --border-radius-xlarge:  3rem;    // 48px — auth card, pill (rounded-xl)
+  --border-radius-xxlarge: 3rem;    // 48px
+  --border-radius-full:    9999px;
 
-  // Shadows — layered for depth
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-small: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-medium: 0 4px 6px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.05);
-  --shadow-large: 0 10px 15px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.04);
-  --shadow-xlarge: 0 20px 25px rgba(15, 23, 42, 0.1), 0 10px 10px rgba(15, 23, 42, 0.04);
-  --shadow-glow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  // ── Shadows (deep black / glassmorphism) ────────────────────────────────
+  --shadow-xs:     0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-small:  0 1px 3px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-large:  0 10px 24px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.45);
+  --shadow-xlarge: 0 24px 48px rgba(0, 0, 0, 0.6), 0 10px 16px rgba(0, 0, 0, 0.4);
+  --shadow-glow:   0 0 0 3px rgba(163, 201, 255, 0.2); // blue focus ring
 
-  // Blur
-  --blur-sm: blur(8px);
-  --blur-small: blur(8px);
-  --blur-medium: blur(16px);
-  --blur-large: blur(24px);
+  // ── Blur ────────────────────────────────────────────────────────────────
+  --blur-sm:     blur(12px);
+  --blur-small:  blur(12px);
+  --blur-medium: blur(24px);
+  --blur-large:  blur(48px);  // Thick Glass Card
 
-  // Spacing (8pt grid)
-  --spacing-1: 0.25rem;   // 4px
-  --spacing-2: 0.5rem;    // 8px
-  --spacing-3: 0.75rem;   // 12px
-  --spacing-4: 1rem;      // 16px
-  --spacing-5: 1.25rem;   // 20px
-  --spacing-6: 1.5rem;    // 24px
-  --spacing-8: 2rem;      // 32px
+  // ── Spacing (8pt grid) ──────────────────────────────────────────────────
+  --spacing-1:  0.25rem;  // 4px
+  --spacing-2:  0.5rem;   // 8px
+  --spacing-3:  0.75rem;  // 12px
+  --spacing-4:  1rem;     // 16px
+  --spacing-5:  1.25rem;  // 20px
+  --spacing-6:  1.5rem;   // 24px — gutter
+  --spacing-8:  2rem;     // 32px
   --spacing-10: 2.5rem;   // 40px
   --spacing-12: 3rem;     // 48px
   --spacing-16: 4rem;     // 64px
 
   // Legacy spacing aliases
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 0.75rem;
-  --spacing-lg: 1rem;
-  --spacing-xl: 1.5rem;
-  --spacing-xxl: 2rem;
+  --spacing-xs:   0.25rem;
+  --spacing-sm:   0.5rem;
+  --spacing-md:   0.75rem;
+  --spacing-lg:   1rem;
+  --spacing-xl:   1.5rem;
+  --spacing-xxl:  2rem;
   --spacing-xxxl: 3rem;
 
-  // Opacity
+  // ── Opacity ─────────────────────────────────────────────────────────────
   --opacity-disabled: 0.4;
-  --opacity-hover: 0.85;
+  --opacity-hover:    0.85;
 
-  // Motion
-  --motion-duration-fast: 150ms;
+  // ── Motion ──────────────────────────────────────────────────────────────
+  --motion-duration-fast:   150ms;
   --motion-duration-medium: 220ms;
-  --motion-duration-slow: 350ms;
-  --motion-easing-standard: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --motion-duration-slow:   350ms;
+  --motion-easing-standard:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --motion-easing-accelerate: cubic-bezier(0.55, 0, 1, 0.45);
   --motion-easing-decelerate: cubic-bezier(0.21, 0, 0.35, 1);
-  --motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-easing-spring:     cubic-bezier(0.34, 1.56, 0.64, 1); // button "spring" press
 
-  // Z-index scale
-  --z-base: 0;
-  --z-raised: 10;
+  // ── Z-index scale ───────────────────────────────────────────────────────
+  --z-base:    0;
+  --z-raised:  10;
   --z-overlay: 100;
-  --z-modal: 200;
-  --z-toast: 300;
+  --z-modal:   200;
+  --z-toast:   300;
   --z-sidebar: 400;
 
-  // Editor surface tokens
-  --color-surface-editor:   #FFFFFF;
-  --color-surface-toolbar:  rgba(248, 250, 252, 0.82);
-  --color-surface-overlay:  rgba(255, 255, 255, 0.88);
+  // ── Layout ──────────────────────────────────────────────────────────────
+  --truth-max-width:    680px;
+  --truth-padding-x:    var(--spacing-8);
+  --truth-line-height:  1.75;
+  --composer-max-width: 1200px;
 
-  // Hairline border (Apple HIG 0.5px separators)
-  --border-width-hairline:  0.5px;
-  --color-border-hairline:  rgba(148, 163, 184, 0.25);
+  // ── Proposal states (glass / dark-appropriate) ──────────────────────────
 
-  // Extended type scale
-  --font-size-5xl:     2.5rem;   // 40px — document title
-  --font-size-display: 3rem;     // 48px — reserved
+  // Open (amber)
+  --color-proposal-open:            #f59e0b;
+  --color-proposal-open-surface:    rgba(245, 158, 11, 0.15);
+  --color-proposal-open-border:     rgba(245, 158, 11, 0.4);
+  --color-proposal-open-gutter:     #f59e0b;
+  --color-proposal-open-tag-bg:     rgba(245, 158, 11, 0.2);
+  --color-proposal-open-tag-text:   #fde68a;
 
-  // Truth / canonical reading surface
-  --truth-max-width:      680px;
-  --truth-padding-x:      var(--spacing-8);
-  --truth-line-height:    1.75;
+  // Accepted (emerald)
+  --color-proposal-accepted:        #32D74B;
+  --color-proposal-accepted-surface: rgba(50, 215, 75, 0.1);
+  --color-proposal-accepted-border: rgba(50, 215, 75, 0.35);
+  --color-proposal-accepted-tag-bg:  rgba(50, 215, 75, 0.15);
+  --color-proposal-accepted-tag-text:#34d058;
 
-  // Composer layout
-  --composer-max-width:   1200px;
+  // Declined (slate / muted)
+  --color-proposal-declined:        #8e9192;
+  --color-proposal-declined-surface: rgba(255, 255, 255, 0.05);
+  --color-proposal-declined-border: rgba(255, 255, 255, 0.15);
+  --color-proposal-declined-tag-bg:  rgba(255, 255, 255, 0.08);
+  --color-proposal-declined-tag-text:#c4c7c8;
 
-  // Proposal state — Open (amber)
-  --color-proposal-open:            #B45309;
-  --color-proposal-open-surface:    rgba(254, 243, 199, 0.55);
-  --color-proposal-open-border:     #FDE68A;
-  --color-proposal-open-gutter:     #F59E0B;
-  --color-proposal-open-tag-bg:     #FEF3C7;
-  --color-proposal-open-tag-text:   #92400E;
-
-  // Proposal state — Accepted (emerald)
-  --color-proposal-accepted:        #065F46;
-  --color-proposal-accepted-surface: rgba(209, 250, 229, 0.4);
-  --color-proposal-accepted-border: #6EE7B7;
-  --color-proposal-accepted-tag-bg:  #D1FAE5;
-  --color-proposal-accepted-tag-text:#064E3B;
-
-  // Proposal state — Declined (slate)
-  --color-proposal-declined:        #475569;
-  --color-proposal-declined-surface: rgba(241, 245, 249, 0.5);
-  --color-proposal-declined-border: #CBD5E1;
-  --color-proposal-declined-tag-bg:  #F1F5F9;
-  --color-proposal-declined-tag-text:#334155;
-
-  // Proposal state — Conflict (red)
-  --color-proposal-conflict:        #991B1B;
-  --color-proposal-conflict-surface: rgba(254, 226, 226, 0.5);
-  --color-proposal-conflict-border: #FECACA;
-  --color-proposal-conflict-tag-bg:  #FEE2E2;
-  --color-proposal-conflict-tag-text:#7F1D1D;
+  // Conflict (red / danger)
+  --color-proposal-conflict:        #FF453A;
+  --color-proposal-conflict-surface: rgba(255, 69, 58, 0.12);
+  --color-proposal-conflict-border: rgba(255, 69, 58, 0.35);
+  --color-proposal-conflict-tag-bg:  rgba(255, 69, 58, 0.15);
+  --color-proposal-conflict-tag-text:#ffb4ab;
 }
 
-// Dark mode
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-primary: #0F172A;
-    --color-background-secondary: #1E293B;
-    --color-surface-primary: rgba(30, 41, 59, 0.9);
-    --color-surface-secondary: rgba(30, 41, 59, 0.6);
-    --color-surface-glass: rgba(30, 41, 59, 0.75);
-
-    --color-text-primary: #F1F5F9;
-    --color-text-secondary: #94A3B8;
-    --color-text-tertiary: #64748B;
-    --color-text-inverse: #0F172A;
-
-    --color-accent-light: rgba(37, 99, 235, 0.15);
-    --color-accent-dark: #60A5FA;
-
-    --color-border-light: rgba(148, 163, 184, 0.1);
-    --color-border-medium: rgba(148, 163, 184, 0.18);
-    --color-border-strong: rgba(148, 163, 184, 0.28);
-
-    --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
-    --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.25);
-    --shadow-xlarge: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.25);
-
-    color-scheme: dark;
-
-    // Surface tokens — dark mode
-    --color-surface-editor:   #1E293B;
-    --color-surface-toolbar:  rgba(15, 23, 42, 0.82);
-    --color-surface-overlay:  rgba(30, 41, 59, 0.92);
-    --color-border-hairline:  rgba(148, 163, 184, 0.12);
-
-    // Proposal state — dark adjustments
-    --color-proposal-open-surface:     rgba(120, 53, 15, 0.2);
-    --color-proposal-open-tag-bg:      rgba(120, 53, 15, 0.35);
-    --color-proposal-open-tag-text:    #FDE68A;
-    --color-proposal-accepted-surface: rgba(6, 78, 59, 0.2);
-    --color-proposal-accepted-tag-bg:  rgba(6, 78, 59, 0.35);
-    --color-proposal-accepted-tag-text:#6EE7B7;
-    --color-proposal-declined-surface: rgba(30, 41, 59, 0.4);
-    --color-proposal-declined-tag-bg:  rgba(30, 41, 59, 0.5);
-    --color-proposal-declined-tag-text:#94A3B8;
-    --color-proposal-conflict-surface: rgba(127, 29, 29, 0.2);
-    --color-proposal-conflict-tag-bg:  rgba(127, 29, 29, 0.35);
-    --color-proposal-conflict-tag-text:#FECACA;
-  }
-}
-
-// Runtime theme class overrides
-.theme-light {
-  color-scheme: light;
-  --color-background-primary: #F8FAFC;
-  --color-background-secondary: #F1F5F9;
-  --color-surface-primary: rgba(255, 255, 255, 0.9);
-  --color-surface-secondary: rgba(255, 255, 255, 0.6);
-  --color-surface-glass: rgba(255, 255, 255, 0.75);
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #64748B;
-  --color-text-tertiary: #94A3B8;
-  --color-border-light: rgba(148, 163, 184, 0.2);
-  --color-border-medium: rgba(148, 163, 184, 0.35);
-  --color-surface-editor:   #FFFFFF;
-  --color-surface-toolbar:  rgba(248, 250, 252, 0.82);
-  --color-surface-overlay:  rgba(255, 255, 255, 0.88);
-  --color-border-hairline:  rgba(148, 163, 184, 0.25);
-}
-
-.theme-dark {
-  color-scheme: dark;
-  --color-background-primary: #0F172A;
-  --color-background-secondary: #1E293B;
-  --color-surface-primary: rgba(30, 41, 59, 0.9);
-  --color-surface-secondary: rgba(30, 41, 59, 0.6);
-  --color-surface-glass: rgba(30, 41, 59, 0.75);
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-tertiary: #64748B;
-  --color-border-light: rgba(148, 163, 184, 0.1);
-  --color-border-medium: rgba(148, 163, 184, 0.18);
-  --color-surface-editor:   #1E293B;
-  --color-surface-toolbar:  rgba(15, 23, 42, 0.82);
-  --color-surface-overlay:  rgba(30, 41, 59, 0.92);
-  --color-border-hairline:  rgba(148, 163, 184, 0.12);
-  --color-proposal-open-surface:     rgba(120, 53, 15, 0.2);
-  --color-proposal-open-tag-bg:      rgba(120, 53, 15, 0.35);
-  --color-proposal-open-tag-text:    #FDE68A;
-  --color-proposal-accepted-surface: rgba(6, 78, 59, 0.2);
-  --color-proposal-accepted-tag-bg:  rgba(6, 78, 59, 0.35);
-  --color-proposal-accepted-tag-text:#6EE7B7;
-  --color-proposal-declined-surface: rgba(30, 41, 59, 0.4);
-  --color-proposal-declined-tag-bg:  rgba(30, 41, 59, 0.5);
-  --color-proposal-declined-tag-text:#94A3B8;
-  --color-proposal-conflict-surface: rgba(127, 29, 29, 0.2);
-  --color-proposal-conflict-tag-bg:  rgba(127, 29, 29, 0.35);
-  --color-proposal-conflict-tag-text:#FECACA;
-}
-
-// Reset
+// ── Reset ────────────────────────────────────────────────────────────────────
 *,
 *::before,
 *::after {
@@ -292,7 +204,7 @@ body {
   margin: 0;
   font-family: var(--font-family-system);
   font-weight: var(--font-weight-regular);
-  font-size: 16px;
+  font-size: 15px; // body-reading spec: 15px
   line-height: 1.5;
   color: var(--color-text-primary);
   background-color: var(--color-background-primary);
@@ -300,17 +212,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-// Typography
+// ── Typography ───────────────────────────────────────────────────────────────
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
+  font-family: var(--font-family-serif); // Metropolis for headings
   font-weight: var(--font-weight-semibold);
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
-h1 { font-size: var(--font-size-4xl); }
-h2 { font-size: var(--font-size-3xl); }
-h3 { font-size: var(--font-size-2xl); }
+h1 { font-size: var(--font-size-5xl); }  // display-lg: 40px
+h2 { font-size: var(--font-size-4xl); }
+h3 { font-size: var(--font-size-3xl); }
 h4 { font-size: var(--font-size-xl); }
 h5 { font-size: var(--font-size-lg); }
 h6 { font-size: var(--font-size-base); }
@@ -325,7 +238,7 @@ a {
   &:hover { color: var(--color-accent-dark); }
 }
 
-// Focus styles — accessible but not intrusive
+// ── Focus styles ─────────────────────────────────────────────────────────────
 *:focus { outline: none; }
 
 *:focus-visible {
@@ -334,7 +247,7 @@ a {
   border-radius: 2px;
 }
 
-// Form resets
+// ── Form resets ──────────────────────────────────────────────────────────────
 button {
   font-family: inherit;
   font-size: inherit;
@@ -353,14 +266,14 @@ input, textarea, select {
   margin: 0;
 }
 
-// Global transition — only for theme changes
+// ── Global transition (surface/color changes only) ───────────────────────────
 body * {
   transition: background-color var(--motion-duration-medium) var(--motion-easing-standard),
               border-color var(--motion-duration-medium) var(--motion-easing-standard),
               color var(--motion-duration-medium) var(--motion-easing-standard);
 }
 
-// Reduced motion
+// ── Reduced motion ───────────────────────────────────────────────────────────
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -368,7 +281,7 @@ body * {
   }
 }
 
-// App layout
+// ── App layout ───────────────────────────────────────────────────────────────
 .app {
   min-height: 100dvh;
   display: flex;

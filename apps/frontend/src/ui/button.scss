@@ -17,29 +17,29 @@
   // Primary — vibrant blue
   &--primary {
     background: linear-gradient(135deg, var(--color-accent-primary) 0%, var(--color-accent-secondary) 100%);
-    color: #fff;
+    color: var(--color-text-inverse);
     border-color: var(--color-accent-dark);
-    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    box-shadow: 0 1px 2px rgba(var(--color-accent-primary-rgb), 0.3), inset 0 1px 0 var(--color-border-medium);
 
     &:hover:not(.button--disabled) {
       background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent-primary) 100%);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(var(--color-accent-primary-rgb), 0.35), inset 0 1px 0 var(--color-border-medium);
       transform: translateY(-1px);
     }
 
     &:active:not(.button--disabled) {
-      transform: translateY(0);
-      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+      transform: translateY(0) scale(0.98); // spring press into Z-axis
+      box-shadow: 0 1px 2px rgba(var(--color-accent-primary-rgb), 0.2);
     }
   }
 
-  // Secondary — ghost
+  // Secondary — ghost glass
   &--secondary {
     background: var(--color-surface-glass);
     color: var(--color-text-primary);
     border-color: var(--color-border-medium);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: var(--blur-small);
+    -webkit-backdrop-filter: var(--blur-small);
 
     &:hover:not(.button--disabled) {
       background: var(--color-surface-primary);
@@ -54,13 +54,13 @@
 
   // Danger
   &--danger {
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-    color: #fff;
-    border-color: #B91C1C;
-    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.3);
+    background: linear-gradient(135deg, var(--color-error) 0%, rgba(var(--color-error-rgb), 0.75) 100%);
+    color: var(--color-text-inverse);
+    border-color: rgba(var(--color-error-rgb), 0.6);
+    box-shadow: 0 1px 2px rgba(var(--color-error-rgb), 0.3);
 
     &:hover:not(.button--disabled) {
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+      box-shadow: 0 4px 12px rgba(var(--color-error-rgb), 0.35);
       transform: translateY(-1px);
     }
   }
