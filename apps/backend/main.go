@@ -41,6 +41,20 @@ func main() {
 	defer redisClient.Close()
 	foundation.Logger.Println("Successfully connected to Redis")
 
+	// initialize S3 / SeaweedFS blob storage
+	_, err = foundation.InitS3Client(foundation.S3Config{
+		Env:             env["APP_ENV"],
+		Endpoint:        env["S3_ENDPOINT"],
+		Region:          env["S3_REGION"],
+		AccessKeyID:     env["S3_ACCESS_KEY_ID"],
+		SecretAccessKey: env["S3_SECRET_ACCESS_KEY"],
+		Bucket:          env["S3_BUCKET"],
+	})
+	if err != nil {
+		foundation.Logger.Fatalf("Error connecting to S3: %v", err)
+	}
+	foundation.Logger.Println("Successfully connected to S3")
+
 	// create router from api package
 	router := internal.BaseRouter()
 
