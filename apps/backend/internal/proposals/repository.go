@@ -10,8 +10,8 @@ import (
 
 func CreateProposal(proposal *Proposal, ctx context.Context) error {
 	err := foundation.PostgresDB.QueryRowContext(ctx,
-		"INSERT INTO proposals (document_id, affected_block_ids, title, new_title, author_id, intent, scope, state, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
-		proposal.DocumentID, pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.NewTitle, proposal.AuthorID, proposal.Intent, proposal.Scope, proposal.State, proposal.CreatedAt, proposal.UpdatedAt).Scan(&proposal.ID)
+		"INSERT INTO proposals (document_id, affected_block_ids, title, new_title, author_id, intent, scope, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		proposal.DocumentID, pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.NewTitle, proposal.AuthorID, proposal.Intent, proposal.Scope, proposal.State).Scan(&proposal.ID)
 	return err
 }
 
@@ -51,8 +51,8 @@ func GetProposalsByDocument(documentID string, ctx context.Context) ([]*Proposal
 }
 
 func UpdateProposal(proposal *Proposal, ctx context.Context) error {
-	_, err := foundation.PostgresDB.ExecContext(ctx, "UPDATE proposals SET affected_block_ids = $1, title = $2, new_title = $3, intent = $4, scope = $5, state = $6, updated_at = $7, rejection_reason = $8 WHERE id = $9",
-		pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.NewTitle, proposal.Intent, proposal.Scope, proposal.State, proposal.UpdatedAt, proposal.RejectionReason, proposal.ID)
+	_, err := foundation.PostgresDB.ExecContext(ctx, "UPDATE proposals SET affected_block_ids = $1, title = $2, new_title = $3, intent = $4, scope = $5, state = $6, rejection_reason = $7 WHERE id = $8",
+		pq.Array(proposal.AffectedBlockIDs), proposal.Title, proposal.NewTitle, proposal.Intent, proposal.Scope, proposal.State, proposal.RejectionReason, proposal.ID)
 	return err
 }
 
@@ -63,8 +63,8 @@ func DeleteProposal(id string, ctx context.Context) error {
 
 func CreateProposalBlockChange(change *ProposalBlockChange, ctx context.Context) error {
 	err := foundation.PostgresDB.QueryRowContext(ctx,
-		"INSERT INTO proposal_block_changes (proposal_id, block_id, action, block_type, order_path, content, created_by, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		change.ProposalID, change.BlockID, change.Action, change.BlockType, pq.Array(change.OrderPath), change.Content, change.CreatedBy, change.CreatedAt).Scan(&change.ID)
+		"INSERT INTO proposal_block_changes (proposal_id, block_id, action, block_type, order_path, content, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		change.ProposalID, change.BlockID, change.Action, change.BlockType, pq.Array(change.OrderPath), change.Content, change.CreatedBy).Scan(&change.ID)
 	return err
 }
 

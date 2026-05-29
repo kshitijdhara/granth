@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"granth/internal/foundation"
-	"time"
 )
 
 // ── Workspaces ────────────────────────────────────────────────────────────────
@@ -18,18 +17,18 @@ func createWorkspaceInTx(w *Workspace, memberID string, ctx context.Context) err
 	defer tx.Rollback()
 
 	err = tx.QueryRowContext(ctx,
-		`INSERT INTO workspaces (name, description, owner_id, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		w.Name, w.Description, w.OwnerID, w.CreatedAt, w.UpdatedAt,
+		`INSERT INTO workspaces (name, description, owner_id)
+		 VALUES ($1, $2, $3) RETURNING id`,
+		w.Name, w.Description, w.OwnerID,
 	).Scan(&w.ID)
 	if err != nil {
 		return fmt.Errorf("error inserting workspace: %w", err)
 	}
 
 	_, err = tx.ExecContext(ctx,
-		`INSERT INTO workspace_members (workspace_id, user_id, role, joined_at)
-		 VALUES ($1, $2, $3, $4)`,
-		w.ID, memberID, string(RoleAdmin), time.Now().UTC().Format(time.RFC3339),
+		`INSERT INTO workspace_members (workspace_id, user_id, role)
+		 VALUES ($1, $2, $3)`,
+		w.ID, memberID, string(RoleAdmin),
 	)
 	if err != nil {
 		return fmt.Errorf("error inserting workspace owner as member: %w", err)
@@ -79,8 +78,8 @@ func fetchWorkspacesForUser(userID string, ctx context.Context) ([]*Workspace, e
 
 func updateWorkspace(w *Workspace, ctx context.Context) error {
 	_, err := foundation.PostgresDB.ExecContext(ctx,
-		`UPDATE workspaces SET name = $1, description = $2, updated_at = $3 WHERE id = $4`,
-		w.Name, w.Description, w.UpdatedAt, w.ID,
+		`UPDATE workspaces SET name = $1, description = $2 WHERE id = $3`,
+		w.Name, w.Description, w.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("error updating workspace: %w", err)
@@ -143,9 +142,9 @@ func fetchMembersForWorkspace(workspaceID string, ctx context.Context) ([]*Works
 
 func insertMember(m *WorkspaceMember, ctx context.Context) error {
 	err := foundation.PostgresDB.QueryRowContext(ctx,
-		`INSERT INTO workspace_members (workspace_id, user_id, role, invited_by, joined_at)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		m.WorkspaceID, m.UserID, m.Role, m.InvitedBy, m.JoinedAt,
+		`INSERT INTO workspace_members (workspace_id, user_id, role, invited_by)
+		 VALUES ($1, $2, $3, $4) RETURNING id`,
+		m.WorkspaceID, m.UserID, m.Role, m.InvitedBy,
 	).Scan(&m.ID)
 	if err != nil {
 		return fmt.Errorf("error inserting member: %w", err)
@@ -230,10 +229,8 @@ func CountUserWorkspaces(userID string) (int, error) {
 func ProvisionDefaultWorkspace(userID, username string) error {
 	ctx := context.Background()
 	w := &Workspace{
-		Name:      fmt.Sprintf("%s's Granth", username),
-		OwnerID:   userID,
-		CreatedAt: time.Now().UTC().Format(time.RFC3339),
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
+		Name:    fmt.Sprintf("%s's Granth", username),
+		OwnerID: userID,
 	}
 	return createWorkspaceInTx(w, userID, ctx)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"granth/internal/foundation"
 )
@@ -30,19 +29,18 @@ func FetchGovernance(workspaceID string, ctx context.Context) (*Governance, erro
 }
 
 // UpsertGovernance creates or replaces the governance config for a workspace.
+// updated_at is managed by the workspace_governance_set_updated_at trigger.
 func UpsertGovernance(g *Governance, ctx context.Context) (*Governance, error) {
-	now := time.Now().UTC().Format(time.RFC3339)
 	out := &Governance{}
 	err := foundation.PostgresDB.QueryRowContext(ctx,
-		`INSERT INTO workspace_governance (workspace_id, min_reviewers, require_role, allow_author_review, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO workspace_governance (workspace_id, min_reviewers, require_role, allow_author_review)
+		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (workspace_id) DO UPDATE
-		   SET min_reviewers = EXCLUDED.min_reviewers,
-		       require_role   = EXCLUDED.require_role,
-		       allow_author_review = EXCLUDED.allow_author_review,
-		       updated_at     = EXCLUDED.updated_at
+		   SET min_reviewers       = EXCLUDED.min_reviewers,
+		       require_role        = EXCLUDED.require_role,
+		       allow_author_review = EXCLUDED.allow_author_review
 		 RETURNING id, workspace_id, min_reviewers, require_role, allow_author_review, created_at, updated_at`,
-		g.WorkspaceID, g.MinReviewers, g.RequireRole, g.AllowAuthorReview, now, now,
+		g.WorkspaceID, g.MinReviewers, g.RequireRole, g.AllowAuthorReview,
 	).Scan(&out.ID, &out.WorkspaceID, &out.MinReviewers, &out.RequireRole, &out.AllowAuthorReview, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error upserting governance: %w", err)

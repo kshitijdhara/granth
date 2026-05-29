@@ -1,6 +1,8 @@
 package blocks
 
 import (
+	"time"
+
 	"github.com/lib/pq"
 )
 
@@ -11,7 +13,7 @@ type Block struct {
 	BlockType  string        `json:"block_type"`
 	OrderPath  pq.Int64Array `json:"order_path"`
 	CreatedBy  string        `json:"created_by"`
-	CreatedAt  string        `json:"created_at"`
-	UpdatedAt  string        `json:"updated_at"`
+	CreatedAt  time.Time     `json:"created_at"`
+	UpdatedAt  time.Time     `json:"updated_at"`
 	UpdatedBy  string        `json:"updated_by"`
 }

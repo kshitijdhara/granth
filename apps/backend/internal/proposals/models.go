@@ -1,6 +1,8 @@
 package proposals
 
 import (
+	"time"
+
 	"github.com/lib/pq"
 )
 
@@ -13,18 +15,18 @@ const (
 )
 
 type Proposal struct {
-	ID               string   `json:"id"`
-	DocumentID       string   `json:"document_id"`
-	AffectedBlockIDs []string `json:"affected_block_ids"`
-	Title            string   `json:"title"`
-	NewTitle         string   `json:"new_title"`
-	AuthorID         string   `json:"author_id"`
-	Intent           string   `json:"intent"`
-	Scope            string   `json:"scope"`
-	State            string   `json:"state"`
-	RejectionReason  *string  `json:"rejection_reason"`
-	CreatedAt        string   `json:"created_at"`
-	UpdatedAt        string   `json:"updated_at"`
+	ID               string    `json:"id"`
+	DocumentID       string    `json:"document_id"`
+	AffectedBlockIDs []string  `json:"affected_block_ids"`
+	Title            string    `json:"title"`
+	NewTitle         string    `json:"new_title"`
+	AuthorID         string    `json:"author_id"`
+	Intent           string    `json:"intent"`
+	Scope            string    `json:"scope"`
+	State            string    `json:"state"`
+	RejectionReason  *string   `json:"rejection_reason"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type ProposalBlockChange struct {
@@ -36,5 +38,5 @@ type ProposalBlockChange struct {
 	OrderPath  pq.Int64Array `json:"order_path"`
 	Content    string        `json:"content"`
 	CreatedBy  string        `json:"created_by"`
-	CreatedAt  string        `json:"created_at"`
+	CreatedAt  time.Time     `json:"created_at"`
 }
