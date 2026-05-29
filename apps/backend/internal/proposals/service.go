@@ -3,6 +3,7 @@ package proposals
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"granth/internal/documents"
@@ -142,6 +143,30 @@ func checkAuthorBlock(proposal *Proposal, userID string, ctx context.Context) er
 	return nil
 }
 
+// pathKey converts an order_path array to a map key string (e.g. "1,2,3").
+func pathKey(p pq.Int64Array) string {
+	parts := make([]string, len(p))
+	for i, v := range p {
+		parts[i] = strconv.FormatInt(v, 10)
+	}
+	return strings.Join(parts, ",")
+}
+
+// nextAvailablePath returns base if it is not in occupied, otherwise increments
+// the last element until a free slot is found. This resolves order_path
+// collisions that arise when two proposals both propose a block at the same
+// position and are accepted sequentially.
+func nextAvailablePath(base pq.Int64Array, occupied map[string]struct{}) pq.Int64Array {
+	p := make(pq.Int64Array, len(base))
+	copy(p, base)
+	for {
+		if _, taken := occupied[pathKey(p)]; !taken {
+			return p
+		}
+		p[len(p)-1]++
+	}
+}
+
 func acceptProposal(proposalID string, ctx context.Context) error {
 	userID, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
@@ -185,12 +210,37 @@ func acceptProposal(proposalID string, ctx context.Context) error {
 	}
 	defer tx.Rollback()
 
+	// Snapshot existing order_paths so we can detect and resolve collisions
+	// caused by a concurrent proposal being accepted first.
+	occupied := map[string]struct{}{}
+	pathRows, err := tx.QueryContext(ctx,
+		"SELECT order_path FROM blocks WHERE document_id = $1", proposal.DocumentID)
+	if err != nil {
+		return fmt.Errorf("error fetching existing block paths: %w", err)
+	}
+	for pathRows.Next() {
+		var p pq.Int64Array
+		if err := pathRows.Scan(&p); err != nil {
+			pathRows.Close()
+			return fmt.Errorf("error scanning block path: %w", err)
+		}
+		occupied[pathKey(p)] = struct{}{}
+	}
+	pathRows.Close()
+	if err := pathRows.Err(); err != nil {
+		return fmt.Errorf("error reading block paths: %w", err)
+	}
+
 	for _, change := range changes {
 		switch change.Action {
 		case "create":
+			path := nextAvailablePath(change.OrderPath, occupied)
 			_, err = tx.ExecContext(ctx,
 				"INSERT INTO blocks (document_id, order_path, type, content, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6)",
-				proposal.DocumentID, pq.Array(change.OrderPath), change.BlockType, change.Content, userID, userID)
+				proposal.DocumentID, pq.Array(path), change.BlockType, change.Content, userID, userID)
+			if err == nil {
+				occupied[pathKey(path)] = struct{}{} // claim slot for subsequent creates in same proposal
+			}
 		case "update":
 			if change.BlockID == nil {
 				continue
