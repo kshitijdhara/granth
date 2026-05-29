@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"granth/internal/foundation"
 )
@@ -66,30 +65,28 @@ func FetchCommentByID(id string, ctx context.Context) (*Comment, error) {
 // CreateComment inserts a new comment and populates the Comment with its
 // generated ID and author_username via a CTE.
 func CreateComment(c *Comment, ctx context.Context) error {
-	now := time.Now().UTC().Format(time.RFC3339)
 	return foundation.PostgresDB.QueryRowContext(ctx,
 		`WITH ins AS (
-		     INSERT INTO proposal_comments (proposal_id, author_id, parent_id, body, created_at, updated_at)
-		     VALUES ($1, $2, $3, $4, $5, $5)
+		     INSERT INTO proposal_comments (proposal_id, author_id, parent_id, body)
+		     VALUES ($1, $2, $3, $4)
 		     RETURNING id, proposal_id, author_id, parent_id, body, created_at, updated_at
 		 )
 		 SELECT ins.id, ins.proposal_id, ins.author_id, u.username,
 		        ins.parent_id, ins.body, ins.created_at, ins.updated_at
 		 FROM ins
 		 INNER JOIN users u ON u.id = ins.author_id`,
-		c.ProposalID, c.AuthorID, c.ParentID, c.Body, now,
+		c.ProposalID, c.AuthorID, c.ParentID, c.Body,
 	).Scan(
 		&c.ID, &c.ProposalID, &c.AuthorID, &c.AuthorUsername,
 		&c.ParentID, &c.Body, &c.CreatedAt, &c.UpdatedAt,
 	)
 }
 
-// UpdateCommentBody updates the body and updated_at of a comment.
+// UpdateCommentBody updates the body of a comment; updated_at is set by trigger.
 func UpdateCommentBody(id, body string, ctx context.Context) error {
-	now := time.Now().UTC().Format(time.RFC3339)
 	_, err := foundation.PostgresDB.ExecContext(ctx,
-		`UPDATE proposal_comments SET body = $1, updated_at = $2 WHERE id = $3`,
-		body, now, id,
+		`UPDATE proposal_comments SET body = $1 WHERE id = $2`,
+		body, id,
 	)
 	if err != nil {
 		return fmt.Errorf("error updating comment: %w", err)

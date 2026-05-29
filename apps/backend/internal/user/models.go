@@ -1,5 +1,7 @@
 package user
 
+import "time"
+
 type AuthResponse struct {
 	UserID       string `json:"userID"`
 	Username     string `json:"username"`
@@ -8,9 +10,11 @@ type AuthResponse struct {
 }
 
 type User struct {
-	ID           string `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
-	PasswordHash string `json:"-"`
-	CreatedAt    string `json:"createdAt"`
+	ID           string                 `json:"id"`
+	Username     string                 `json:"username"`
+	Email        string                 `json:"email"`
+	PasswordHash string                 `json:"-"`
+	CreatedAt    time.Time              `json:"createdAt"`
+	UpdatedAt    time.Time              `json:"updatedAt"`
+	Properties   map[string]interface{} `json:"properties,omitempty"`
 }

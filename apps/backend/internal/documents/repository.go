@@ -32,17 +32,17 @@ func FetchDocumentByTitle(title string, ctx context.Context) (*Document, error) 
 
 func CreateDocument(document *Document, ctx context.Context) error {
 	err := foundation.PostgresDB.QueryRowContext(ctx,
-		`INSERT INTO documents (title, workspace_id, created_by, created_at, updated_at, updated_by)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		document.Title, document.WorkspaceID, document.CreatedBy, document.CreatedAt, document.UpdatedAt, document.UpdatedBy,
+		`INSERT INTO documents (title, workspace_id, created_by, updated_by)
+		 VALUES ($1, $2, $3, $4) RETURNING id`,
+		document.Title, document.WorkspaceID, document.CreatedBy, document.UpdatedBy,
 	).Scan(&document.ID)
 	return err
 }
 
 func UpdateDocument(document *Document, ctx context.Context) error {
 	_, err := foundation.PostgresDB.ExecContext(ctx,
-		`UPDATE documents SET title = $1, updated_at = $2, updated_by = $3 WHERE id = $4`,
-		document.Title, document.UpdatedAt, document.UpdatedBy, document.ID,
+		`UPDATE documents SET title = $1, updated_by = $2 WHERE id = $3`,
+		document.Title, document.UpdatedBy, document.ID,
 	)
 	return err
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"granth/internal/blocks"
 	"granth/internal/foundation"
-	"time"
 )
 
 func createNewDocument(title string, workspaceID *string, ctx context.Context) (string, error) {
@@ -13,13 +12,10 @@ func createNewDocument(title string, workspaceID *string, ctx context.Context) (
 	if !ok {
 		return "", fmt.Errorf("User ID not found in context")
 	}
-	now := time.Now().UTC().Format(time.RFC3339)
 	newDocument := &Document{
 		Title:       title,
 		WorkspaceID: workspaceID,
 		CreatedBy:   userId,
-		CreatedAt:   now,
-		UpdatedAt:   now,
 		UpdatedBy:   userId,
 	}
 	if err := CreateDocument(newDocument, ctx); err != nil {
@@ -53,7 +49,6 @@ func updateDocumentByID(document *Document, ctx context.Context) error {
 	if !ok {
 		return fmt.Errorf("User ID not found in context")
 	}
-	document.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 	document.UpdatedBy = userId
 	err := UpdateDocument(document, ctx)
 	if err != nil {
@@ -69,14 +64,13 @@ func getAllBlocksForDocument(documentID string, ctx context.Context) ([]*blocks.
 	}
 	return blocks, nil
 }
+
 func createBlockForDocument(block *blocks.Block, ctx context.Context) error {
 	userId, ok := foundation.GetUserIDFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("User ID not found in context")
 	}
 	block.CreatedBy = userId
-	block.CreatedAt = time.Now().UTC().Format(time.RFC3339)
-	block.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 	block.UpdatedBy = userId
 	err := blocks.CreateBlock(block, ctx)
 	if err != nil {
@@ -90,7 +84,6 @@ func updateBlockForDocument(block *blocks.Block, ctx context.Context) error {
 	if !ok {
 		return fmt.Errorf("User ID not found in context")
 	}
-	block.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 	block.UpdatedBy = userId
 	err := blocks.UpdateBlock(block, ctx)
 	if err != nil {

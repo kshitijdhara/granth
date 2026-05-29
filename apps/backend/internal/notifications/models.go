@@ -1,6 +1,9 @@
 package notifications
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Notification is a single event in a user's activity feed.
 type Notification struct {
@@ -9,7 +12,7 @@ type Notification struct {
 	Kind      string          `json:"kind"`
 	Payload   json.RawMessage `json:"payload"`
 	Read      bool            `json:"read"`
-	CreatedAt string          `json:"created_at"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 // Notification kind constants.

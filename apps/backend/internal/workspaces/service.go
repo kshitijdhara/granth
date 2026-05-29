@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"granth/internal/foundation"
-	"time"
 )
 
 func createWorkspace(name, description string, ctx context.Context) (*Workspace, error) {
@@ -13,13 +12,10 @@ func createWorkspace(name, description string, ctx context.Context) (*Workspace,
 		return nil, fmt.Errorf("user ID not found in context")
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
 	w := &Workspace{
 		Name:        name,
 		Description: description,
 		OwnerID:     userID,
-		CreatedAt:   now,
-		UpdatedAt:   now,
 	}
 
 	if err := createWorkspaceInTx(w, userID, ctx); err != nil {
@@ -76,7 +72,6 @@ func updateWorkspaceDetails(id, name, description string, ctx context.Context) e
 		ID:          id,
 		Name:        name,
 		Description: description,
-		UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
 	}
 	return updateWorkspace(w, ctx)
 }
@@ -154,7 +149,6 @@ func addMember(workspaceID, targetUserID, role string, ctx context.Context) (*Wo
 		UserID:      targetUserID,
 		Role:        role,
 		InvitedBy:   &userID,
-		JoinedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 	if err := insertMember(m, ctx); err != nil {
 		return nil, err
