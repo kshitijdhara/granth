@@ -156,6 +156,8 @@ func handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 		statusCode := http.StatusInternalServerError
 		if err.Error() == "only the workspace owner can delete it" {
 			statusCode = http.StatusForbidden
+		} else if err.Error() == "cannot delete your only workspace" {
+			statusCode = http.StatusConflict
 		}
 		shared.WriteError(w, shared.NewAPIError(statusCode, err.Error()))
 		return

@@ -211,3 +211,29 @@ func CountMembers(workspaceID string, ctx context.Context) (int, error) {
 	}
 	return count, nil
 }
+
+// CountUserWorkspaces returns the number of workspaces the user is a member of.
+func CountUserWorkspaces(userID string) (int, error) {
+	var count int
+	err := foundation.PostgresDB.QueryRow(
+		`SELECT COUNT(*) FROM workspace_members WHERE user_id = $1`,
+		userID,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("error counting user workspaces: %w", err)
+	}
+	return count, nil
+}
+
+// ProvisionDefaultWorkspace creates a default workspace for a newly registered user.
+// The workspace is named "{username}'s Granth" and the user is added as an admin member.
+func ProvisionDefaultWorkspace(userID, username string) error {
+	ctx := context.Background()
+	w := &Workspace{
+		Name:      fmt.Sprintf("%s's Granth", username),
+		OwnerID:   userID,
+		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
+	}
+	return createWorkspaceInTx(w, userID, ctx)
+}

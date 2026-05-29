@@ -16,7 +16,7 @@
     width: 60%;
     height: 60%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--color-accent-primary-rgb), 0.1) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -28,7 +28,7 @@
     width: 50%;
     height: 50%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--color-accent-primary-rgb), 0.08) 0%, transparent 70%);
     pointer-events: none;
   }
 

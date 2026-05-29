@@ -3,12 +3,10 @@ import {
 	ArrowRightStartOnRectangleIcon,
 	Bars3Icon,
 	BookOpenIcon,
+	BuildingOffice2Icon,
 	InboxIcon,
-	MoonIcon,
 	SparklesIcon,
-	SunIcon,
 	UserCircleIcon,
-	UsersIcon,
 	XMarkIcon,
 } from "@heroicons/react/24/solid";
 import type React from "react";
@@ -17,7 +15,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/auth.context";
 import { notificationsApi } from "@/features/notifications/notifications.api";
 import WorkspaceSelector from "@/features/workspaces/workspace-selector";
-import { useTheme } from "@/theme.context";
 import "./sidebar.scss";
 
 interface SidebarProps {
@@ -30,14 +27,13 @@ const NAV_ITEMS = [
 	{ key: "truth", path: "/truth", label: "Library", Icon: BookOpenIcon },
 	{ key: "motion", path: "/motion", label: "Review", Icon: SparklesIcon },
 	{ key: "archive", path: "/archive", label: "Decisions", Icon: ArchiveBoxIcon },
-	{ key: "group", path: "/group", label: "Team", Icon: UsersIcon },
+	{ key: "group", path: "/group", label: "Workspace", Icon: BuildingOffice2Icon },
 ] as const;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { isAuthenticated, logout } = useAuth();
-	const { theme, toggleTheme } = useTheme();
 	const [isCollapsing, setIsCollapsing] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 
@@ -119,25 +115,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 				</nav>
 
 				<div className="sidebar__footer">
-					<button
-						type="button"
-						className="sidebar__nav-item sidebar__nav-item--theme"
-						onClick={toggleTheme}
-						title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-						aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-					>
-						{theme === "light" ? (
-							<MoonIcon className="sidebar__icon" />
-						) : (
-							<SunIcon className="sidebar__icon" />
-						)}
-						{isOpen && !isCollapsing && (
-							<span className="sidebar__nav-label">
-								{theme === "light" ? "Dark mode" : "Light mode"}
-							</span>
-						)}
-					</button>
-
 					{isAuthenticated ? (
 						<>
 							<button

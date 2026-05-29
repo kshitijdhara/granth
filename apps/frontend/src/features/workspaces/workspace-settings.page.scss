@@ -241,6 +241,12 @@
     gap: var(--spacing-3);
   }
 
+  &__danger-note {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: var(--spacing-3) 0 0;
+  }
+
   &__not-found {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);

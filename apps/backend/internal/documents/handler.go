@@ -5,7 +5,9 @@ import (
 	"strconv"
 
 	"granth/internal/blocks"
+	"granth/internal/foundation"
 	"granth/internal/shared"
+	"granth/internal/workspaces"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -79,6 +81,27 @@ func handleCreateDocument(w http.ResponseWriter, r *http.Request) {
 
 	if req.Title == "" {
 		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "Title is required"))
+		return
+	}
+
+	if req.WorkspaceID == nil || *req.WorkspaceID == "" {
+		shared.WriteError(w, shared.NewAPIError(http.StatusBadRequest, "workspace_id is required"))
+		return
+	}
+
+	userID, ok := foundation.GetUserIDFromContext(r.Context())
+	if !ok {
+		shared.WriteError(w, shared.NewAPIError(http.StatusUnauthorized, "User ID not found in context"))
+		return
+	}
+
+	member, err := workspaces.FetchMember(*req.WorkspaceID, userID, r.Context())
+	if err != nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusInternalServerError, "Error checking workspace membership: "+err.Error()))
+		return
+	}
+	if member == nil {
+		shared.WriteError(w, shared.NewAPIError(http.StatusForbidden, "You are not a member of this workspace"))
 		return
 	}
 
