@@ -3,13 +3,13 @@ package internal
 import (
 	"net/http"
 
-	"granth/internal/auth"
 	"granth/internal/comments"
 	"granth/internal/documents"
+	"granth/internal/foundation"
 	"granth/internal/governance"
 	"granth/internal/notifications"
 	"granth/internal/proposals"
-	"granth/internal/foundation"
+	"granth/internal/user"
 	"granth/internal/workspaces"
 
 	"github.com/go-chi/chi/v5"
@@ -39,7 +39,7 @@ func BaseRouter() http.Handler {
 		w.Write([]byte(`{"message": "Welcome to Granth, authenticated user!", "userID": "` + userID + `"}`))
 	})
 
-	r.Mount("/api/auth", auth.AuthRouter())
+	r.Mount("/api/auth", user.AuthRouter())
 	r.With(foundation.AuthMiddleware).Mount("/api/workspaces", workspaces.WorkspacesRouter())
 	r.With(foundation.AuthMiddleware).Mount("/api/documents", documents.DocumentsRouter())
 	r.With(foundation.AuthMiddleware).Mount("/api/proposals", proposals.ProposalsRouter())

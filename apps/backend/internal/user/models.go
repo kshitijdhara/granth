@@ -1,4 +1,4 @@
-package auth
+package user
 
 type AuthResponse struct {
 	UserID       string `json:"userID"`
